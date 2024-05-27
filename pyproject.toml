@@ -1,0 +1,57 @@
+[tool.poetry]
+name = "anaplan-sdk"
+version = "0.0.1"
+description = "Provides pythonic access to the Anaplan API"
+authors = ["Vinzenz Klass <vinzenz.klass@ba.valantic.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11.0"
+httpx = "^0.27.0"
+cryptography = "^42.0.7"
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.4.5"
+pre-commit = "^3.6.1"
+mkdocs-material = "^9.5.25"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "venv",
+]
+
+line-length = 100
+fix = true
+target-version = "py312"
+
+[tool.ruff.format]
+skip-magic-trailing-comma = false
