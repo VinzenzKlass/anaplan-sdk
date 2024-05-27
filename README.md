@@ -1,9 +1,9 @@
 # Getting started
 
-## Install Dependencies
+## Install Project
 
 ```shell
-pip install --upgrade -r requirements.txt
+poetry install
 ```
 
 ## Enable git hooks:
