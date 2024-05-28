@@ -84,3 +84,21 @@ def test_upload_and_download_file():
     client.upload_file(113000000000, "Hi!")
     out = client.get_file(113000000000)
     assert out == b"Hi!"
+
+
+def test_run_process():
+    client.run_action(118000000004)
+
+
+def test_invoke_action():
+    task_id = client.invoke_action(118000000004)
+    assert isinstance(task_id, str)
+    assert len(task_id) == 32
+
+
+def test_get_task_status():
+    task_status = client.get_task_status(118000000004, client.invoke_action(118000000004))
+    assert isinstance(task_status, dict)
+    assert "currentStep" in task_status
+    assert "successful" in task_status.get("result")
+    assert "nestedResults" in task_status.get("result")
