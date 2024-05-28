@@ -15,6 +15,7 @@ tenacity = "^8.3.0"
 ruff = "^0.4.5"
 pre-commit = "^3.6.1"
 mkdocs-material = "^9.5.25"
+pytest = "^8.2.1"
 
 [build-system]
 requires = ["poetry-core"]
@@ -56,3 +57,12 @@ target-version = "py312"
 
 [tool.ruff.format]
 skip-magic-trailing-comma = false
+
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q"
+pythonpath = "anaplan_sdk/"
+testpaths = [
+    "tests",
+]
