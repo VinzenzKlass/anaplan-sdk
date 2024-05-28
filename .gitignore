@@ -1,5 +1,4 @@
 # Byte-compiled / optimized / DLL files
-
 __pycache__/
 *.py[cod]
 *$py.class
@@ -9,6 +8,7 @@ __pycache__/
 .idea
 .iml
 
+debug.py
 # Distribution / packaging
 .Python
 build/

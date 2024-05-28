@@ -10,10 +10,16 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
-from httpx import HTTPStatusError
+from httpx import HTTPStatusError, HTTPError
+from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
-from ._exceptions import InvalidCredentialsException, InvalidIdentifierException, AnaplanActionError
-from ._types import Import, Export, Process, File, Action, List
+from ._exceptions import (
+    InvalidCredentialsException,
+    InvalidIdentifierException,
+    AnaplanActionError,
+    ReAuthException,
+)
+from ._types import Import, Export, Process, File, Action, List, Workspace, Model
 
 logger = logging.getLogger("anaplan_sdk")
 
@@ -32,8 +38,8 @@ class Client:
 
     def __init__(
         self,
-        workspace_id: str,
-        model_id: str,
+        workspace_id: str | None = None,
+        model_id: str | None = None,
         user_email: str | None = None,
         password: str | None = None,
         certificate: str | bytes | None = None,
@@ -69,8 +75,8 @@ class Client:
         :param timeout: The timeout for the HTTP requests.
         :param status_poll_delay: The delay between polling the status of a task.
         :param upload_parallel: Whether to upload the chunks in parallel. Defaults to True. **If
-                                you are network bound or are experiencing rate limiting issues,
-                                set this to False.**
+                                you are heavily network bound or are experiencing rate limiting
+                                issues, set this to False.**
         :param upload_chunk_size: The size of the chunks to upload. This is the maximum size of
                                   each chunk. Defaults to 25MB.
         """
@@ -95,13 +101,53 @@ class Client:
         self.upload_chunk_size = upload_chunk_size
         try:
             self._auth_token = self._cert_auth() if certificate else self._basic_auth()
-            self._verify_model()
         except HTTPStatusError as error:
             if error.response.status_code == 401:
                 raise InvalidCredentialsException from error
-            if error.response.status_code == 404:
-                raise InvalidIdentifierException("Workspace or Model not found.") from error
             raise error
+
+    def list_workspaces(self) -> list[Workspace]:
+        """
+        Lists all the Workspaces the authenticated user has access to.
+        :return: All Workspaces as a list of :py:class:`Workspace`.
+        """
+        response = self._get(f"{self._base_url}?tenantDetails=true")
+        return [
+            Workspace(
+                id=e.get("id"),
+                name=e.get("name"),
+                active=e.get("active"),
+                size_allowance=int(e.get("sizeAllowance")),
+                current_size=int(e.get("currentSize")),
+            )
+            for e in response.get("workspaces")
+        ]
+
+    def list_models(self) -> list[Model]:
+        """
+        Lists all the Models the authenticated user has access to.
+        :return: All Models in the Workspace as a list of :py:class:`Model`.
+        """
+        response = self._get(
+            f"{self._base_url.replace('/workspaces', '/models')}?modelDetails=true"
+        )
+        return [
+            Model(
+                id=e.get("id"),
+                name=e.get("name"),
+                active_state=e.get("activeState"),
+                last_saved_serial_number=int(e.get("lastSavedSerialNumber")),
+                last_modified_by_user_guid=e.get("lastModifiedByUserGuid"),
+                memory_usage=int(e.get("memoryUsage", 0)),
+                current_workspace_id=e.get("currentWorkspaceId"),
+                current_workspace_name=e.get("currentWorkspaceName"),
+                model_url=e.get("modelUrl"),
+                category_values=e.get("categoryValues"),
+                iso_creation_date=e.get("isoCreationDate"),
+                last_modified=e.get("lastModified"),
+            )
+            for e in response.get("models")
+        ]
 
     def list_actions(self) -> list[Action]:
         """
@@ -111,17 +157,10 @@ class Client:
 
         :return: All Actions on this model as a list of :py:class:`Action`.
         """
-        response = self._client.get(
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/actions",
-            headers={
-                "Authorization": f"AnaplanAuthToken {self._auth_token}",
-            },
-            timeout=self.timeout,
-        )
-        response.raise_for_status()
+        response = self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/actions")
         return [
             Action(id=int(e.get("id")), name=e.get("name"), type=e.get("actionType"))
-            for e in response.json().get("actions")
+            for e in response.get("actions")
         ]
 
     def list_imports(self) -> list[Import]:
@@ -129,22 +168,15 @@ class Client:
         Lists all the Imports in the Model.
         :return: All Imports on this model as a list of :py:class:`Import`.
         """
-        response = self._client.get(
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/imports",
-            headers={
-                "Authorization": f"AnaplanAuthToken {self._auth_token}",
-            },
-            timeout=self.timeout,
-        )
-        response.raise_for_status()
+        response = self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/imports")
         return [
             Import(
                 id=int(e.get("id")),
                 type=e.get("importType"),
                 name=e.get("name"),
-                source_id=int(e.get("importDataSourceId")) or None,
+                source_id=int(e.get("importDataSourceId")) if e.get("importDataSourceId") else None,
             )
-            for e in response.json().get("imports")
+            for e in response.get("imports")
         ]
 
     def list_exports(self) -> list[Export]:
@@ -152,14 +184,7 @@ class Client:
         Lists all the Exports in the Model.
         :return: All Exports on this model as a list of :py:class:`Export`.
         """
-        response = self._client.get(
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/exports",
-            headers={
-                "Authorization": f"AnaplanAuthToken {self._auth_token}",
-            },
-            timeout=self.timeout,
-        )
-        response.raise_for_status()
+        response = self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/exports")
         return [
             Export(
                 id=int(e.get("id")),
@@ -169,7 +194,7 @@ class Client:
                 encoding=e.get("encoding"),
                 layout=e.get("layout"),
             )
-            for e in response.json().get("exports")
+            for e in response.get("exports")
         ]
 
     def list_processes(self) -> list[Process]:
@@ -177,32 +202,17 @@ class Client:
         Lists all the Processes in the Model.
         :return: All Processes on this model as a list of :py:class:`Process`.
         """
-        response = self._client.get(
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/processes",
-            headers={
-                "Authorization": f"AnaplanAuthToken {self._auth_token}",
-            },
-            timeout=self.timeout,
+        response = self._get(
+            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/processes"
         )
-        response.raise_for_status()
-        return [
-            Process(id=int(e.get("id")), name=e.get("name"))
-            for e in response.json().get("processes")
-        ]
+        return [Process(id=int(e.get("id")), name=e.get("name")) for e in response.get("processes")]
 
     def list_files(self) -> list[File]:
         """
         Lists all the Files in the Model.
         :return: All Files on this model as a list of :py:class:`File`.
         """
-        response = self._client.get(
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files",
-            headers={
-                "Authorization": f"AnaplanAuthToken {self._auth_token}",
-            },
-            timeout=self.timeout,
-        )
-        response.raise_for_status()
+        response = self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files")
         return [
             File(
                 id=int(e.get("id")),
@@ -215,7 +225,7 @@ class Client:
                 header_row=e.get("headerRow"),
                 separator=e.get("separator"),
             )
-            for e in response.json().get("files")
+            for e in response.get("files")
         ]
 
     def list_lists(self) -> list[List]:
@@ -223,15 +233,8 @@ class Client:
         Lists all the Lists in the Model.
         :return: All Lists on this model as a list of :py:class:`List`.
         """
-        response = self._client.get(
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/processes",
-            headers={
-                "Authorization": f"AnaplanAuthToken {self._auth_token}",
-            },
-            timeout=self.timeout,
-        )
-        response.raise_for_status()
-        return [List(id=int(e.get("id")), name=e.get("name")) for e in response.json().get("lists")]
+        response = self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/lists")
+        return [List(id=int(e.get("id")), name=e.get("name")) for e in response.get("lists")]
 
     def run_action(self, action_id: int) -> None:
         """
@@ -239,19 +242,22 @@ class Client:
         completes with errors, will raise an :py:class:`AnaplanActionError`
         :param action_id: The identifier of the Action to run.
         """
-        task_id = self._invoke_action(action_id)
-        task_status = self._get_task_status(action_id, task_id)
-
-        while "COMPLETE" not in task_status.get("taskState"):
-            time.sleep(self.status_poll_delay)
+        try:
+            task_id = self._invoke_action(action_id)
             task_status = self._get_task_status(action_id, task_id)
 
-        if task_status.get("taskState") == "COMPLETE" and not task_status.get("result").get(
-            "successful"
-        ):
-            raise AnaplanActionError(f"Task '{task_id}' completed with errors.")
+            while "COMPLETE" not in task_status.get("taskState"):
+                time.sleep(self.status_poll_delay)
+                task_status = self._get_task_status(action_id, task_id)
 
-        logger.info(f"Task '{task_id}' completed but unsuccessful.")
+            if task_status.get("taskState") == "COMPLETE" and not task_status.get("result").get(
+                "successful"
+            ):
+                raise AnaplanActionError(f"Task '{task_id}' completed with errors.")
+
+            logger.info(f"Task '{task_id}' completed but unsuccessful.")
+        except HTTPError as error:
+            self._recover_or_raise(error)
 
     def get_file(self, file_id: int) -> bytes:
         """
@@ -259,16 +265,9 @@ class Client:
         :param file_id: The identifier of the file to retrieve.
         :return: The content of the file.
         """
-        response = self._client.get(
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files/{file_id}",
-            headers={
-                "Authorization": f"AnaplanAuthToken {self._auth_token}",
-            },
-            timeout=self.timeout,
+        return self._get_binary(
+            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files/{file_id}"
         )
-        response.raise_for_status()
-        logger.info(f"Retrieved {len(response.content)} bytes from File '{file_id}'.")
-        return response.content
 
     def upload_file(self, file_id: int, content: str | bytes) -> None:
         """
@@ -284,14 +283,11 @@ class Client:
         """
         if isinstance(content, str):
             content = content.encode()
-
         chunks = [
             content[i : i + self.upload_chunk_size]
             for i in range(0, len(content), self.upload_chunk_size)
         ]
-
         self._set_chunk_count(file_id, len(chunks))
-
         if self.upload_parallel:
             with ThreadPoolExecutor(max_workers=4) as executor:
                 executor.map(
@@ -302,59 +298,44 @@ class Client:
                 self._upload_chunk(file_id, index, chunk)
         logger.info(f"Content loaded to  File '{file_id}'.")
 
+    @retry(retry=retry_if_exception_type(ReAuthException), stop=stop_after_attempt(2))
     def _upload_chunk(self, file_id: int, index: int, chunk: bytes) -> None:
-        response = self._client.put(
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files/{file_id}/"
-            f"chunks/{index}",
-            headers={
-                "Authorization": f"AnaplanAuthToken {self._auth_token}",
-                "Content-Type": "application/x-gzip",
-            },
-            content=gzip.compress(chunk),
-            timeout=self.timeout,
-        )
-        response.raise_for_status()
+        try:
+            response = self._client.put(
+                f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files/{file_id}/"
+                f"chunks/{index}",
+                headers={
+                    "Authorization": f"AnaplanAuthToken {self._auth_token}",
+                    "Content-Type": "application/x-gzip",
+                },
+                content=gzip.compress(chunk),
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+        except HTTPError as error:
+            self._recover_or_raise(error)
 
     def _set_chunk_count(self, file_id: int, num_chunks: int) -> None:
-        response = self._client.post(
+        self._post(
             f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files/{file_id}",
-            headers={
-                "Authorization": f"AnaplanAuthToken {self._auth_token}",
-                "Content-Type": "application/json",
-            },
             json={"chunkCount": num_chunks},
-            timeout=self.timeout,
         )
-        response.raise_for_status()
 
     def _get_task_status(
         self, action_id: int, task_id: str
     ) -> dict[str, float | int | str | list | dict | bool]:
-        response = self._client.get(
+        return self._get(
             f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/"
-            f"{self._determine_action_type(action_id)}/{action_id}/tasks/{task_id}",
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"AnaplanAuthToken {self._auth_token}",
-            },
-            timeout=self.timeout,
-        )
-        response.raise_for_status()
-        return response.json().get("task")
+            f"{self._determine_action_type(action_id)}/{action_id}/tasks/{task_id}"
+        ).get("task")
 
     def _invoke_action(self, action_id: int) -> str:
-        response = self._client.post(
+        response = self._post(
             f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/"
             f"{self._determine_action_type(action_id)}/{action_id}/tasks",
-            headers={
-                "Content-Type": "application/json",
-                "Authorization": f"AnaplanAuthToken {self._auth_token}",
-            },
             json={"localeName": "en_US"},
-            timeout=self.timeout,
         )
-        response.raise_for_status()
-        task_id = response.json().get("task").get("taskId")
+        task_id = response.get("task").get("taskId")
         logger.info(f"Invoked Action '{action_id}', spawned Task: '{task_id}'.")
         return ""
 
@@ -388,13 +369,58 @@ class Client:
         logger.info("Authentication Token created.")
         return response.json().get("tokenInfo").get("tokenValue")
 
-    def _verify_model(self):
-        response = self._client.get(
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/currentPeriod",
-            headers={"Authorization": f"AnaplanAuthToken {self._auth_token}"},
-            timeout=self.timeout,
-        )
-        response.raise_for_status()
+    @retry(retry=retry_if_exception_type(ReAuthException), stop=stop_after_attempt(2))
+    def _get(self, url: str) -> dict[str, float | int | str | list | dict | bool]:
+        try:
+            response = self._client.get(
+                url,
+                headers={"Authorization": f"AnaplanAuthToken {self._auth_token}"},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response.json()
+        except HTTPError as error:
+            self._recover_or_raise(error)
+
+    @retry(retry=retry_if_exception_type(ReAuthException), stop=stop_after_attempt(2))
+    def _get_binary(self, url: str) -> bytes:
+        try:
+            response = self._client.get(
+                url,
+                headers={"Authorization": f"AnaplanAuthToken {self._auth_token}"},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            return response.content
+        except HTTPError as error:
+            self._recover_or_raise(error)
+
+    @retry(retry=retry_if_exception_type(ReAuthException), stop=stop_after_attempt(2))
+    def _post(
+        self, url: str, json: dict | None = None
+    ) -> dict[str, float | int | str | list | dict | bool]:
+        try:
+            return self._client.post(
+                url,
+                headers={
+                    "Authorization": f"AnaplanAuthToken {self._auth_token}",
+                    "Content-Type": "application/json",
+                },
+                json=json,
+                timeout=self.timeout,
+            ).json()
+        except HTTPError as error:
+            self._recover_or_raise(error)
+
+    def _recover_or_raise(self, error: HTTPError) -> None:
+        if isinstance(error, HTTPStatusError):
+            if error.response.status_code == 401:
+                self._auth_token = self._auth_token = (
+                    self._cert_auth() if self.certificate else self._basic_auth()
+                )
+                raise ReAuthException from error
+            if error.response.status_code == 404:
+                raise InvalidIdentifierException from error
 
     def _get_certificate(self) -> bytes:
         if isinstance(self.certificate, str):
