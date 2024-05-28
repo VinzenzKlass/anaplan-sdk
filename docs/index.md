@@ -8,7 +8,7 @@ Anaplan SDK
 
 ---
 
-Anaplan SDK is an independent, unofficial Project providing pythonic access to
+Anaplan SDK is an independent, unofficial project providing pythonic access to
 the [Anaplan Integration API v2](https://anaplan.docs.apiary.io/). This Project aims to provide high-level abstractions
 over the API, so you can deal with python objects and simple functions rather than implementation details like HTTP,
 Authentication,

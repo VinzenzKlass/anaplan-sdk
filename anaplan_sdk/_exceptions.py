@@ -8,6 +8,18 @@ class AnaplanException(Exception):
         super().__init__(self.message)
 
 
+class ReAuthException(AnaplanException):
+    """
+    Exception raised when the Anaplan API token has expired.
+    """
+
+    def __init__(
+        self, message: str = "Anaplan API token has expired, authenticating anew and trying again"
+    ):
+        self.message = message
+        super().__init__(self.message)
+
+
 class InvalidCredentialsException(AnaplanException):
     """
     Exception raised when the provided credentials are invalid.
