@@ -1,5 +1,5 @@
 <p align="center" style="margin: 0 0 10px">
-  <img width="115" height="126" src="https://upload.wikimedia.org/wikipedia/commons/c/c3/Python-logo-notext.svg" alt='Python'>
+  <img width="200" height="200" src="docs/img/anaplan-sdk.png" alt='Python' style="border-radius: 15px">
 </p>
 
 <h1 align="center" style="font-size: 3rem; font-weight: 400; margin: -15px 0">
