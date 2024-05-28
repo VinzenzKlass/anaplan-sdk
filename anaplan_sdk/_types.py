@@ -1,9 +1,6 @@
 from dataclasses import dataclass
 
 
-type AnaplanJSON = dict[str, float | int | str | list | dict | bool]
-
-
 @dataclass
 class Import:
     """

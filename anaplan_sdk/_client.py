@@ -19,7 +19,7 @@ from ._exceptions import (
     AnaplanActionError,
     ReAuthException,
 )
-from ._types import Import, Export, Process, File, Action, List, Workspace, Model, AnaplanJSON
+from ._types import Import, Export, Process, File, Action, List, Workspace, Model
 
 logger = logging.getLogger("anaplan_sdk")
 
@@ -302,7 +302,9 @@ class Client:
                 self._upload_chunk(file_id, index, chunk)
         logger.info(f"Content loaded to  File '{file_id}'.")
 
-    def get_task_status(self, action_id: int, task_id: str) -> AnaplanJSON:
+    def get_task_status(
+        self, action_id: int, task_id: str
+    ) -> dict[str, float | int | str | list | dict | bool]:
         """
         Retrieves the status of the specified task.
         :param action_id: The identifier of the action that was invoked.
