@@ -8,6 +8,12 @@ on:
 
 jobs:
   tests:
+    env:
+      ANAPLAN_SDK_TEST_WORKSPACE_ID: ${{secrets.ANAPLAN_SDK_TEST_WORKSPACE_ID}}
+      ANAPLAN_SDK_TEST_MODEL_ID: ${{secrets.ANAPLAN_SDK_TEST_MODEL_ID}}
+      ANAPLAN_SDK_TEST_CERT: ${{secrets.ANAPLAN_SDK_TEST_CERT}}
+      ANAPLAN_SDK_TEST_PK: ${{secrets.ANAPLAN_SDK_TEST_PK}}
+
     name: "Python ${{ matrix.python-version }}"
     runs-on: "ubuntu-latest"
 
