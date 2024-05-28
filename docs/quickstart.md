@@ -1,5 +1,3 @@
-## Installation
-
 This Quickstart Guide assumes you already have both the `Workspace Id` and `Model Id` of the Model you want to work
 with. If you don't: You can find both of these either in the URL displayed on the browser or by instantiating a client
 with Authentication information only and then call the `list_workspaces` and `list_models` endpoint. Alternatively, you
@@ -8,18 +6,6 @@ can use an HTTP Client like Postman, Insomnia, or Paw.
 This Project provides both synchronous and asynchronous clients. The rest of this Quickstart will provide code samples
 for the synchronous client. For usage of the asynchronous client you can replace the `Client` with `AsyncClient` and use
 async await syntax.
-
-### Using pip
-
-```shell
-pip install anaplan-sdk
-```
-
-### Using poetry
-
-```shell
-poetry add anaplan-sdk
-```
 
 ## Instantiate a Client
 

@@ -22,6 +22,7 @@ repo_url: https://github.com/VinzenzKlass/anaplan-sdk
 
 nav:
   - Introduction: 'index.md'
+  - Installation: 'installation.md'
   - QuickStart: 'quickstart.md'
   - Anaplan API Explained: 'anaplan_api_explained.md'
   - Guides:

@@ -1,0 +1,35 @@
+name: Test Suite
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  tests:
+    env:
+      ANAPLAN_SDK_TEST_WORKSPACE_ID: ${{secrets.ANAPLAN_SDK_TEST_WORKSPACE_ID}}
+      ANAPLAN_SDK_TEST_MODEL_ID: ${{secrets.ANAPLAN_SDK_TEST_MODEL_ID}}
+      ANAPLAN_SDK_TEST_CERT: ${{secrets.ANAPLAN_SDK_TEST_CERT}}
+      ANAPLAN_SDK_TEST_PK: ${{secrets.ANAPLAN_SDK_TEST_PK}}
+
+    name: "Python ${{ matrix.python-version }}"
+    runs-on: "ubuntu-latest"
+
+    strategy:
+      matrix:
+        python-version: [ "3.10", "3.11", "3.12" ]
+
+    steps:
+      - uses: "actions/checkout@v4"
+      - uses: "actions/setup-python@v5"
+        with:
+          python-version: "${{ matrix.python-version }}"
+          allow-prereleases: true
+      - name: "Install Poetry"
+        run: "pip install poetry"
+      - name: "Setup Poetry"
+        run: "poetry install"
+      - name: "Run tests"
+        run: "poetry run python -m pytest tests/"
