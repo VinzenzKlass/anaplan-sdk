@@ -3,6 +3,8 @@ with. If you don't: You can find both of these either in the URL displayed on th
 with Authentication information only and then call the `list_workspaces` and `list_models` endpoint. Alternatively, you
 can use an HTTP Client like Postman, Insomnia, or Paw.
 
+It further assumes you have a valid user with credentials and required permissions.
+
 This Project provides both synchronous and asynchronous clients. The rest of this Quickstart will provide code samples
 for the synchronous client. For usage of the asynchronous client you can replace the `Client` with `AsyncClient` and use
 async await syntax.
@@ -48,7 +50,7 @@ anaplan_client = anaplan_sdk.Client(
 Once Instantiated, you can invoke any method on your client instance. Say you want to find the id of an export action
 based on the name provided by one of your Anaplan Model Builders, run the export, find the file that was populated, and
 retrieve the content thereof. If this workflow feels unintuitive, you may want to head over to
-the [Anaplan API Explained](anaplan_api_explained.md) Section.
+the [Anaplan Explained](anaplan_explained.md) Section.
 
 Here is what these steps would look like:
 
