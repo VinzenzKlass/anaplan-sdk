@@ -441,6 +441,7 @@ class Client:
                 raise ReAuthException from error
             if error.response.status_code == 404:
                 raise InvalidIdentifierException from error
+        raise error
 
     def _get_certificate(self) -> bytes:
         if isinstance(self.certificate, str):
