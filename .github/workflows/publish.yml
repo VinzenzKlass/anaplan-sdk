@@ -1,0 +1,31 @@
+name: Publish to PyPI
+
+on:
+  push:
+    branches: [ "master" ]
+
+  workflow_dispatch:
+
+
+jobs:
+  tests:
+    env:
+      POETRY_PYPI_TOKEN_PYPI: ${{secrets.POETRY_PYPI_TOKEN_PYPI}}
+
+    name: "Python 3.12"
+    runs-on: "ubuntu-latest"
+
+    steps:
+      - uses: "actions/checkout@v4"
+      - uses: "actions/setup-python@v5"
+        with:
+          python-version: "3.12"
+          allow-prereleases: true
+      - name: "Install Poetry"
+        run: "pip install poetry"
+      - name: "Setup Poetry"
+        run: "poetry install"
+      - name: "Build"
+        run: "poetry build"
+      - name: "Publish"
+        run: "poetry publish"
