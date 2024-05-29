@@ -1,3 +1,7 @@
+"""
+Synchronous Client.
+"""
+
 import base64
 import gzip
 import logging
@@ -101,7 +105,8 @@ class Client:
         self.status_poll_delay = status_poll_delay
         self.upload_parallel = upload_parallel
         self.upload_chunk_size = upload_chunk_size
-        self._auth_token = self._cert_auth() if certificate else self._basic_auth()
+        self._auth_token = ""
+        self._cert_auth() if certificate else self._basic_auth()
 
     def list_workspaces(self) -> list[Workspace]:
         """
@@ -356,7 +361,7 @@ class Client:
             json={"chunkCount": num_chunks},
         )
 
-    def _basic_auth(self) -> str:
+    def _basic_auth(self) -> None:
         try:
             credentials = base64.b64encode(f"{self.user_email}:{self.password}".encode()).decode()
             response = self._client.post(
@@ -365,14 +370,14 @@ class Client:
                 timeout=self.timeout,
             )
             response.raise_for_status()
+            self._auth_token = response.json().get("tokenInfo").get("tokenValue")
             logger.info("Authentication Token created.")
-            return response.json().get("tokenInfo").get("tokenValue")
         except HTTPError as error:
             if isinstance(error, HTTPStatusError) and error.response.status_code == 401:
                 raise InvalidCredentialsException from error
             raise error
 
-    def _cert_auth(self) -> str:
+    def _cert_auth(self) -> None:
         try:
             message = os.urandom(150)
             encoded_cert = base64.b64encode(self._get_certificate()).decode()
@@ -391,8 +396,8 @@ class Client:
                 timeout=self.timeout,
             )
             response.raise_for_status()
+            self._auth_token = response.json().get("tokenInfo").get("tokenValue")
             logger.info("Authentication Token created.")
-            return response.json().get("tokenInfo").get("tokenValue")
         except HTTPError as error:
             if isinstance(error, HTTPStatusError) and error.response.status_code == 401:
                 raise InvalidCredentialsException from error
@@ -444,9 +449,7 @@ class Client:
     def _recover_or_raise(self, error: HTTPError) -> None:
         if isinstance(error, HTTPStatusError):
             if error.response.status_code == 401:
-                self._auth_token = self._auth_token = (
-                    self._cert_auth() if self.certificate else self._basic_auth()
-                )
+                self._cert_auth() if self.certificate else self._basic_auth()
                 raise ReAuthException from error
             if error.response.status_code == 404:
                 raise InvalidIdentifierException from error
