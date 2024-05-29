@@ -1,12 +1,17 @@
 [tool.poetry]
 name = "anaplan-sdk"
-version = "0.0.2"
+version = "0.0.4"
 description = "Provides pythonic access to the Anaplan API"
+license = "Apache-2.0"
 authors = ["Vinzenz Klass <vinzenz.klass@ba.valantic.com>"]
 readme = "README.md"
+homepage = "https://vinzenzklass.github.io/anaplan-sdk/"
+repository = "https://github.com/VinzenzKlass/anaplan-sdk"
+documentation = "https://vinzenzklass.github.io/anaplan-sdk/"
+keywords = ["anaplan"]
 
 [tool.poetry.dependencies]
-python = "^3.10.4"
+python = ">=3.10.4"
 httpx = "^0.27.0"
 cryptography = "^42.0.7"
 tenacity = "^8.3.0"
