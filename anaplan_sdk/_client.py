@@ -25,7 +25,25 @@ from ._exceptions import (
     AnaplanActionError,
     ReAuthException,
 )
-from ._models import Import, Export, Process, File, Action, List, Workspace, Model
+from ._models import (
+    Import,
+    Export,
+    Process,
+    File,
+    Action,
+    List,
+    Workspace,
+    Model,
+    to_workspaces,
+    to_models,
+    to_actions,
+    to_imports,
+    to_exports,
+    to_processes,
+    to_files,
+    to_lists,
+    determine_action_type,
+)
 
 logger = logging.getLogger("anaplan_sdk")
 
@@ -113,43 +131,16 @@ class Client:
         Lists all the Workspaces the authenticated user has access to.
         :return: All Workspaces as a list of :py:class:`Workspace`.
         """
-        response = self._get(f"{self._base_url}?tenantDetails=true")
-        return [
-            Workspace(
-                id=e.get("id"),
-                name=e.get("name"),
-                active=e.get("active"),
-                size_allowance=int(e.get("sizeAllowance")),
-                current_size=int(e.get("currentSize")),
-            )
-            for e in response.get("workspaces")
-        ]
+        return to_workspaces(self._get(f"{self._base_url}?tenantDetails=true"))
 
     def list_models(self) -> list[Model]:
         """
         Lists all the Models the authenticated user has access to.
         :return: All Models in the Workspace as a list of :py:class:`Model`.
         """
-        response = self._get(
-            f"{self._base_url.replace('/workspaces', '/models')}?modelDetails=true"
+        return to_models(
+            self._get(f"{self._base_url.replace('/workspaces', '/models')}?modelDetails=true")
         )
-        return [
-            Model(
-                id=e.get("id"),
-                name=e.get("name"),
-                active_state=e.get("activeState"),
-                last_saved_serial_number=int(e.get("lastSavedSerialNumber")),
-                last_modified_by_user_guid=e.get("lastModifiedByUserGuid"),
-                memory_usage=int(e.get("memoryUsage", 0)),
-                current_workspace_id=e.get("currentWorkspaceId"),
-                current_workspace_name=e.get("currentWorkspaceName"),
-                model_url=e.get("modelUrl"),
-                category_values=e.get("categoryValues"),
-                iso_creation_date=e.get("isoCreationDate"),
-                last_modified=e.get("lastModified"),
-            )
-            for e in response.get("models")
-        ]
 
     def list_actions(self) -> list[Action]:
         """
@@ -159,84 +150,54 @@ class Client:
 
         :return: All Actions on this model as a list of :py:class:`Action`.
         """
-        response = self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/actions")
-        return [
-            Action(id=int(e.get("id")), name=e.get("name"), type=e.get("actionType"))
-            for e in response.get("actions")
-        ]
+        return to_actions(
+            self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/actions")
+        )
 
     def list_imports(self) -> list[Import]:
         """
         Lists all the Imports in the Model.
         :return: All Imports on this model as a list of :py:class:`Import`.
         """
-        response = self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/imports")
-        return [
-            Import(
-                id=int(e.get("id")),
-                type=e.get("importType"),
-                name=e.get("name"),
-                source_id=int(e.get("importDataSourceId")) if e.get("importDataSourceId") else None,
-            )
-            for e in response.get("imports")
-        ]
+        return to_imports(
+            self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/imports")
+        )
 
     def list_exports(self) -> list[Export]:
         """
         Lists all the Exports in the Model.
         :return: All Exports on this model as a list of :py:class:`Export`.
         """
-        response = self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/exports")
-        return [
-            Export(
-                id=int(e.get("id")),
-                name=e.get("name"),
-                type=e.get("exportType"),
-                format=e.get("exportFormat"),
-                encoding=e.get("encoding"),
-                layout=e.get("layout"),
-            )
-            for e in response.get("exports")
-        ]
+        return to_exports(
+            self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/exports")
+        )
 
     def list_processes(self) -> list[Process]:
         """
         Lists all the Processes in the Model.
         :return: All Processes on this model as a list of :py:class:`Process`.
         """
-        response = self._get(
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/processes"
+        return to_processes(
+            self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/processes")
         )
-        return [Process(id=int(e.get("id")), name=e.get("name")) for e in response.get("processes")]
 
     def list_files(self) -> list[File]:
         """
         Lists all the Files in the Model.
         :return: All Files on this model as a list of :py:class:`File`.
         """
-        response = self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files")
-        return [
-            File(
-                id=int(e.get("id")),
-                name=e.get("name"),
-                chunk_count=e.get("chunkCount"),
-                delimiter=e.get("delimiter"),
-                encoding=e.get("encoding"),
-                first_data_row=e.get("firstDataRow"),
-                format=e.get("format"),
-                header_row=e.get("headerRow"),
-                separator=e.get("separator"),
-            )
-            for e in response.get("files")
-        ]
+        return to_files(
+            self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files")
+        )
 
     def list_lists(self) -> list[List]:
         """
         Lists all the Lists in the Model.
         :return: All Lists on this model as a list of :py:class:`List`.
         """
-        response = self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/lists")
-        return [List(id=int(e.get("id")), name=e.get("name")) for e in response.get("lists")]
+        return to_lists(
+            self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/lists")
+        )
 
     def run_action(self, action_id: int) -> None:
         """
@@ -316,7 +277,7 @@ class Client:
         """
         return self._get(
             f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/"
-            f"{self._determine_action_type(action_id)}/{action_id}/tasks/{task_id}"
+            f"{determine_action_type(action_id)}/{action_id}/tasks/{task_id}"
         ).get("task")
 
     def invoke_action(self, action_id: int) -> str:
@@ -331,7 +292,7 @@ class Client:
         """
         response = self._post(
             f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/"
-            f"{self._determine_action_type(action_id)}/{action_id}/tasks",
+            f"{determine_action_type(action_id)}/{action_id}/tasks",
             json={"localeName": "en_US"},
         )
         task_id = response.get("task").get("taskId")
@@ -483,15 +444,3 @@ class Client:
             return serialization.load_pem_private_key(data, password, backend=default_backend())
         except (IOError, InvalidKey, UnsupportedAlgorithm) as error:
             raise InvalidPrivateKeyException from error
-
-    @staticmethod
-    def _determine_action_type(action_id: int) -> str:
-        if 12000000000 <= action_id < 113000000000:
-            return "imports"
-        if 116000000000 <= action_id < 117000000000:
-            return "exports"
-        if 117000000000 <= action_id < 118000000000:
-            return "actions"
-        if 118000000000 <= action_id < 119000000000:
-            return "processes"
-        raise InvalidIdentifierException(f"'{action_id}' is not a valid identifier.")
