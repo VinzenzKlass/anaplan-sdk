@@ -1,4 +1,5 @@
 import os
+import sys
 
 import anaplan_sdk
 from anaplan_sdk import InvalidIdentifierException
@@ -16,6 +17,18 @@ broken_client = anaplan_sdk.Client(
     certificate=os.getenv("ANAPLAN_SDK_TEST_CERT"),
     private_key=os.getenv("ANAPLAN_SDK_TEST_PK"),
 )
+
+py_version = sys.version.split(" ")[0]
+if "3.12" in py_version:
+    test_file = 113000000031
+    test_action = 118000000007
+
+elif "3.11" in py_version:
+    test_file = 113000000030
+    test_action = 118000000008
+else:
+    test_file = 113000000029
+    test_action = 118000000006
 
 
 def test_unauthorized_client_raises_value_error():
