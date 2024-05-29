@@ -29,6 +29,7 @@ nav:
       - Logging: 'logging.md'
   - API Reference:
       - Developer Interface: 'api.md'
+      - Models: 'models.md'
       - Exceptions: 'exceptions.md'
 
 

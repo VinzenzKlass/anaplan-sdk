@@ -30,6 +30,16 @@ class InvalidCredentialsException(AnaplanException):
         super().__init__(self.message)
 
 
+class InvalidPrivateKeyException(InvalidCredentialsException):
+    """
+    Exception raised when the provided private key is invalid.
+    """
+
+    def __init__(self, message: str = "Invalid private key."):
+        self.message = message
+        super().__init__(self.message)
+
+
 class InvalidIdentifierException(AnaplanException):
     """
     Exception raised when the provided identifier is invalid.

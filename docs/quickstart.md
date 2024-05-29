@@ -79,3 +79,8 @@ import_config = next(
 anaplan_client.upload_file(import_config.source_id, "Some excellent new data!")
 anaplan_client.run_action(import_config.id)
 ```
+
+Relying on the naming of actions to identify them can be very risky and is highly error-prone. It is generally a good
+idea to align with your model builders, agree on the logic for your dataflows and then statically reference them by
+their ids. If you need some flexibility, you can always wrap the action in processes and call these, so that the model
+builder can make minor changes independently.

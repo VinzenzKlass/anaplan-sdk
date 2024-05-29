@@ -6,6 +6,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 import httpx
+from cryptography.exceptions import InvalidKey, UnsupportedAlgorithm
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization, hashes
 from cryptography.hazmat.primitives.asymmetric import padding
@@ -15,11 +16,12 @@ from tenacity import retry, retry_if_exception_type, stop_after_attempt
 
 from ._exceptions import (
     InvalidCredentialsException,
+    InvalidPrivateKeyException,
     InvalidIdentifierException,
     AnaplanActionError,
     ReAuthException,
 )
-from ._types import Import, Export, Process, File, Action, List, Workspace, Model
+from ._models import Import, Export, Process, File, Action, List, Workspace, Model
 
 logger = logging.getLogger("anaplan_sdk")
 
@@ -99,12 +101,7 @@ class Client:
         self.status_poll_delay = status_poll_delay
         self.upload_parallel = upload_parallel
         self.upload_chunk_size = upload_chunk_size
-        try:
-            self._auth_token = self._cert_auth() if certificate else self._basic_auth()
-        except HTTPStatusError as error:
-            if error.response.status_code == 401:
-                raise InvalidCredentialsException from error
-            raise error
+        self._auth_token = self._cert_auth() if certificate else self._basic_auth()
 
     def list_workspaces(self) -> list[Workspace]:
         """
@@ -360,34 +357,46 @@ class Client:
         )
 
     def _basic_auth(self) -> str:
-        credentials = base64.b64encode(f"{self.user_email}:{self.password}".encode()).decode()
-        response = self._client.post(
-            self._auth_url, headers={"Authorization": f"Basic {credentials}"}, timeout=self.timeout
-        )
-        response.raise_for_status()
-        logger.info("Authentication Token created.")
-        return response.json().get("tokenInfo").get("tokenValue")
+        try:
+            credentials = base64.b64encode(f"{self.user_email}:{self.password}".encode()).decode()
+            response = self._client.post(
+                self._auth_url,
+                headers={"Authorization": f"Basic {credentials}"},
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            logger.info("Authentication Token created.")
+            return response.json().get("tokenInfo").get("tokenValue")
+        except HTTPError as error:
+            if isinstance(error, HTTPStatusError) and error.response.status_code == 401:
+                raise InvalidCredentialsException from error
+            raise error
 
     def _cert_auth(self) -> str:
-        message = os.urandom(150)
-        encoded_cert = base64.b64encode(self._get_certificate()).decode()
-        encoded_string = base64.b64encode(message).decode()
-        encoded_signed_string = base64.b64encode(
-            self._get_private_key().sign(message, padding.PKCS1v15(), hashes.SHA512())
-        ).decode()
-        payload = {"encodedData": encoded_string, "encodedSignedData": encoded_signed_string}
-        response = self._client.post(
-            self._auth_url,
-            headers={
-                "Authorization": f"CACertificate {encoded_cert}",
-                "Content-Type": "application/json",
-            },
-            json=payload,
-            timeout=self.timeout,
-        )
-        response.raise_for_status()
-        logger.info("Authentication Token created.")
-        return response.json().get("tokenInfo").get("tokenValue")
+        try:
+            message = os.urandom(150)
+            encoded_cert = base64.b64encode(self._get_certificate()).decode()
+            encoded_string = base64.b64encode(message).decode()
+            encoded_signed_string = base64.b64encode(
+                self._get_private_key().sign(message, padding.PKCS1v15(), hashes.SHA512())
+            ).decode()
+            payload = {"encodedData": encoded_string, "encodedSignedData": encoded_signed_string}
+            response = self._client.post(
+                self._auth_url,
+                headers={
+                    "Authorization": f"CACertificate {encoded_cert}",
+                    "Content-Type": "application/json",
+                },
+                json=payload,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+            logger.info("Authentication Token created.")
+            return response.json().get("tokenInfo").get("tokenValue")
+        except HTTPError as error:
+            if isinstance(error, HTTPStatusError) and error.response.status_code == 401:
+                raise InvalidCredentialsException from error
+            raise error
 
     @retry(retry=retry_if_exception_type(ReAuthException), stop=stop_after_attempt(2))
     def _get(self, url: str) -> dict[str, float | int | str | list | dict | bool]:
@@ -452,22 +461,25 @@ class Client:
         return self.certificate
 
     def _get_private_key(self) -> RSAPrivateKey:
-        if isinstance(self.private_key, str):
-            if os.path.isfile(self.certificate):
-                with open(self.private_key, "rb") as f:
-                    data = f.read()
+        try:
+            if isinstance(self.private_key, str):
+                if os.path.isfile(self.certificate):
+                    with open(self.private_key, "rb") as f:
+                        data = f.read()
+                else:
+                    data = self.private_key.encode()
             else:
-                data = self.private_key.encode()
-        else:
-            data = self.private_key
+                data = self.private_key
 
-        password = None
-        if self.private_key_password:
-            if isinstance(self.private_key_password, str):
-                password = self.private_key_password.encode()
-            else:
-                password = self.private_key_password
-        return serialization.load_pem_private_key(data, password, backend=default_backend())
+            password = None
+            if self.private_key_password:
+                if isinstance(self.private_key_password, str):
+                    password = self.private_key_password.encode()
+                else:
+                    password = self.private_key_password
+            return serialization.load_pem_private_key(data, password, backend=default_backend())
+        except (IOError, InvalidKey, UnsupportedAlgorithm) as error:
+            raise InvalidPrivateKeyException from error
 
     @staticmethod
     def _determine_action_type(action_id: int) -> str:
