@@ -1,8 +1,11 @@
 [tool.poetry]
 name = "anaplan-sdk"
 version = "0.0.1"
-description = "Provides pythonic access to the Anaplan API"
-authors = ["Vinzenz Klass <vinzenz.klass@ba.valantic.com>"]
+description = "Provides pythonic access to the Anaplan API."
+requires-python = ">=3.10"
+authors = [
+    { name = "Vinzenz Klass", email = "vinzenz.klass@ba.valantic.com" },
+]
 readme = "README.md"
 
 [tool.poetry.dependencies]
