@@ -2,28 +2,18 @@
 Asynchronous Client.
 """
 
-import base64
 import gzip
 import logging
-import os
 import time
 from asyncio import gather
 
 import httpx
-from cryptography.exceptions import InvalidKey, UnsupportedAlgorithm
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import serialization, hashes
-from cryptography.hazmat.primitives.asymmetric import padding
-from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
-from httpx import HTTPStatusError, HTTPError
-from tenacity import retry, retry_if_exception_type, stop_after_attempt
+from httpx import HTTPError
 
+from ._auth import AnaplanCertAuth, get_certificate, get_private_key, AnaplanBasicAuth
 from ._exceptions import (
-    InvalidCredentialsException,
-    InvalidPrivateKeyException,
-    InvalidIdentifierException,
     AnaplanActionError,
-    ReAuthException,
+    raise_appropriate_error,
 )
 from ._models import (
     Import,
@@ -105,21 +95,21 @@ class AsyncClient:
                 "Either `certificate` and `private_key` or `user_email` and `password` must be "
                 "provided."
             )
-        self._client = httpx.AsyncClient()
+        auth = (
+            AnaplanCertAuth(
+                get_certificate(certificate), get_private_key(private_key, private_key_password)
+            )
+            if certificate
+            else AnaplanBasicAuth(user_email=user_email, password=password)
+        )
+        self._client = httpx.AsyncClient(auth=auth)
         self._auth_url = "https://auth.anaplan.com/token/authenticate"
         self._base_url = "https://api.anaplan.com/2/0/workspaces"
         self.workspace_id = workspace_id
         self.model_id = model_id
-        self.user_email = user_email
-        self.password = password
-        self.certificate = certificate
-        self.private_key = private_key
-        self.private_key_password = private_key_password
         self.timeout = timeout
         self.status_poll_delay = status_poll_delay
         self.upload_chunk_size = upload_chunk_size
-        self._auth_token = ""
-        self._cert_auth() if certificate else self._basic_auth()
 
     async def list_workspaces(self) -> list[Workspace]:
         """
@@ -293,22 +283,18 @@ class AsyncClient:
         logger.info(f"Invoked Action '{action_id}', spawned Task: '{task_id}'.")
         return task_id
 
-    @retry(retry=retry_if_exception_type(ReAuthException), stop=stop_after_attempt(2))
     async def _upload_chunk(self, file_id: int, index: int, chunk: bytes) -> None:
         try:
             response = await self._client.put(
                 f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files/{file_id}/"
                 f"chunks/{index}",
-                headers={
-                    "Authorization": f"AnaplanAuthToken {self._auth_token}",
-                    "Content-Type": "application/x-gzip",
-                },
+                headers={"Content-Type": "application/x-gzip"},
                 content=gzip.compress(chunk),
                 timeout=self.timeout,
             )
             response.raise_for_status()
         except HTTPError as error:
-            await self._recover_or_raise(error)
+            raise_appropriate_error(error)
 
     async def _set_chunk_count(self, file_id: int, num_chunks: int) -> None:
         await self._post(
@@ -316,75 +302,22 @@ class AsyncClient:
             json={"chunkCount": num_chunks},
         )
 
-    async def _basic_auth(self) -> None:
-        try:
-            credentials = base64.b64encode(f"{self.user_email}:{self.password}".encode()).decode()
-            response = await self._client.post(
-                self._auth_url,
-                headers={"Authorization": f"Basic {credentials}"},
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-            self._auth_token = response.json().get("tokenInfo").get("tokenValue")
-            logger.info("Authentication Token created.")
-        except HTTPError as error:
-            if isinstance(error, HTTPStatusError) and error.response.status_code == 401:
-                raise InvalidCredentialsException from error
-            raise error
-
-    async def _cert_auth(self) -> None:
-        try:
-            message = os.urandom(150)
-            encoded_cert = base64.b64encode(await self._get_certificate()).decode()
-            encoded_string = base64.b64encode(message).decode()
-            encoded_signed_string = base64.b64encode(
-                (await self._get_private_key()).sign(message, padding.PKCS1v15(), hashes.SHA512())
-            ).decode()
-            payload = {"encodedData": encoded_string, "encodedSignedData": encoded_signed_string}
-            response = await self._client.post(
-                self._auth_url,
-                headers={
-                    "Authorization": f"CACertificate {encoded_cert}",
-                    "Content-Type": "application/json",
-                },
-                json=payload,
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-            self._auth_token = response.json().get("tokenInfo").get("tokenValue")
-            logger.info("Authentication Token created.")
-        except HTTPError as error:
-            if isinstance(error, HTTPStatusError) and error.response.status_code == 401:
-                raise InvalidCredentialsException from error
-            raise error
-
-    @retry(retry=retry_if_exception_type(ReAuthException), stop=stop_after_attempt(2))
     async def _get(self, url: str) -> dict[str, float | int | str | list | dict | bool]:
         try:
-            response = await self._client.get(
-                url,
-                headers={"Authorization": f"AnaplanAuthToken {self._auth_token}"},
-                timeout=self.timeout,
-            )
+            response = await self._client.get(url, timeout=self.timeout)
             response.raise_for_status()
             return response.json()
         except HTTPError as error:
-            await self._recover_or_raise(error)
+            raise_appropriate_error(error)
 
-    @retry(retry=retry_if_exception_type(ReAuthException), stop=stop_after_attempt(2))
     async def _get_binary(self, url: str) -> bytes:
         try:
-            response = await self._client.get(
-                url,
-                headers={"Authorization": f"AnaplanAuthToken {self._auth_token}"},
-                timeout=self.timeout,
-            )
+            response = await self._client.get(url, timeout=self.timeout)
             response.raise_for_status()
             return response.content
         except HTTPError as error:
-            await self._recover_or_raise(error)
+            raise_appropriate_error(error)
 
-    @retry(retry=retry_if_exception_type(ReAuthException), stop=stop_after_attempt(2))
     async def _post(
         self, url: str, json: dict | None = None
     ) -> dict[str, float | int | str | list | dict | bool]:
@@ -392,51 +325,10 @@ class AsyncClient:
             return (
                 await self._client.post(
                     url,
-                    headers={
-                        "Authorization": f"AnaplanAuthToken {self._auth_token}",
-                        "Content-Type": "application/json",
-                    },
+                    headers={"Content-Type": "application/json"},
                     json=json,
                     timeout=self.timeout,
                 )
             ).json()
         except HTTPError as error:
-            await self._recover_or_raise(error)
-
-    async def _recover_or_raise(self, error: HTTPError) -> None:
-        if isinstance(error, HTTPStatusError):
-            if error.response.status_code == 401:
-                await self._cert_auth() if self.certificate else await self._basic_auth()
-                raise ReAuthException from error
-            if error.response.status_code == 404:
-                raise InvalidIdentifierException from error
-        raise error
-
-    async def _get_certificate(self) -> bytes:
-        if isinstance(self.certificate, str):
-            if os.path.isfile(self.certificate):
-                async with open(self.certificate, "rb") as f:
-                    return await f.read()
-            return self.certificate.encode()
-        return self.certificate
-
-    async def _get_private_key(self) -> RSAPrivateKey:
-        try:
-            if isinstance(self.private_key, str):
-                if os.path.isfile(self.certificate):
-                    async with open(self.private_key, "rb") as f:
-                        data = await f.read()
-                else:
-                    data = self.private_key.encode()
-            else:
-                data = self.private_key
-
-            password = None
-            if self.private_key_password:
-                if isinstance(self.private_key_password, str):
-                    password = self.private_key_password.encode()
-                else:
-                    password = self.private_key_password
-            return serialization.load_pem_private_key(data, password, backend=default_backend())
-        except (IOError, InvalidKey, UnsupportedAlgorithm) as error:
-            raise InvalidPrivateKeyException from error
+            raise_appropriate_error(error)
