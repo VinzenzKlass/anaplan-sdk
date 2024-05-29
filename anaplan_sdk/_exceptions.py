@@ -1,3 +1,6 @@
+from httpx import HTTPError, HTTPStatusError
+
+
 class AnaplanException(Exception):
     """
     Base class for all Anaplan SDK Exceptions.
@@ -5,18 +8,6 @@ class AnaplanException(Exception):
 
     def __init__(self, message: str):
         self.message = f"\n\n\n{message}\n"
-        super().__init__(self.message)
-
-
-class ReAuthException(AnaplanException):
-    """
-    Exception raised when the Anaplan API token has expired.
-    """
-
-    def __init__(
-        self, message: str = "Anaplan API token has expired, authenticating anew and trying again"
-    ):
-        self.message = message
         super().__init__(self.message)
 
 
@@ -58,3 +49,10 @@ class AnaplanActionError(AnaplanException):
     def __init__(self, message: str = "Anaplan completed with errors."):
         self.message = message
         super().__init__(self.message)
+
+
+def raise_appropriate_error(error: HTTPError) -> None:
+    if isinstance(error, HTTPStatusError):
+        if error.response.status_code == 404:
+            raise InvalidIdentifierException from error
+    raise error
