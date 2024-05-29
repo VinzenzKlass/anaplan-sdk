@@ -103,7 +103,6 @@ class AsyncClient:
             else AnaplanBasicAuth(user_email=user_email, password=password)
         )
         self._client = httpx.AsyncClient(auth=auth)
-        self._auth_url = "https://auth.anaplan.com/token/authenticate"
         self._base_url = "https://api.anaplan.com/2/0/workspaces"
         self.workspace_id = workspace_id
         self.model_id = model_id
