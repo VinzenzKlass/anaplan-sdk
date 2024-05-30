@@ -94,7 +94,7 @@ class Client:
         :param timeout: The timeout for the HTTP requests.
         :param retry_count: The number of times to retry an HTTP request if it fails. Set this to 0
                             to never retry. Defaults to 2, meaning each HTTP Operation will be
-                            tried a total number of 2.
+                            tried a total number of 2 times.
         :param status_poll_delay: The delay between polling the status of a task.
         :param upload_parallel: Whether to upload the chunks in parallel. Defaults to True. **If
                                 you are heavily network bound or are experiencing rate limiting
@@ -355,13 +355,13 @@ class Client:
         ).json()
 
     def _run_with_retry(self, func: Callable[..., Response], *args, **kwargs) -> Response:
-        for i in range(self.retry_count):
+        for i in range(max(self.retry_count, 1)):
             try:
                 response = func(*args, **kwargs)
                 response.raise_for_status()
                 return response
             except HTTPError as error:
                 url = args[0] or kwargs.get("url")
-                if i == self.retry_count - 1:
+                if i >= self.retry_count - 1:
                     raise_appropriate_error(error)
                 logger.info(f"Retrying for: {url}")

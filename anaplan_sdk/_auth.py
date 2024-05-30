@@ -34,7 +34,7 @@ class AnaplanBasicAuth(httpx.Auth):
         request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
         response = yield request
         if response.status_code == 401:
-            logger.info("Token expired, refreshing.")
+            logger.info("Token expired or invalid, refreshing.")
             response = yield self._basic_auth_request()
             if "tokenInfo" not in response.json():
                 raise InvalidCredentialsException
@@ -68,7 +68,7 @@ class AnaplanCertAuth(httpx.Auth):
         request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
         response = yield request
         if response.status_code == 401:
-            logger.info("Token expired, refreshing.")
+            logger.info("Token expired or invalid, refreshing.")
             response = yield self._cert_auth_request()
             if "tokenInfo" not in response.json():
                 raise InvalidCredentialsException
