@@ -26,24 +26,24 @@ class AnaplanBasicAuth(httpx.Auth):
         user_email: str,
         password: str,
     ):
-        self.token = "none"
-        self.user_email = user_email
-        self.password = password
+        self._token = "none"
+        self._user_email = user_email
+        self._password = password
 
     def auth_flow(self, request):
-        request.headers["Authorization"] = f"AnaplanAuthToken {self.token}"
+        request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
         response = yield request
         if response.status_code == 401:
-            logger.info("Token expired, refreshing.")
+            logger.info("Token expired or invalid, refreshing.")
             response = yield self._basic_auth_request()
             if "tokenInfo" not in response.json():
                 raise InvalidCredentialsException
-            self.token = response.json().get("tokenInfo").get("tokenValue")
-            request.headers["Authorization"] = f"AnaplanAuthToken {self.token}"
+            self._token = response.json().get("tokenInfo").get("tokenValue")
+            request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
             yield request
 
     def _basic_auth_request(self):
-        credentials = base64.b64encode(f"{self.user_email}:{self.password}".encode()).decode()
+        credentials = base64.b64encode(f"{self._user_email}:{self._password}".encode()).decode()
         return httpx.Request(
             method="post",
             url="https://auth.anaplan.com/token/authenticate",
@@ -60,28 +60,28 @@ class AnaplanCertAuth(httpx.Auth):
         certificate: bytes,
         private_key: RSAPrivateKey,
     ):
-        self.token = "none"
-        self.certificate = certificate
-        self.private_key = private_key
+        self._token = "none"
+        self._certificate = certificate
+        self._private_key = private_key
 
     def auth_flow(self, request):
-        request.headers["Authorization"] = f"AnaplanAuthToken {self.token}"
+        request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
         response = yield request
         if response.status_code == 401:
-            logger.info("Token expired, refreshing.")
+            logger.info("Token expired or invalid, refreshing.")
             response = yield self._cert_auth_request()
             if "tokenInfo" not in response.json():
                 raise InvalidCredentialsException
-            self.token = response.json().get("tokenInfo").get("tokenValue")
-            request.headers["Authorization"] = f"AnaplanAuthToken {self.token}"
+            self._token = response.json().get("tokenInfo").get("tokenValue")
+            request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
             yield request
 
     def _cert_auth_request(self):
         message = os.urandom(150)
-        encoded_cert = base64.b64encode(self.certificate).decode()
+        encoded_cert = base64.b64encode(self._certificate).decode()
         encoded_string = base64.b64encode(message).decode()
         encoded_signed_string = base64.b64encode(
-            self.private_key.sign(message, padding.PKCS1v15(), hashes.SHA512())
+            self._private_key.sign(message, padding.PKCS1v15(), hashes.SHA512())
         ).decode()
         return httpx.Request(
             method="post",

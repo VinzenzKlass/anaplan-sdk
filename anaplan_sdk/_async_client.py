@@ -6,9 +6,10 @@ import gzip
 import logging
 import time
 from asyncio import gather
+from typing import Callable, Coroutine, Any
 
 import httpx
-from httpx import HTTPError
+from httpx import HTTPError, Response
 
 from ._auth import AnaplanCertAuth, get_certificate, get_private_key, AnaplanBasicAuth
 from ._exceptions import (
@@ -35,6 +36,7 @@ from ._models import (
     determine_action_type,
 )
 
+logging.getLogger("httpx").setLevel(logging.CRITICAL)
 logger = logging.getLogger("anaplan_sdk")
 
 
@@ -60,8 +62,10 @@ class AsyncClient:
         private_key: str | bytes | None = None,
         private_key_password: str | bytes | None = None,
         timeout: int = 30,
+        retry_count: int = 2,
         status_poll_delay: int = 1,
         upload_chunk_size: int = 25_000_000,
+        allow_file_creation: bool = False,
     ) -> None:
         """
         An asynchronous Client for pythonic access to the Anaplan Integration API v2:
@@ -86,10 +90,18 @@ class AsyncClient:
         :param private_key: The absolute path to the private key file or the private key itself.
         :param private_key_password: The password to access the private key if there is one.
         :param timeout: The timeout for the HTTP requests.
+        :param retry_count: The number of times to retry an HTTP request if it fails. Set this to 0
+                            to never retry. Defaults to 2, meaning each HTTP Operation will be
+                            tried a total number of 2 times.
         :param status_poll_delay: The delay between polling the status of a task.
         :param upload_chunk_size: The size of the chunks to upload. This is the maximum size of
                                   each chunk. Defaults to 25MB.
-        """
+        :param allow_file_creation: Whether to allow the creation of new files. Defaults to False
+                            since this is typically unintentional and may well be unwanted
+                            behaviour in the API altogether. A file that is created this
+                            way will not be referenced by any action in anaplan until
+                            manually assigned so there is typically no value in dynamically
+                            creating new files and uploading content to them."""
         if not ((user_email and password) or (certificate and private_key)):
             raise ValueError(
                 "Either `certificate` and `private_key` or `user_email` and `password` must be "
@@ -107,8 +119,10 @@ class AsyncClient:
         self.workspace_id = workspace_id
         self.model_id = model_id
         self.timeout = timeout
+        self.retry_count = retry_count
         self.status_poll_delay = status_poll_delay
         self.upload_chunk_size = upload_chunk_size
+        self.allow_file_creation = allow_file_creation
 
     async def list_workspaces(self) -> list[Workspace]:
         """
@@ -283,17 +297,14 @@ class AsyncClient:
         return task_id
 
     async def _upload_chunk(self, file_id: int, index: int, chunk: bytes) -> None:
-        try:
-            response = await self._client.put(
-                f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files/{file_id}/"
-                f"chunks/{index}",
-                headers={"Content-Type": "application/x-gzip"},
-                content=gzip.compress(chunk),
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-        except HTTPError as error:
-            raise_appropriate_error(error)
+        await self._run_with_retry(
+            self._client.put,
+            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files/{file_id}/"
+            f"chunks/{index}",
+            headers={"Content-Type": "application/x-gzip"},
+            content=gzip.compress(chunk),
+            timeout=self.timeout,
+        )
 
     async def _set_chunk_count(self, file_id: int, num_chunks: int) -> None:
         await self._post(
@@ -302,32 +313,32 @@ class AsyncClient:
         )
 
     async def _get(self, url: str) -> dict[str, float | int | str | list | dict | bool]:
-        try:
-            response = await self._client.get(url, timeout=self.timeout)
-            response.raise_for_status()
-            return response.json()
-        except HTTPError as error:
-            raise_appropriate_error(error)
+        return (await self._run_with_retry(self._client.get, url, timeout=self.timeout)).json()
 
     async def _get_binary(self, url: str) -> bytes:
-        try:
-            response = await self._client.get(url, timeout=self.timeout)
-            response.raise_for_status()
-            return response.content
-        except HTTPError as error:
-            raise_appropriate_error(error)
+        return (await self._run_with_retry(self._client.get, url, timeout=self.timeout)).content
 
     async def _post(
         self, url: str, json: dict | None = None
     ) -> dict[str, float | int | str | list | dict | bool]:
-        try:
-            return (
-                await self._client.post(
-                    url,
-                    headers={"Content-Type": "application/json"},
-                    json=json,
-                    timeout=self.timeout,
-                )
-            ).json()
-        except HTTPError as error:
-            raise_appropriate_error(error)
+        return (
+            await self._run_with_retry(
+                self._client.post,
+                url,
+                headers={"Content-Type": "application/json"},
+                json=json,
+                timeout=self.timeout,
+            )
+        ).json()
+
+    async def _run_with_retry(
+        self, func: Callable[..., Coroutine[Any, Any, Response]], *args, **kwargs
+    ) -> Response:
+        for i in range(max(self.retry_count, 1)):
+            try:
+                response = await func(*args, **kwargs)
+                response.raise_for_status()
+                return response
+            except HTTPError as error:
+                if i >= self.retry_count - 1:
+                    raise_appropriate_error(error)
