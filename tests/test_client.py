@@ -9,6 +9,7 @@ client = anaplan_sdk.Client(
     model_id=os.getenv("ANAPLAN_SDK_TEST_MODEL_ID"),
     certificate=os.getenv("ANAPLAN_SDK_TEST_CERT"),
     private_key=os.getenv("ANAPLAN_SDK_TEST_PK"),
+    retry_count=3,
 )
 
 broken_client = anaplan_sdk.Client(
@@ -16,6 +17,7 @@ broken_client = anaplan_sdk.Client(
     model_id="nonsense",
     certificate=os.getenv("ANAPLAN_SDK_TEST_CERT"),
     private_key=os.getenv("ANAPLAN_SDK_TEST_PK"),
+    retry_count=1,
 )
 
 py_version = sys.version.split(" ")[0]
