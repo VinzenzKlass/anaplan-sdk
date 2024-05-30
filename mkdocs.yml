@@ -28,9 +28,21 @@ nav:
   - Guides:
       - Logging: 'logging.md'
   - API Reference:
-      - Developer Interface: 'api.md'
+      - Developer Interface:
+          - AsyncClient: 'async_client.md'
+          - Client: 'client.md'
       - Models: 'models.md'
       - Exceptions: 'exceptions.md'
+
+
+plugins:
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: "sphinx"
+            show_source: false
+            show_bases: false
 
 
 markdown_extensions:

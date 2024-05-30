@@ -56,14 +56,16 @@ for model in anaplan_client.list_models():
 
 ### Async Support
 
-This SDK also provides and `AsyncClient` with full async support
+This SDK also provides an `AsyncClient` with full async support
 
 ```python
+import asyncio
+
 anaplan_client = anaplan_sdk.AsyncClient(
-    workspace_id=os.getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),
-    model_id=os.getenv("ANAPLAN_SDK_TEST_MODEL_ID"),
-    certificate=os.getenv("ANAPLAN_SDK_TEST_CERT"),
-    private_key=os.getenv("ANAPLAN_SDK_TEST_PK"),
+    workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    model_id="11111111111111111111111111111111",
+    user_email="admin@company.com",
+    password="my_super_secret_password",
 )
 workspaces, models = await asyncio.gather(
     anaplan_client.list_workspaces(), anaplan_client.list_models()
@@ -74,5 +76,5 @@ for model in models:
     print(f"f{model.name}: {model.id}")
 ```
 
-For more information, API reference and detailed guides:
-Visit [Anaplan SDK](https://vinzenzklass.github.io/anaplan-sdk/).
+For more information, API reference and detailed guides,
+visit [Anaplan SDK](https://vinzenzklass.github.io/anaplan-sdk/).
