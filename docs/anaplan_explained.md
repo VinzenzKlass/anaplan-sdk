@@ -1,5 +1,3 @@
-**Aka. the "*Why is this API so weird?!*"-section.**
-
 This section tries to explain Anaplan specific concepts and design choices to Developers to enable a better
 understanding of the API. It is less interesting for people
 already familiar with Anaplan.
@@ -24,10 +22,11 @@ in many ways. Support for the Transactional API is planned for the future but ge
   export action. Anaplan does not use (S)FTP, you will reference these files only by their ID and send or receive their
   content in the body of HTTP Requests.
 - Anaplan has the following type of actions:
-    - Imports - 112000... IDs.
-    - Exports - 116000... IDs.
-    - Processes - 118000... IDs.
-    - Other Actions - 117000... IDs.
+    - Imports - 112000000000 IDs.
+    - Exports - 116000000000 IDs.
+    - Processes - 118000000000 IDs.
+    - Other Actions - 117000000000 IDs.
+  
 - Imports read data from a file and load it into a module. Exports conversely load data from a module to a file. The
   file id of the resulting file is identical to the export id. "Other Actions" move things around in Anaplan and can
   also delete data etc. Processes are simply a sequence of the other three.
