@@ -238,10 +238,8 @@ class AsyncClient:
 
     async def upload_file(self, file_id: int, content: str | bytes) -> None:
         """
-        Uploads the content to the specified file. If `upload_parallel` is set to True on the
-        instance you are invoking this from, will attempt to upload the chunks in parallel for
-        better performance. If you are network bound or are experiencing rate limiting issues, set
-        `upload_parallel` to False.
+        Uploads the content to the specified file. If there are several chunks, upload of
+        individual chunks are concurrent.
 
         :param file_id: The identifier of the file to upload to.
         :param content: The content to upload. **This Content will be compressed before uploading.
