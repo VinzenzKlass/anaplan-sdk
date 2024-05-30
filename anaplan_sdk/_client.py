@@ -6,14 +6,16 @@ import gzip
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
+from typing import Callable
 
 import httpx
-from httpx import HTTPError
+from httpx import HTTPError, Response
 
 from ._auth import AnaplanBasicAuth, AnaplanCertAuth, get_certificate, get_private_key
 from ._exceptions import (
     AnaplanActionError,
     raise_appropriate_error,
+    InvalidIdentifierException,
 )
 from ._models import (
     Import,
@@ -35,6 +37,7 @@ from ._models import (
     determine_action_type,
 )
 
+logging.getLogger("httpx").setLevel(logging.CRITICAL)
 logger = logging.getLogger("anaplan_sdk")
 
 
@@ -60,9 +63,11 @@ class Client:
         private_key: str | bytes | None = None,
         private_key_password: str | bytes | None = None,
         timeout: int = 30,
+        retry_count: int = 2,
         status_poll_delay: int = 1,
         upload_parallel: bool = True,
         upload_chunk_size: int = 25_000_000,
+        allow_file_creation: bool = False,
     ) -> None:
         """
         A synchronous Client for pythonic access to the Anaplan Integration API v2:
@@ -87,12 +92,21 @@ class Client:
         :param private_key: The absolute path to the private key file or the private key itself.
         :param private_key_password: The password to access the private key if there is one.
         :param timeout: The timeout for the HTTP requests.
+        :param retry_count: The number of times to retry an HTTP request if it fails. Set this to 0
+                            to never retry. Defaults to 2, meaning each HTTP Operation will be
+                            tried a total number of 2.
         :param status_poll_delay: The delay between polling the status of a task.
         :param upload_parallel: Whether to upload the chunks in parallel. Defaults to True. **If
                                 you are heavily network bound or are experiencing rate limiting
                                 issues, set this to False.**
         :param upload_chunk_size: The size of the chunks to upload. This is the maximum size of
                                   each chunk. Defaults to 25MB.
+        :param allow_file_creation: Whether to allow the creation of new files. Defaults to False
+                                    since this is typically unintentional and may well be unwanted
+                                    behaviour in the API altogether. A file that is created this
+                                    way will not be referenced by any action in anaplan until
+                                    manually assigned so there is typically no value in dynamically
+                                    creating new files and uploading content to them.
         """
         if not ((user_email and password) or (certificate and private_key)):
             raise ValueError(
@@ -111,9 +125,11 @@ class Client:
         self.workspace_id = workspace_id
         self.model_id = model_id
         self.timeout = timeout
+        self.retry_count = retry_count
         self.status_poll_delay = status_poll_delay
         self.upload_parallel = upload_parallel
         self.upload_chunk_size = upload_chunk_size
+        self.allow_file_creation = allow_file_creation
 
     def list_workspaces(self) -> list[Workspace]:
         """
@@ -289,49 +305,63 @@ class Client:
         return task_id
 
     def _upload_chunk(self, file_id: int, index: int, chunk: bytes) -> None:
-        try:
-            response = self._client.put(
-                f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files/{file_id}/"
-                f"chunks/{index}",
-                headers={"Content-Type": "application/x-gzip"},
-                content=gzip.compress(chunk),
-                timeout=self.timeout,
-            )
-            response.raise_for_status()
-        except HTTPError as error:
-            raise_appropriate_error(error)
+        self._run_with_retry(
+            self._client.put,
+            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files/{file_id}/"
+            f"chunks/{index}",
+            headers={"Content-Type": "application/x-gzip"},
+            content=gzip.compress(chunk),
+            timeout=self.timeout,
+        )
 
     def _set_chunk_count(self, file_id: int, num_chunks: int) -> None:
-        self._post(
+        if not self.allow_file_creation and not (113000000000 <= file_id <= 113999999999):
+            raise InvalidIdentifierException(
+                f"File with Id {file_id} does not exist. If you want to dynamically create files "
+                "to avoid this error, set `allow_file_creation=True` on the calling instance. "
+                "Make sure you have understood the implications of this before doing so. "
+            )
+        response = self._post(
             f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files/{file_id}",
             json={"chunkCount": num_chunks},
         )
+        optionally_new_file = int(response.get("file").get("id"))
+        if optionally_new_file != file_id:
+            if self.allow_file_creation:
+                logger.info(f"Created new file with name '{file_id}', Id is {optionally_new_file}.")
+                return
+            raise InvalidIdentifierException(
+                f"File with Id {file_id} did not exist and was created in Anaplan. You may want to "
+                f"ask a model builder to remove it. If you want to dynamically create files "
+                "to avoid this error, set `allow_file_creation=True` on the calling instance. "
+                "Make sure you have understood the implications of this before doing so."
+            )
 
     def _get(self, url: str) -> dict[str, float | int | str | list | dict | bool]:
-        try:
-            response = self._client.get(url, timeout=self.timeout)
-            response.raise_for_status()
-            return response.json()
-        except HTTPError as error:
-            raise_appropriate_error(error)
+        return self._run_with_retry(self._client.get, url, timeout=self.timeout).json()
 
     def _get_binary(self, url: str) -> bytes:
-        try:
-            response = self._client.get(url, timeout=self.timeout)
-            response.raise_for_status()
-            return response.content
-        except HTTPError as error:
-            raise_appropriate_error(error)
+        return self._run_with_retry(self._client.get, url, timeout=self.timeout).content
 
     def _post(
         self, url: str, json: dict | None = None
     ) -> dict[str, float | int | str | list | dict | bool]:
-        try:
-            return self._client.post(
-                url,
-                headers={"Content-Type": "application/json"},
-                json=json,
-                timeout=self.timeout,
-            ).json()
-        except HTTPError as error:
-            raise_appropriate_error(error)
+        return self._run_with_retry(
+            self._client.post,
+            url,
+            headers={"Content-Type": "application/json"},
+            json=json,
+            timeout=self.timeout,
+        ).json()
+
+    def _run_with_retry(self, func: Callable[..., Response], *args, **kwargs) -> Response:
+        for i in range(self.retry_count):
+            try:
+                response = func(*args, **kwargs)
+                response.raise_for_status()
+                return response
+            except HTTPError as error:
+                url = args[0] or kwargs.get("url")
+                if i == self.retry_count - 1:
+                    raise_appropriate_error(error)
+                logger.info(f"Retrying for: {url}")

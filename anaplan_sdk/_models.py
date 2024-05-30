@@ -59,12 +59,12 @@ class File:
     id: int
     name: str
     chunk_count: int
-    delimiter: str
-    encoding: str
+    delimiter: str | None
+    encoding: str | None
     first_data_row: int
-    format: str
+    format: str | None
     header_row: int
-    separator: str
+    separator: str | None
 
 
 @dataclass
