@@ -309,8 +309,8 @@ class AsyncClient:
         Invokes the specified Anaplan Action and returns the spawned Task identifier. This is
         useful if you want to handle the Task status yourself or if you want to run multiple
         Actions in parallel.
-        :param action_id:
-        :return:
+        :param action_id: The identifier of the Action to run. Can be any Anaplan Invokable.
+        :return: The identifier of the spawned Task.
         """
         response = await self._post(
             f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/"

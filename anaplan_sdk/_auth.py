@@ -2,15 +2,15 @@
 Custom Authentication class to pass to httpx alongside some helper functions.
 """
 
-import base64
 import logging
 import os
+from base64 import b64encode
 
 import httpx
 from cryptography.exceptions import InvalidKey, UnsupportedAlgorithm
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from httpx import HTTPError
 
@@ -44,7 +44,7 @@ class AnaplanBasicAuth(httpx.Auth):
             yield request
 
     def _basic_auth_request(self):
-        credentials = base64.b64encode(f"{self._user_email}:{self._password}".encode()).decode()
+        credentials = b64encode(f"{self._user_email}:{self._password}".encode()).decode()
         return httpx.Request(
             method="post",
             url="https://auth.anaplan.com/token/authenticate",
@@ -54,7 +54,7 @@ class AnaplanBasicAuth(httpx.Auth):
     def _init_token(self) -> str:
         try:
             logger.info("Creating Authentication Token.")
-            credentials = base64.b64encode(f"{self._user_email}:{self._password}".encode()).decode()
+            credentials = b64encode(f"{self._user_email}:{self._password}".encode()).decode()
             return (
                 httpx.post(
                     url="https://auth.anaplan.com/token/authenticate",
@@ -131,11 +131,9 @@ class AnaplanCertAuth(httpx.Auth):
     def _prep_credentials(self) -> tuple[str, str, str]:
         message = os.urandom(150)
         return (
-            base64.b64encode(self._certificate).decode(),
-            base64.b64encode(message).decode(),
-            base64.b64encode(
-                self._private_key.sign(message, padding.PKCS1v15(), hashes.SHA512())
-            ).decode(),
+            b64encode(self._certificate).decode(),
+            b64encode(message).decode(),
+            b64encode(self._private_key.sign(message, PKCS1v15(), hashes.SHA512())).decode(),
         )
 
 

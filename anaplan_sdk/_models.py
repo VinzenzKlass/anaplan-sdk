@@ -6,6 +6,17 @@ from ._exceptions import InvalidIdentifierException
 class Workspace(BaseModel):
     """
     Object representing an Anaplan Workspace.
+
+    **id (str):** The unique identifier of this workspace.
+
+    **name (str):** The name of this workspace that is also displayed to the users. This can
+    change any time.
+
+    **active (bool):** Whether this workspace is active or not.
+
+    **size_allowance (int):** The maximum allowed size of this workspace in bytes.
+
+    **current_size (int):** The current size of this workspace in bytes.
     """
 
     id: str
@@ -18,6 +29,33 @@ class Workspace(BaseModel):
 class Model(BaseModel):
     """
     Object representing an Anaplan Model.
+
+    **id (str):** The unique identifier of this model.
+
+    **name (str):** The name of this model that is also displayed to the users. This can
+    change any time.
+
+    **active_state (str):** The current state of this model. One of "ARCHIVED", "UNLOCKED", "ACTIVE"
+
+    **last_saved_serial_number (int):** The serial number of the last save of this model.
+
+    **last_modified_by_user_guid (str):** The unique identifier of the user who last modified this
+    model.
+
+    **memory_usage (int):** The memory usage of this model in bytes.
+
+    **current_workspace_id (str):** The unique identifier of the workspace that this model is
+    currently in.
+
+    **current_workspace_name (str):** The name of the workspace that this model is currently in.
+
+    **url (str):** The URL of this model.
+
+    **category_values (list):** The category values of this model.
+
+    **iso_creation_date (str):** The creation date of this model in ISO format.
+
+    **last_modified (str):** The last modified date of this model in ISO format.
     """
 
     id: str
@@ -37,6 +75,24 @@ class Model(BaseModel):
 class File(BaseModel):
     """
     Object representing an Anaplan File.
+
+    **id (int):** The unique identifier of this file.
+
+    **name (str):** The name of this file.
+
+    **chunk_count (int):** The number of chunks this file is split into.
+
+    **delimiter (str):** The delimiter used in this file.
+
+    **encoding (str):** The encoding of this file.
+
+    **first_data_row (int):** The row number of the first data row in this file.
+
+    **format (str):** The format of this file.
+
+    **header_row (int):** The row number of the header row in this file.
+
+    **separator (str):** The separator used in this file.
     """
 
     id: int
@@ -53,6 +109,10 @@ class File(BaseModel):
 class List(BaseModel):
     """
     Object representing an Anaplan List.
+
+    **id (int):** The unique identifier of this list.
+
+    **name (str):** The name of this list.
     """
 
     id: int
@@ -62,6 +122,12 @@ class List(BaseModel):
 class Action(BaseModel):
     """
     Object representing an Anaplan Action.
+
+    **id (int):** The unique identifier of this action.
+
+    **name (str):** The name of this action.
+
+    **type (str):** The type of this action.
     """
 
     id: int
@@ -72,6 +138,10 @@ class Action(BaseModel):
 class Process(BaseModel):
     """
     Object representing an Anaplan Process.
+
+    **id (int):** The unique identifier of this process.
+
+    **name (str):** The name of this process.
     """
 
     id: int
@@ -81,6 +151,14 @@ class Process(BaseModel):
 class Import(BaseModel):
     """
     Object representing an Anaplan Import.
+
+    **id (int):** The unique identifier of this import.
+
+    **name (str):** The name of this import.
+
+    **type (str):** The type of this import.
+
+    **source_id (int):** The unique identifier of the data source of this import.
     """
 
     id: int
@@ -98,6 +176,18 @@ class Import(BaseModel):
 class Export(BaseModel):
     """
     Object representing an Anaplan Export.
+
+    **id (int):** The unique identifier of this export.
+
+    **name (str):** The name of this export.
+
+    **type (str):** The type of this export.
+
+    **format (str):** The format of this export.
+
+    **encoding (str):** The encoding of this export.
+
+    **layout (str):** The layout of this export.
     """
 
     id: int
