@@ -6,15 +6,13 @@ import gzip
 import logging
 import time
 from asyncio import gather
-from typing import Callable, Coroutine, Any
 
 import httpx
-from httpx import HTTPError, Response
 
 from ._auth import AnaplanCertAuth, get_certificate, get_private_key, AnaplanBasicAuth
+from ._base import _AsyncBaseClient
 from ._exceptions import (
     AnaplanActionError,
-    raise_appropriate_error,
 )
 from ._models import (
     Import,
@@ -32,7 +30,7 @@ logging.getLogger("httpx").setLevel(logging.CRITICAL)
 logger = logging.getLogger("anaplan_sdk")
 
 
-class AsyncClient:
+class AsyncClient(_AsyncBaseClient):
     """
     An asynchronous Client for pythonic access to the Anaplan Integration API v2:
     https://anaplan.docs.apiary.io/. This Client provides high-level abstractions over the API, so
@@ -111,10 +109,10 @@ class AsyncClient:
         self.workspace_id = workspace_id
         self.model_id = model_id
         self.timeout = timeout
-        self.retry_count = retry_count
         self.status_poll_delay = status_poll_delay
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
+        super().__init__(retry_count)
 
     async def list_workspaces(self) -> list[Workspace]:
         """
@@ -355,15 +353,3 @@ class AsyncClient:
                 timeout=self.timeout,
             )
         ).json()
-
-    async def _run_with_retry(
-        self, func: Callable[..., Coroutine[Any, Any, Response]], *args, **kwargs
-    ) -> Response:
-        for i in range(max(self.retry_count, 1)):
-            try:
-                response = await func(*args, **kwargs)
-                response.raise_for_status()
-                return response
-            except HTTPError as error:
-                if i >= self.retry_count - 1:
-                    raise_appropriate_error(error)

@@ -198,6 +198,17 @@ class Export(BaseModel):
     layout: str
 
 
+class ModelStatus(BaseModel):
+    peak_memory_usage_estimate: int = Field(alias="peakMemoryUsageEstimate")
+    peak_memory_usage_time: int = Field(alias="peakMemoryUsageTime")
+    progress: float
+    current_step: str = Field(alias="currentStep")
+    tooltip: str
+    task_id: str = Field(alias="taskId")
+    creation_time: int = Field(alias="creationTime")
+    export_task_type: str = Field(alias="exportTaskType")
+
+
 def determine_action_type(action_id: int) -> str:
     """
     Determine the type of action based on its identifier.

@@ -6,15 +6,13 @@ import gzip
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Callable
 
 import httpx
-from httpx import HTTPError, Response
 
 from ._auth import AnaplanBasicAuth, AnaplanCertAuth, get_certificate, get_private_key
+from ._base import _BaseClient
 from ._exceptions import (
     AnaplanActionError,
-    raise_appropriate_error,
     InvalidIdentifierException,
 )
 from ._models import (
@@ -28,12 +26,13 @@ from ._models import (
     Model,
     determine_action_type,
 )
+from ._transactional_client import _TransactionalClient
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
 logger = logging.getLogger("anaplan_sdk")
 
 
-class Client:
+class Client(_BaseClient):
     """
     A synchronous Client for pythonic access to the Anaplan Integration API v2:
     https://anaplan.docs.apiary.io/. This Client provides high-level abstractions over the API, so
@@ -114,14 +113,21 @@ class Client:
         )
         self._client = httpx.Client(auth=auth)
         self._base_url = "https://api.anaplan.com/2/0/workspaces"
+        self._transactional_client = _TransactionalClient(
+            self._client, model_id, timeout, retry_count
+        )
         self.workspace_id = workspace_id
         self.model_id = model_id
         self.timeout = timeout
-        self.retry_count = retry_count
         self.status_poll_delay = status_poll_delay
         self.upload_parallel = upload_parallel
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
+        super().__init__(retry_count)
+
+    @property
+    def transactional(self) -> _TransactionalClient:
+        return self._transactional_client
 
     def list_workspaces(self) -> list[Workspace]:
         """
@@ -368,15 +374,3 @@ class Client:
             json=json,
             timeout=self.timeout,
         ).json()
-
-    def _run_with_retry(self, func: Callable[..., Response], *args, **kwargs) -> Response:
-        for i in range(max(self.retry_count, 1)):
-            try:
-                response = func(*args, **kwargs)
-                response.raise_for_status()
-                return response
-            except HTTPError as error:
-                url = args[0] or kwargs.get("url")
-                if i >= self.retry_count - 1:
-                    raise_appropriate_error(error)
-                logger.info(f"Retrying for: {url}")
