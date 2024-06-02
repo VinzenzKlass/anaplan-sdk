@@ -14,7 +14,7 @@ from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from httpx import HTTPError
 
-from ._exceptions import InvalidPrivateKeyException, InvalidCredentialsException
+from .exceptions import InvalidPrivateKeyException, InvalidCredentialsException
 
 logger = logging.getLogger("anaplan_sdk")
 

@@ -9,7 +9,7 @@ from typing import Callable, Coroutine, Any
 import httpx
 from httpx import Response, HTTPError
 
-from anaplan_sdk._exceptions import raise_appropriate_error
+from .exceptions import raise_appropriate_error
 
 logger = logging.getLogger("anaplan_sdk")
 

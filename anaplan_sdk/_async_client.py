@@ -8,22 +8,11 @@ from asyncio import gather
 
 import httpx
 
+from ._async_transactional_client import _AsyncTransactionalClient
 from ._auth import AnaplanCertAuth, get_certificate, get_private_key, AnaplanBasicAuth
 from ._base import _AsyncBaseClient
-from ._exceptions import (
-    AnaplanActionError,
-)
-from ._models import (
-    Import,
-    Export,
-    Process,
-    File,
-    Action,
-    List,
-    Workspace,
-    Model,
-    action_url,
-)
+from .exceptions import AnaplanActionError
+from .models import Import, Export, Process, File, Action, Workspace, Model, action_url
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
 logger = logging.getLogger("anaplan_sdk")
@@ -78,7 +67,7 @@ class AsyncClient(_AsyncBaseClient):
                             itself.
         :param private_key: The absolute path to the private key file or the private key itself.
         :param private_key_password: The password to access the private key if there is one.
-        :param timeout: The timeout for the HTTP requests.
+        :param timeout: The timeout in seconds for the HTTP requests.
         :param retry_count: The number of times to retry an HTTP request if it fails. Set this to 0
                             to never retry. Defaults to 2, meaning each HTTP Operation will be
                             tried a total number of 2 times.
@@ -107,10 +96,32 @@ class AsyncClient(_AsyncBaseClient):
             timeout=timeout,
         )
         self._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
+        self._transactional_client = (
+            _AsyncTransactionalClient(client, model_id, retry_count) if model_id else None
+        )
         self.status_poll_delay = status_poll_delay
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
         super().__init__(retry_count, client)
+
+    @property
+    def transactional(self) -> _AsyncTransactionalClient:
+        """
+        The Transactional Client provides access to the Anaplan Transactional API. This is useful
+        for more advanced use cases where you need to interact with the Anaplan Model in a more
+        granular way.
+
+        If you instantiated the client without the field `model_id`, this will raise a
+        :py:class:`ValueError`, since none of the endpoints can be invoked without the model Id.
+        :return: The Transactional Client.
+        """
+        if not self._transactional_client:
+            raise ValueError(
+                "Cannot use the Transactional Client (Anaplan Transactional API) "
+                "without field `model_id`. Make sure the instance you are trying to call this on "
+                "is instantiated correctly with a valid `model_id`."
+            )
+        return self._transactional_client
 
     async def list_workspaces(self) -> list[Workspace]:
         """
@@ -143,15 +154,6 @@ class AsyncClient(_AsyncBaseClient):
         """
         return [
             File.model_validate(e) for e in (await self._get(f"{self._url}/files")).get("files")
-        ]
-
-    async def list_lists(self) -> list[List]:
-        """
-        Lists all the Lists in the Model.
-        :return: All Lists on this model as a list of :py:class:`List`.
-        """
-        return [
-            List.model_validate(e) for e in (await self._get(f"{self._url}/lists")).get("lists")
         ]
 
     async def list_actions(self) -> list[Action]:

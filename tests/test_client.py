@@ -71,12 +71,6 @@ def test_list_files():
     assert len(files) > 0
 
 
-def test_list_lists():
-    lists = client.list_lists()
-    assert isinstance(lists, list)
-    assert len(lists) > 0
-
-
 def test_list_processes():
     processes = client.list_processes()
     assert isinstance(processes, list)

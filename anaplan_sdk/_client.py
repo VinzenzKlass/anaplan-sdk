@@ -10,22 +10,12 @@ import httpx
 
 from ._auth import AnaplanBasicAuth, AnaplanCertAuth, get_certificate, get_private_key
 from ._base import _BaseClient
-from ._exceptions import (
+from ._transactional_client import _TransactionalClient
+from .exceptions import (
     AnaplanActionError,
     InvalidIdentifierException,
 )
-from ._models import (
-    Import,
-    Export,
-    Process,
-    File,
-    Action,
-    List,
-    Workspace,
-    Model,
-    action_url,
-)
-from ._transactional_client import _TransactionalClient
+from .models import Import, Export, Process, File, Action, Workspace, Model, action_url
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
 logger = logging.getLogger("anaplan_sdk")
@@ -81,7 +71,7 @@ class Client(_BaseClient):
                             itself.
         :param private_key: The absolute path to the private key file or the private key itself.
         :param private_key_password: The password to access the private key if there is one.
-        :param timeout: The timeout for the HTTP requests.
+        :param timeout: The timeout in seconds for the HTTP requests.
         :param retry_count: The number of times to retry an HTTP request if it fails. Set this to 0
                             to never retry. Defaults to 2, meaning each HTTP Operation will be
                             tried a total number of 2 times.
@@ -170,13 +160,6 @@ class Client(_BaseClient):
         :return: All Files on this model as a list of :py:class:`File`.
         """
         return [File.model_validate(e) for e in self._get(f"{self._url}/files").get("files")]
-
-    def list_lists(self) -> list[List]:
-        """
-        Lists all the Lists in the Model.
-        :return: All Lists on this model as a list of :py:class:`List`.
-        """
-        return [List.model_validate(e) for e in self._get(f"{self._url}/lists").get("lists")]
 
     def list_actions(self) -> list[Action]:
         """

@@ -88,13 +88,6 @@ async def test_list_files():
 
 
 @pytest.mark.asyncio
-async def test_list_lists():
-    lists = await client.list_lists()
-    assert isinstance(lists, list)
-    assert len(lists) > 0
-
-
-@pytest.mark.asyncio
 async def test_list_processes():
     processes = await client.list_processes()
     assert isinstance(processes, list)

@@ -26,11 +26,15 @@ nav:
   - Quick Start: 'quickstart.md'
   - Anaplan Explained: 'anaplan_explained.md'
   - Guides:
+      - Use the Bulk API: 'bulk.md'
+      - Use the Transactional API: 'transactional.md'
       - Logging: 'logging.md'
   - API Reference:
       - Developer Interface:
           - AsyncClient: 'async_client.md'
           - Client: 'client.md'
+          - Async Transactional Client: 'async_transactional_client.md'
+          - Transactional Client: 'transactional_client.md'
       - Models: 'models.md'
       - Exceptions: 'exceptions.md'
 
