@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field, field_validator
 
 from ._exceptions import InvalidIdentifierException
@@ -209,11 +211,11 @@ class ModelStatus(BaseModel):
     export_task_type: str = Field(alias="exportTaskType")
 
 
-def determine_action_type(action_id: int) -> str:
+def action_url(action_id: int) -> Literal["imports", "exports", "actions", "processes"]:
     """
     Determine the type of action based on its identifier.
-    :param action_id: The identifier of the action.]
-    :return: The type of action.
+    :param action_id: The identifier of the action.
+    :return: The type of action.§
     """
     if 12000000000 <= action_id < 113000000000:
         return "imports"

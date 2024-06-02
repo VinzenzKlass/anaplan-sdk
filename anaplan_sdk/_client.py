@@ -2,7 +2,6 @@
 Synchronous Client.
 """
 
-import gzip
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
@@ -24,7 +23,7 @@ from ._models import (
     List,
     Workspace,
     Model,
-    determine_action_type,
+    action_url,
 )
 from ._transactional_client import _TransactionalClient
 
@@ -104,29 +103,43 @@ class Client(_BaseClient):
                 "Either `certificate` and `private_key` or `user_email` and `password` must be "
                 "provided."
             )
-        auth = (
-            AnaplanCertAuth(
-                get_certificate(certificate), get_private_key(private_key, private_key_password)
-            )
-            if certificate
-            else AnaplanBasicAuth(user_email=user_email, password=password)
+        client = httpx.Client(
+            auth=(
+                AnaplanCertAuth(
+                    get_certificate(certificate), get_private_key(private_key, private_key_password)
+                )
+                if certificate
+                else AnaplanBasicAuth(user_email=user_email, password=password)
+            ),
+            timeout=timeout,
         )
-        self._client = httpx.Client(auth=auth)
-        self._base_url = "https://api.anaplan.com/2/0/workspaces"
-        self._transactional_client = _TransactionalClient(
-            self._client, model_id, timeout, retry_count
+        self._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
+        self._transactional_client = (
+            _TransactionalClient(client, model_id, retry_count) if model_id else None
         )
-        self.workspace_id = workspace_id
-        self.model_id = model_id
-        self.timeout = timeout
         self.status_poll_delay = status_poll_delay
         self.upload_parallel = upload_parallel
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
-        super().__init__(retry_count)
+        super().__init__(retry_count, client)
 
     @property
     def transactional(self) -> _TransactionalClient:
+        """
+        The Transactional Client provides access to the Anaplan Transactional API. This is useful
+        for more advanced use cases where you need to interact with the Anaplan Model in a more
+        granular way.
+
+        If you instantiated the client without the field `model_id`, this will raise a
+        :py:class:`ValueError`, since none of the endpoints can be invoked without the model Id.
+        :return: The Transactional Client.
+        """
+        if not self._transactional_client:
+            raise ValueError(
+                "Cannot use the Transactional Client (Anaplan Transactional API) "
+                "without field `model_id`. Make sure the instance you are trying to call this on "
+                "is instantiated correctly with a valid `model_id`."
+            )
         return self._transactional_client
 
     def list_workspaces(self) -> list[Workspace]:
@@ -136,7 +149,9 @@ class Client(_BaseClient):
         """
         return [
             Workspace.model_validate(e)
-            for e in self._get(f"{self._base_url}?tenantDetails=true").get("workspaces")
+            for e in self._get("https://api.anaplan.com/2/0/workspaces?tenantDetails=true").get(
+                "workspaces"
+            )
         ]
 
     def list_models(self) -> list[Model]:
@@ -146,9 +161,7 @@ class Client(_BaseClient):
         """
         return [
             Model.model_validate(e)
-            for e in self._get(
-                f"{self._base_url.replace('/workspaces', '/models')}?modelDetails=true"
-            ).get("models")
+            for e in self._get("https://api.anaplan.com/2/0/models?modelDetails=true").get("models")
         ]
 
     def list_files(self) -> list[File]:
@@ -156,24 +169,14 @@ class Client(_BaseClient):
         Lists all the Files in the Model.
         :return: All Files on this model as a list of :py:class:`File`.
         """
-        return [
-            File.model_validate(e)
-            for e in self._get(
-                f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files"
-            ).get("files")
-        ]
+        return [File.model_validate(e) for e in self._get(f"{self._url}/files").get("files")]
 
     def list_lists(self) -> list[List]:
         """
         Lists all the Lists in the Model.
         :return: All Lists on this model as a list of :py:class:`List`.
         """
-        return [
-            List.model_validate(e)
-            for e in self._get(
-                f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/lists"
-            ).get("lists")
-        ]
+        return [List.model_validate(e) for e in self._get(f"{self._url}/lists").get("lists")]
 
     def list_actions(self) -> list[Action]:
         """
@@ -183,10 +186,7 @@ class Client(_BaseClient):
         :return: All Actions on this model as a list of :py:class:`Action`.
         """
         return [
-            Action.model_validate(e)
-            for e in (
-                self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/actions")
-            ).get("actions")
+            Action.model_validate(e) for e in (self._get(f"{self._url}/actions")).get("actions")
         ]
 
     def list_processes(self) -> list[Process]:
@@ -196,9 +196,7 @@ class Client(_BaseClient):
         """
         return [
             Process.model_validate(e)
-            for e in (
-                self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/processes")
-            ).get("processes")
+            for e in (self._get(f"{self._url}/processes")).get("processes")
         ]
 
     def list_imports(self) -> list[Import]:
@@ -207,10 +205,7 @@ class Client(_BaseClient):
         :return: All Imports on this model as a list of :py:class:`Import`.
         """
         return [
-            Import.model_validate(e)
-            for e in (
-                self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/imports")
-            ).get("imports")
+            Import.model_validate(e) for e in (self._get(f"{self._url}/imports")).get("imports")
         ]
 
     def list_exports(self) -> list[Export]:
@@ -219,10 +214,7 @@ class Client(_BaseClient):
         :return: All Exports on this model as a list of :py:class:`Export`.
         """
         return [
-            Export.model_validate(e)
-            for e in (
-                self._get(f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/exports")
-            ).get("exports")
+            Export.model_validate(e) for e in (self._get(f"{self._url}/exports")).get("exports")
         ]
 
     def run_action(self, action_id: int) -> None:
@@ -258,9 +250,7 @@ class Client(_BaseClient):
         :param file_id: The identifier of the file to retrieve.
         :return: The content of the file.
         """
-        return self._get_binary(
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files/{file_id}"
-        )
+        return self._get_binary(f"{self._url}/files/{file_id}")
 
     def upload_file(self, file_id: int, content: str | bytes) -> None:
         """
@@ -301,10 +291,9 @@ class Client(_BaseClient):
         :return: The status of the task as returned by the API. For more information
                  see: https://anaplan.docs.apiary.io.
         """
-        return self._get(
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/"
-            f"{determine_action_type(action_id)}/{action_id}/tasks/{task_id}"
-        ).get("task")
+        return self._get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks/{task_id}").get(
+            "task"
+        )
 
     def invoke_action(self, action_id: int) -> str:
         """
@@ -317,8 +306,7 @@ class Client(_BaseClient):
         :return: The identifier of the spawned Task.
         """
         response = self._post(
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/"
-            f"{determine_action_type(action_id)}/{action_id}/tasks",
+            f"{self._url}/{action_url(action_id)}/{action_id}/tasks",
             json={"localeName": "en_US"},
         )
         task_id = response.get("task").get("taskId")
@@ -326,14 +314,7 @@ class Client(_BaseClient):
         return task_id
 
     def _upload_chunk(self, file_id: int, index: int, chunk: bytes) -> None:
-        self._run_with_retry(
-            self._client.put,
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files/{file_id}/"
-            f"chunks/{index}",
-            headers={"Content-Type": "application/x-gzip"},
-            content=gzip.compress(chunk),
-            timeout=self.timeout,
-        )
+        self._put_binary_gzip(f"{self._url}/files/{file_id}/chunks/{index}", content=chunk)
 
     def _set_chunk_count(self, file_id: int, num_chunks: int) -> None:
         if not self.allow_file_creation and not (113000000000 <= file_id <= 113999999999):
@@ -342,10 +323,7 @@ class Client(_BaseClient):
                 "to avoid this error, set `allow_file_creation=True` on the calling instance. "
                 "Make sure you have understood the implications of this before doing so. "
             )
-        response = self._post(
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files/{file_id}",
-            json={"chunkCount": num_chunks},
-        )
+        response = self._post(f"{self._url}/files/{file_id}", json={"chunkCount": num_chunks})
         optionally_new_file = int(response.get("file").get("id"))
         if optionally_new_file != file_id:
             if self.allow_file_creation:
@@ -357,20 +335,3 @@ class Client(_BaseClient):
                 "to avoid this error, set `allow_file_creation=True` on the calling instance. "
                 "Make sure you have understood the implications of this before doing so."
             )
-
-    def _get(self, url: str) -> dict[str, float | int | str | list | dict | bool]:
-        return self._run_with_retry(self._client.get, url, timeout=self.timeout).json()
-
-    def _get_binary(self, url: str) -> bytes:
-        return self._run_with_retry(self._client.get, url, timeout=self.timeout).content
-
-    def _post(
-        self, url: str, json: dict | None = None
-    ) -> dict[str, float | int | str | list | dict | bool]:
-        return self._run_with_retry(
-            self._client.post,
-            url,
-            headers={"Content-Type": "application/json"},
-            json=json,
-            timeout=self.timeout,
-        ).json()
