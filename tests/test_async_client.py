@@ -5,7 +5,7 @@ import sys
 import pytest
 
 import anaplan_sdk
-from anaplan_sdk import InvalidIdentifierException
+from anaplan_sdk.exceptions import InvalidIdentifierException
 
 client = anaplan_sdk.AsyncClient(
     workspace_id=os.getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),
