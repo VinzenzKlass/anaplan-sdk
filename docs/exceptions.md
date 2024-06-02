@@ -1,1 +1,1 @@
-::: anaplan_sdk._exceptions
+::: anaplan_sdk.exceptions

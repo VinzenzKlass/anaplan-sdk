@@ -2,7 +2,7 @@ import os
 import sys
 
 import anaplan_sdk
-from anaplan_sdk import InvalidIdentifierException
+from anaplan_sdk.exceptions import InvalidIdentifierException
 
 client = anaplan_sdk.Client(
     workspace_id=os.getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),
@@ -69,12 +69,6 @@ def test_list_files():
     files = client.list_files()
     assert isinstance(files, list)
     assert len(files) > 0
-
-
-def test_list_lists():
-    lists = client.list_lists()
-    assert isinstance(lists, list)
-    assert len(lists) > 0
 
 
 def test_list_processes():

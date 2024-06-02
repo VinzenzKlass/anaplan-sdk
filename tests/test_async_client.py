@@ -5,7 +5,7 @@ import sys
 import pytest
 
 import anaplan_sdk
-from anaplan_sdk import InvalidIdentifierException
+from anaplan_sdk.exceptions import InvalidIdentifierException
 
 client = anaplan_sdk.AsyncClient(
     workspace_id=os.getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),
@@ -85,13 +85,6 @@ async def test_list_files():
     files = await client.list_files()
     assert isinstance(files, list)
     assert len(files) > 0
-
-
-@pytest.mark.asyncio
-async def test_list_lists():
-    lists = await client.list_lists()
-    assert isinstance(lists, list)
-    assert len(lists) > 0
 
 
 @pytest.mark.asyncio

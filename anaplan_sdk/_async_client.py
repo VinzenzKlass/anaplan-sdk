@@ -2,37 +2,23 @@
 Asynchronous Client.
 """
 
-import gzip
 import logging
 import time
 from asyncio import gather
-from typing import Callable, Coroutine, Any
 
 import httpx
-from httpx import HTTPError, Response
 
+from ._async_transactional_client import _AsyncTransactionalClient
 from ._auth import AnaplanCertAuth, get_certificate, get_private_key, AnaplanBasicAuth
-from ._exceptions import (
-    AnaplanActionError,
-    raise_appropriate_error,
-)
-from ._models import (
-    Import,
-    Export,
-    Process,
-    File,
-    Action,
-    List,
-    Workspace,
-    Model,
-    determine_action_type,
-)
+from ._base import _AsyncBaseClient
+from .exceptions import AnaplanActionError
+from .models import Import, Export, Process, File, Action, Workspace, Model, action_url
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
 logger = logging.getLogger("anaplan_sdk")
 
 
-class AsyncClient:
+class AsyncClient(_AsyncBaseClient):
     """
     An asynchronous Client for pythonic access to the Anaplan Integration API v2:
     https://anaplan.docs.apiary.io/. This Client provides high-level abstractions over the API, so
@@ -81,7 +67,7 @@ class AsyncClient:
                             itself.
         :param private_key: The absolute path to the private key file or the private key itself.
         :param private_key_password: The password to access the private key if there is one.
-        :param timeout: The timeout for the HTTP requests.
+        :param timeout: The timeout in seconds for the HTTP requests.
         :param retry_count: The number of times to retry an HTTP request if it fails. Set this to 0
                             to never retry. Defaults to 2, meaning each HTTP Operation will be
                             tried a total number of 2 times.
@@ -96,25 +82,46 @@ class AsyncClient:
                             creating new files and uploading content to them."""
         if not ((user_email and password) or (certificate and private_key)):
             raise ValueError(
-                "Either `certificate` and `private_key` or `user_email` and `password` must be "
-                "provided."
+                "Must provide `certificate` and `private_key` or `user_email` and `password`."
+                "If you Private Key is Password protected, must also pass `private_key_password`."
             )
-        auth = (
-            AnaplanCertAuth(
-                get_certificate(certificate), get_private_key(private_key, private_key_password)
-            )
-            if certificate
-            else AnaplanBasicAuth(user_email=user_email, password=password)
+        client = httpx.AsyncClient(
+            auth=(
+                AnaplanCertAuth(
+                    get_certificate(certificate), get_private_key(private_key, private_key_password)
+                )
+                if certificate
+                else AnaplanBasicAuth(user_email=user_email, password=password)
+            ),
+            timeout=timeout,
         )
-        self._client = httpx.AsyncClient(auth=auth)
-        self._base_url = "https://api.anaplan.com/2/0/workspaces"
-        self.workspace_id = workspace_id
-        self.model_id = model_id
-        self.timeout = timeout
-        self.retry_count = retry_count
+        self._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
+        self._transactional_client = (
+            _AsyncTransactionalClient(client, model_id, retry_count) if model_id else None
+        )
         self.status_poll_delay = status_poll_delay
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
+        super().__init__(retry_count, client)
+
+    @property
+    def transactional(self) -> _AsyncTransactionalClient:
+        """
+        The Transactional Client provides access to the Anaplan Transactional API. This is useful
+        for more advanced use cases where you need to interact with the Anaplan Model in a more
+        granular way.
+
+        If you instantiated the client without the field `model_id`, this will raise a
+        :py:class:`ValueError`, since none of the endpoints can be invoked without the model Id.
+        :return: The Transactional Client.
+        """
+        if not self._transactional_client:
+            raise ValueError(
+                "Cannot use the Transactional Client (Anaplan Transactional API) "
+                "without field `model_id`. Make sure the instance you are trying to call this on "
+                "is instantiated correctly with a valid `model_id`."
+            )
+        return self._transactional_client
 
     async def list_workspaces(self) -> list[Workspace]:
         """
@@ -123,7 +130,9 @@ class AsyncClient:
         """
         return [
             Workspace.model_validate(e)
-            for e in (await self._get(f"{self._base_url}?tenantDetails=true")).get("workspaces")
+            for e in (
+                await self._get("https://api.anaplan.com/2/0/workspaces?tenantDetails=true")
+            ).get("workspaces")
         ]
 
     async def list_models(self) -> list[Model]:
@@ -133,11 +142,9 @@ class AsyncClient:
         """
         return [
             Model.model_validate(e)
-            for e in (
-                await self._get(
-                    f"{self._base_url.replace('/workspaces', '/models')}?modelDetails=true"
-                )
-            ).get("models")
+            for e in (await self._get("https://api.anaplan.com/2/0/models?modelDetails=true")).get(
+                "models"
+            )
         ]
 
     async def list_files(self) -> list[File]:
@@ -146,26 +153,7 @@ class AsyncClient:
         :return: All Files on this model as a list of :py:class:`File`.
         """
         return [
-            File.model_validate(e)
-            for e in (
-                await self._get(
-                    f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files"
-                )
-            ).get("files")
-        ]
-
-    async def list_lists(self) -> list[List]:
-        """
-        Lists all the Lists in the Model.
-        :return: All Lists on this model as a list of :py:class:`List`.
-        """
-        return [
-            List.model_validate(e)
-            for e in (
-                await self._get(
-                    f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/lists"
-                )
-            ).get("lists")
+            File.model_validate(e) for e in (await self._get(f"{self._url}/files")).get("files")
         ]
 
     async def list_actions(self) -> list[Action]:
@@ -177,11 +165,7 @@ class AsyncClient:
         """
         return [
             Action.model_validate(e)
-            for e in (
-                await self._get(
-                    f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/actions"
-                )
-            ).get("actions")
+            for e in (await self._get(f"{self._url}/actions")).get("actions")
         ]
 
     async def list_processes(self) -> list[Process]:
@@ -191,11 +175,7 @@ class AsyncClient:
         """
         return [
             Process.model_validate(e)
-            for e in (
-                await self._get(
-                    f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/processes"
-                )
-            ).get("processes")
+            for e in (await self._get(f"{self._url}/processes")).get("processes")
         ]
 
     async def list_imports(self) -> list[Import]:
@@ -205,11 +185,7 @@ class AsyncClient:
         """
         return [
             Import.model_validate(e)
-            for e in (
-                await self._get(
-                    f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/imports"
-                )
-            ).get("imports")
+            for e in (await self._get(f"{self._url}/imports")).get("imports")
         ]
 
     async def list_exports(self) -> list[Export]:
@@ -219,11 +195,7 @@ class AsyncClient:
         """
         return [
             Export.model_validate(e)
-            for e in (
-                await self._get(
-                    f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/exports"
-                )
-            ).get("exports")
+            for e in (await self._get(f"{self._url}/exports")).get("exports")
         ]
 
     async def run_action(self, action_id: int) -> None:
@@ -259,9 +231,7 @@ class AsyncClient:
         :param file_id: The identifier of the file to retrieve.
         :return: The content of the file.
         """
-        return await self._get_binary(
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files/{file_id}"
-        )
+        return await self._get_binary(f"{self._url}/files/{file_id}")
 
     async def upload_file(self, file_id: int, content: str | bytes) -> None:
         """
@@ -296,10 +266,7 @@ class AsyncClient:
                  see: https://anaplan.docs.apiary.io.
         """
         return (
-            await self._get(
-                f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/"
-                f"{determine_action_type(action_id)}/{action_id}/tasks/{task_id}"
-            )
+            await self._get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks/{task_id}")
         ).get("task")
 
     async def invoke_action(self, action_id: int) -> str:
@@ -313,9 +280,7 @@ class AsyncClient:
         :return: The identifier of the spawned Task.
         """
         response = await self._post(
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/"
-            f"{determine_action_type(action_id)}/{action_id}/tasks",
-            json={"localeName": "en_US"},
+            f"{self._url}/{action_url(action_id)}/{action_id}/tasks", json={"localeName": "en_US"}
         )
         task_id = response.get("task").get("taskId")
         logger.info(f"Invoked Action '{action_id}', spawned Task: '{task_id}'.")
@@ -323,47 +288,8 @@ class AsyncClient:
 
     async def _upload_chunk(self, file_id: int, index: int, chunk: bytes) -> None:
         await self._run_with_retry(
-            self._client.put,
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files/{file_id}/"
-            f"chunks/{index}",
-            headers={"Content-Type": "application/x-gzip"},
-            content=gzip.compress(chunk),
-            timeout=self.timeout,
+            self._put_binary_gzip, f"{self._url}/files/{file_id}/chunks/{index}", content=chunk
         )
 
     async def _set_chunk_count(self, file_id: int, num_chunks: int) -> None:
-        await self._post(
-            f"{self._base_url}/{self.workspace_id}/models/{self.model_id}/files/{file_id}",
-            json={"chunkCount": num_chunks},
-        )
-
-    async def _get(self, url: str) -> dict[str, float | int | str | list | dict | bool]:
-        return (await self._run_with_retry(self._client.get, url, timeout=self.timeout)).json()
-
-    async def _get_binary(self, url: str) -> bytes:
-        return (await self._run_with_retry(self._client.get, url, timeout=self.timeout)).content
-
-    async def _post(
-        self, url: str, json: dict | None = None
-    ) -> dict[str, float | int | str | list | dict | bool]:
-        return (
-            await self._run_with_retry(
-                self._client.post,
-                url,
-                headers={"Content-Type": "application/json"},
-                json=json,
-                timeout=self.timeout,
-            )
-        ).json()
-
-    async def _run_with_retry(
-        self, func: Callable[..., Coroutine[Any, Any, Response]], *args, **kwargs
-    ) -> Response:
-        for i in range(max(self.retry_count, 1)):
-            try:
-                response = await func(*args, **kwargs)
-                response.raise_for_status()
-                return response
-            except HTTPError as error:
-                if i >= self.retry_count - 1:
-                    raise_appropriate_error(error)
+        await self._post(f"{self._url}/files/{file_id}", json={"chunkCount": num_chunks})

@@ -55,4 +55,4 @@ def raise_appropriate_error(error: HTTPError) -> None:
     if isinstance(error, HTTPStatusError):
         if error.response.status_code == 404:
             raise InvalidIdentifierException from error
-    raise error
+    raise AnaplanException from error
