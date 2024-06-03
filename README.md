@@ -13,6 +13,11 @@ the [Anaplan Integration API v2](https://anaplan.docs.apiary.io/). This Project 
 over the API, so you can deal with python objects and simple functions rather than implementation details like HTTP
 Requests, Authentication, JSON Parsing, Compression, Chunking and so on.
 
+This Projects supports both
+the [Bulk APIs](https://help.anaplan.com/use-the-bulk-apis-93218e5e-00e5-406e-8361-09ab861889a7) and
+the [Transactional APIs](https://help.anaplan.com/use-the-transactional-apis-cc1c1e91-39fc-4272-a4b5-16bc91e9c313) and
+provides synchronous and asynchronous Clients for both.
+
 Visit [Anaplan SDK](https://vinzenzklass.github.io/anaplan-sdk/) for documentation.
 
 ---
