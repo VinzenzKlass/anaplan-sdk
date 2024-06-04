@@ -81,4 +81,4 @@ async def test_delete_list_items():
 
 @pytest.mark.asyncio
 async def test_reset_list_index():
-    await client.reset_list_index(101000000009)
+    await client.reset_list_index(101000000010)

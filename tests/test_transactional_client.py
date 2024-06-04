@@ -62,4 +62,4 @@ def test_delete_list_items():
 
 
 def test_reset_list_index():
-    client.reset_list_index(101000000009)
+    client.reset_list_index(101000000010)
