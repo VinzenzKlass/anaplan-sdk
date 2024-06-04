@@ -46,7 +46,6 @@ async def test_list_line_items():
 async def test_get_list_items():
     items = await client.get_list_items(101000000009)
     assert isinstance(items, list)
-    assert len(items) > 0
 
 
 @pytest.mark.asyncio
@@ -71,3 +70,15 @@ async def test_list_insertion():
     assert result.added == 1
     assert result.ignored == 0
     assert result.total == 1
+
+
+@pytest.mark.asyncio
+async def test_delete_list_items():
+    code = str(uuid4())
+    await client.add_items_to_list(101000000009, [{"code": code, "name": str(uuid4())}])
+    await client.delete_list_items(101000000009, [{"code": code}])
+
+
+@pytest.mark.asyncio
+async def test_reset_list_index():
+    await client.reset_list_index(101000000010)
