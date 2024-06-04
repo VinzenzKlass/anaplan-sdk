@@ -25,12 +25,13 @@ class _BaseClient:
     def _get_binary(self, url: str) -> bytes:
         return self._run_with_retry(self._client.get, url).content
 
-    def _post(
-        self, url: str, json: dict | None = None
-    ) -> dict[str, float | int | str | list | dict | bool]:
+    def _post(self, url: str, json: dict) -> dict[str, float | int | str | list | dict | bool]:
         return self._run_with_retry(
             self._client.post, url, headers={"Content-Type": "application/json"}, json=json
         ).json()
+
+    def _post_empty(self, url: str) -> None:
+        self._run_with_retry(self._client.post, url)
 
     def _put_binary_gzip(self, url: str, content: bytes) -> Response:
         return self._run_with_retry(
@@ -65,13 +66,16 @@ class _AsyncBaseClient:
         return (await self._run_with_retry(self._client.get, url)).content
 
     async def _post(
-        self, url: str, json: dict | None = None
+        self, url: str, json: dict
     ) -> dict[str, float | int | str | list | dict | bool]:
         return (
             await self._run_with_retry(
                 self._client.post, url, headers={"Content-Type": "application/json"}, json=json
             )
         ).json()
+
+    async def _post_empty(self, url: str) -> None:
+        await self._run_with_retry(self._client.post, url)
 
     async def _put_binary_gzip(self, url: str, content: bytes) -> Response:
         return await self._run_with_retry(

@@ -34,8 +34,6 @@ anaplan_client = anaplan_sdk.Client(
 ### Certificate Authentication
 
 ```python
-import anaplan_sdk
-
 anaplan_client = anaplan_sdk.Client(
     workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
     model_id="11111111111111111111111111111111",

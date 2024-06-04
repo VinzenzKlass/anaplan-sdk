@@ -1,4 +1,4 @@
-This Project requires Python 3.10 or newer. 
+This Project requires Python 3.10.4 or newer.
 
 ### Using pip
 

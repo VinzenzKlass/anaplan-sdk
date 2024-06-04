@@ -1,5 +1,3 @@
-from typing import Iterable
-
 import httpx
 
 from ._base import _BaseClient
@@ -70,7 +68,7 @@ class _TransactionalClient(_BaseClient):
         ]
 
     def add_items_to_list(
-        self, list_id: int, items: Iterable[dict[str, str | dict]]
+        self, list_id: int, items: list[dict[str, str | dict]]
     ) -> InsertionResult:
         """
         Adds items to a List.
@@ -82,3 +80,19 @@ class _TransactionalClient(_BaseClient):
         return InsertionResult.model_validate(
             self._post(f"{self._url}/lists/{list_id}/items?action=add", json={"items": items})
         )
+
+    def delete_list_items(self, list_id: int, items: list[dict[str, str | int]]) -> None:
+        """
+        Deletes items from a List.
+        :param list_id: The ID of the List.
+        :param items: The items to delete from the List. Must be a dict with either `code` or `id`
+                      as the keys to identify the records to delete.
+        """
+        self._post(f"{self._url}/lists/{list_id}/items?action=delete", json={"items": items})
+
+    def reset_list_index(self, list_id: int) -> None:
+        """
+        Resets the index of a List. The List must be empty to do so.
+        :param list_id: The ID of the List.
+        """
+        self._post_empty(f"{self._url}/lists/{list_id}/resetIndex")
