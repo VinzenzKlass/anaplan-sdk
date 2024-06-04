@@ -9,7 +9,7 @@ from typing import Callable, Coroutine, Any
 import httpx
 from httpx import Response, HTTPError
 
-from .exceptions import raise_appropriate_error
+from .exceptions import raise_error
 
 logger = logging.getLogger("anaplan_sdk")
 
@@ -49,7 +49,7 @@ class _BaseClient:
             except HTTPError as error:
                 url = args[0] or kwargs.get("url")
                 if i >= self._retry_count - 1:
-                    raise_appropriate_error(error)
+                    raise_error(error)
                 logger.info(f"Retrying for: {url}")
 
 
@@ -91,4 +91,4 @@ class _AsyncBaseClient:
                 return response
             except HTTPError as error:
                 if i >= self._retry_count - 1:
-                    raise_appropriate_error(error)
+                    raise_error(error)

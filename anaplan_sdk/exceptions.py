@@ -51,8 +51,12 @@ class AnaplanActionError(AnaplanException):
         super().__init__(self.message)
 
 
-def raise_appropriate_error(error: HTTPError) -> None:
+def raise_error(error: HTTPError) -> None:
+    """
+    Raise an appropriate exception based on the error.
+    :param error: The error to raise an exception for.
+    """
     if isinstance(error, HTTPStatusError):
         if error.response.status_code == 404:
             raise InvalidIdentifierException from error
-    raise AnaplanException from error
+    raise AnaplanException(str(error))
