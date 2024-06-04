@@ -79,5 +79,6 @@ async def test_delete_list_items():
     await client.delete_list_items(101000000009, [{"code": code}])
 
 
+@pytest.mark.asyncio
 async def test_reset_list_index():
     await client.reset_list_index(101000000009)
