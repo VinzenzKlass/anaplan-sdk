@@ -264,6 +264,29 @@ class Client(_BaseClient):
                 self._upload_chunk(file_id, index, chunk)
         logger.info(f"Content loaded to  File '{file_id}'.")
 
+    def upload_and_import(self, file_id: int, content: str | bytes, action_id: int) -> None:
+        """
+        Convenience wrapper around `upload_file()` and `run_action()` to upload content to a file
+        and run an import action in one call.
+        :param file_id: The identifier of the file to upload to.
+        :param content: The content to upload. **This Content will be compressed before uploading.
+                        If you are passing the Input as bytes, pass it uncompressed to avoid
+                        redundant work.**
+        :param action_id: The identifier of the action to run after uploading the content.
+        """
+        self.upload_file(file_id, content)
+        self.run_action(action_id)
+
+    def export_and_download(self, action_id: int) -> bytes:
+        """
+        Convenience wrapper around `run_action()` and `get_file()` to run an export action and
+        download the exported content in one call.
+        :param action_id: The identifier of the action to run.
+        :return: The content of the exported file.
+        """
+        self.run_action(action_id)
+        return self.get_file(action_id)
+
     def get_task_status(
         self, action_id: int, task_id: str
     ) -> dict[str, float | int | str | list | dict | bool]:

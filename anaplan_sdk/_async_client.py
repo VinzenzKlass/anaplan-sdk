@@ -255,6 +255,29 @@ class AsyncClient(_AsyncBaseClient):
         )
         logger.info(f"Content loaded to  File '{file_id}'.")
 
+    async def upload_and_import(self, file_id: int, content: str | bytes, action_id: int) -> None:
+        """
+        Convenience wrapper around `upload_file()` and `run_action()` to upload content to a file
+        and run an import action in one call.
+        :param file_id: The identifier of the file to upload to.
+        :param content: The content to upload. **This Content will be compressed before uploading.
+                        If you are passing the Input as bytes, pass it uncompressed to avoid
+                        redundant work.**
+        :param action_id: The identifier of the action to run after uploading the content.
+        """
+        await self.upload_file(file_id, content)
+        await self.run_action(action_id)
+
+    async def export_and_download(self, action_id: int) -> bytes:
+        """
+        Convenience wrapper around `run_action()` a     nd `get_file()` to run an export action and
+        download the exported content in one call.
+        :param action_id: The identifier of the action to run.
+        :return: The content of the exported file.
+        """
+        await self.run_action(action_id)
+        return await self.get_file(action_id)
+
     async def get_task_status(
         self, action_id: int, task_id: str
     ) -> dict[str, float | int | str | list | dict | bool]:
