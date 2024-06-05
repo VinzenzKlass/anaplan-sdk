@@ -28,6 +28,7 @@ nav:
   - Quick Start: 'quickstart.md'
   - Anaplan Explained: 'anaplan_explained.md'
   - Guides:
+      - Bulk vs Transactional: 'bulk_vs_transactional.md'
       - Use the Bulk API: 'bulk.md'
       - Use the Transactional API: 'transactional.md'
       - Logging: 'logging.md'

@@ -45,10 +45,9 @@ anaplan_client = anaplan_sdk.Client(
 
 ## Making first requests
 
-Once Instantiated, you can invoke any method on your client instance. Say you want to find the id of an export action
-based on the name provided by one of your Anaplan Model Builders, run the export, find the file that was populated, and
-retrieve the content thereof. If this workflow feels unintuitive, you may want to head over to
-the [Anaplan Explained](anaplan_explained.md) Section.
+Say you want to find the id of an export action based on the name provided by one of your Anaplan Model Builders, run
+the export, find the file that was populated, and retrieve the content thereof. If this workflow feels unintuitive, you
+may want to head over to the [Anaplan Explained](anaplan_explained.md) Section.
 
 Here is what these steps would look like:
 
@@ -82,3 +81,8 @@ Relying on the naming of actions to identify them can be very risky and is highl
 idea to align with your model builders, agree on the logic for your dataflows and then statically reference them by
 their ids. If you need some flexibility, you can always wrap the action in processes and call these, so that the model
 builder can make minor changes independently.
+
+If you already know all the Ids, you essential just need the latter two lines of the above Snippet, making the code
+becomes much simpler and more robust:
+
+For a more detailed guide on how to use both the Bulk APIs and Transactional APIs, refer to the Guides.
