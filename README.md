@@ -5,6 +5,9 @@
 <h1 align="center" style="font-size: 3rem; font-weight: 400; margin: -15px 0">
 Anaplan SDK
 </h1>
+<p align="center" style="margin-top: 15px">
+<img align="center" src="https://img.shields.io/pypi/dm/anaplan-sdk" alt="Downloads Badge"/>
+</p>
 
 ---
 
