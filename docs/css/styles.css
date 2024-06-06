@@ -1,0 +1,9 @@
+:root {
+    --md-primary-fg-color: #3C67EA;
+}
+
+.md-typeset .tabbed-labels:before {
+    border-bottom: .1rem solid;
+    border-bottom-color: var(--md-primary-fg-color);
+}
+
