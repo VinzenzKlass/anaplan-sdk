@@ -5,10 +5,6 @@ can use an HTTP Client like Postman, Insomnia, or Paw.
 
 It further assumes you have a valid user with credentials and required permissions.
 
-This Project provides both synchronous and asynchronous clients. The rest of this Quickstart will provide code samples
-for the synchronous client. For usage of the asynchronous client you can replace the `Client` with `AsyncClient` and use
-async await syntax.
-
 ## Instantiate a Client
 
 Clients are instantiated with the workspace, model and authentication information. There are two primary means of
@@ -20,10 +16,12 @@ Basic Authentication is unsuitable for Production. Anaplan password policies for
 days, depending on tenant settings, making this approach annoying to maintain and error-prone and is thus not
 recommended for production.
 
+/// tab | Synchronous
+
 ```python
 import anaplan_sdk
 
-anaplan_client = anaplan_sdk.Client(
+anaplan = anaplan_sdk.Client(
     workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
     model_id="11111111111111111111111111111111",
     user_email="admin@company.com",
@@ -31,17 +29,57 @@ anaplan_client = anaplan_sdk.Client(
 )
 ```
 
-### Certificate Authentication
+///
+
+/// tab | Asynchronous
 
 ```python
-anaplan_client = anaplan_sdk.Client(
+import anaplan_sdk
+
+anaplan = anaplan_sdk.AsyncClient(
+    workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    model_id="11111111111111111111111111111111",
+    user_email="admin@company.com",
+    password="my_super_secret_password",
+)
+```
+
+///
+
+### Certificate Authentication
+
+/// tab | Synchronous
+
+```python
+import anaplan_sdk
+
+anaplan = anaplan_sdk.Client(
     workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
     model_id="11111111111111111111111111111111",
     certificate=r"C:\users\vinz\certs\anaplan.pem",
     private_key=r"C:\users\vinz\keys\anaplan.pem",
     private_key_password="my_super_secret_password",
 )
+
 ```
+
+///
+/// tab | Asynchronous
+
+```python
+import anaplan_sdk
+
+anaplan = anaplan_sdk.AsyncClient(
+    workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    model_id="11111111111111111111111111111111",
+    certificate=r"C:\users\vinz\certs\anaplan.pem",
+    private_key=r"C:\users\vinz\keys\anaplan.pem",
+    private_key_password="my_super_secret_password",
+)
+
+```
+
+///
 
 ## Making first requests
 
@@ -51,31 +89,68 @@ may want to head over to the [Anaplan Explained](anaplan_explained.md) Section.
 
 Here is what these steps would look like:
 
+/// tab | Synchronous
+
 ```python
 export_id = next(
     filter(
         lambda x: "The thing I am looking for" in x.name,
-        anaplan_client.list_exports(),
+        anaplan.list_exports(),
     )
 ).id
-anaplan_client.run_action(export_id)
-content = anaplan_client.get_file(export_id)
+anaplan.run_action(export_id)
+content = anaplan.get_file(export_id)
 ```
+
+///
+/// tab | Asynchronous
+
+```python
+export_id = next(
+    filter(
+        lambda x: "The thing I am looking for" in x.name,
+        await anaplan.list_exports(),
+    )
+).id
+await anaplan.run_action(export_id)
+content = await anaplan.get_file(export_id)
+
+```
+
+///
 
 The `content` variable will now hold the content of what was produced by the invoked export action.
 
 The same works similarly for imports:
 
+/// tab | Synchronous
+
 ```python
 import_config = next(
     filter(
         lambda x: "The thing I am looking for" in x.name,
-        anaplan_client.list_imports(),
+        anaplan.list_imports(),
     )
 )
-anaplan_client.upload_file(import_config.source_id, "Some excellent new data!")
-anaplan_client.run_action(import_config.id)
+anaplan.upload_file(import_config.source_id, "Some excellent new data!")
+anaplan.run_action(import_config.id)
 ```
+
+///
+/// tab | Asynchronous
+
+```python
+import_config = next(
+    filter(
+        lambda x: "The thing I am looking for" in x.name,
+        await anaplan.list_imports(),
+    )
+)
+await anaplan.upload_file(import_config.source_id, "Some excellent new data!")
+await anaplan.run_action(import_config.id)
+```
+
+///
 
 Relying on the naming of actions to identify them can be very risky and is highly error-prone. It is generally a good
 idea to align with your model builders, agree on the logic for your dataflows and then statically reference them by

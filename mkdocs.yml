@@ -7,17 +7,19 @@ theme:
   palette:
     - scheme: 'default'
       media: '(prefers-color-scheme: light)'
+      primary: blue'
       toggle:
         icon: 'material/lightbulb'
         name: "Switch to dark mode"
     - scheme: 'slate'
       media: '(prefers-color-scheme: dark)'
-      primary: 'dark blue'
+      primary: blue'
       toggle:
         icon: 'material/lightbulb-outline'
         name: 'Switch to light mode'
   features:
     - content.code.copy
+    - content.tabs.link
 
 repo_name: VinzenzKlass/anaplan-sdk
 repo_url: https://github.com/VinzenzKlass/anaplan-sdk
@@ -53,8 +55,12 @@ plugins:
             show_source: false
             show_bases: false
 
+extra_css:
+  - css/styles.css
 
 markdown_extensions:
+  - pymdownx.blocks.tab:
+      alternate_style: true
   - admonition
   - codehilite:
       css_class: highlight
