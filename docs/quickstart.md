@@ -56,8 +56,8 @@ import anaplan_sdk
 anaplan = anaplan_sdk.Client(
     workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
     model_id="11111111111111111111111111111111",
-    certificate=r"C:\users\vinz\certs\anaplan.pem",
-    private_key=r"C:\users\vinz\keys\anaplan.pem",
+    certificate="~/certs/anaplan.pem",
+    private_key="~/keys/anaplan.pem",
     private_key_password="my_super_secret_password",
 )
 
@@ -72,8 +72,8 @@ import anaplan_sdk
 anaplan = anaplan_sdk.AsyncClient(
     workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
     model_id="11111111111111111111111111111111",
-    certificate=r"C:\users\vinz\certs\anaplan.pem",
-    private_key=r"C:\users\vinz\keys\anaplan.pem",
+    certificate="~/certs/anaplan.pem",
+    private_key="~/keys/anaplan.pem",
     private_key_password="my_super_secret_password",
 )
 
@@ -157,7 +157,6 @@ idea to align with your model builders, agree on the logic for your dataflows an
 their ids. If you need some flexibility, you can always wrap the action in processes and call these, so that the model
 builder can make minor changes independently.
 
-If you already know all the Ids, you essential just need the latter two lines of the above Snippet, making the code
-becomes much simpler and more robust:
+If you already know all the Ids, you just need the last two lines of the above Snippet, making the code becomes much simpler and more robust.
 
 For a more detailed guide on how to use both the Bulk APIs and Transactional APIs, refer to the Guides.
