@@ -43,8 +43,8 @@ nav:
       - Models: 'models.md'
       - Exceptions: 'exceptions.md'
 
-
 plugins:
+  - search
   - mkdocstrings:
       handlers:
         python:
@@ -59,8 +59,8 @@ extra_css:
   - css/styles.css
 
 markdown_extensions:
+  - pymdownx.superfences
+  - pymdownx.highlight
   - pymdownx.blocks.tab:
       alternate_style: true
   - admonition
-  - codehilite:
-      css_class: highlight

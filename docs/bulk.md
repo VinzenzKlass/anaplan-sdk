@@ -39,10 +39,10 @@ With this SDK, all of the above is condensed to:
 
 ```python
 anaplan = anaplan_sdk.Client(
-    workspace_id=os.getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),
-    model_id=os.getenv("ANAPLAN_SDK_TEST_MODEL_ID"),
-    certificate=os.getenv("ANAPLAN_SDK_TEST_CERT"),
-    private_key=os.getenv("ANAPLAN_SDK_TEST_PK"),
+    workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    model_id="11111111111111111111111111111111",
+    certificate="~/certs/anaplan.pem",
+    private_key="~/keys/anaplan.pem",
 )
 anaplan.upload_and_import(113000000000, b"Hello World!", 118000000000)
 export_content = anaplan.export_and_download(116000000000)
@@ -53,10 +53,10 @@ export_content = anaplan.export_and_download(116000000000)
 
 ```python
 anaplan = anaplan_sdk.AsyncClient(
-    workspace_id=os.getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),
-    model_id=os.getenv("ANAPLAN_SDK_TEST_MODEL_ID"),
-    certificate=os.getenv("ANAPLAN_SDK_TEST_CERT"),
-    private_key=os.getenv("ANAPLAN_SDK_TEST_PK"),
+    workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+    model_id="11111111111111111111111111111111",
+    certificate="~/certs/anaplan.pem",
+    private_key="~/keys/anaplan.pem",
 )
 _, export_content = await gather(
     anaplan.upload_and_import(113000000000, b"Hello World!", 118000000000),

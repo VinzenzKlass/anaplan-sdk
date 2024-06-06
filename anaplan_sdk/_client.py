@@ -227,6 +227,8 @@ class Client(_BaseClient):
         ):
             raise AnaplanActionError(f"Task '{task_id}' completed with errors.")
 
+        logger.info(f"Task '{task_id}' completed successfully..")
+
     def get_file(self, file_id: int) -> bytes:
         """
         Retrieves the content of the specified file.
@@ -253,6 +255,7 @@ class Client(_BaseClient):
             content[i : i + self.upload_chunk_size]
             for i in range(0, len(content), self.upload_chunk_size)
         ]
+        logger.info(f"Content will be uploaded in {len(chunks)}chunks.")
         self._set_chunk_count(file_id, len(chunks))
         if self.upload_parallel:
             with ThreadPoolExecutor(max_workers=4) as executor:
@@ -321,6 +324,7 @@ class Client(_BaseClient):
 
     def _upload_chunk(self, file_id: int, index: int, chunk: bytes) -> None:
         self._put_binary_gzip(f"{self._url}/files/{file_id}/chunks/{index}", content=chunk)
+        logger.info(f"Chunk {index} loaded to file '{file_id}'.")
 
     def _set_chunk_count(self, file_id: int, num_chunks: int) -> None:
         if not self.allow_file_creation and not (113000000000 <= file_id <= 113999999999):
