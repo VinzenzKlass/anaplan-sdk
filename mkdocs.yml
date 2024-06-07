@@ -33,6 +33,7 @@ nav:
       - Bulk vs Transactional: 'bulk_vs_transactional.md'
       - Use the Bulk API: 'bulk.md'
       - Use the Transactional API: 'transactional.md'
+      - Multiple Models: 'multiple_models.md'
       - Logging: 'logging.md'
   - API Reference:
       - Developer Interface:
