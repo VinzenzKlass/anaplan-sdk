@@ -83,9 +83,9 @@ some additional information about this record you can add, and the module will t
 Since uploading the content the module and the list share twice would be redundant and inefficient, we want to group
 those.
 
-The easiest way to do this is to have your model builder create two actions that reference the same, one importing into
-the list and the other one importing into the module and then put them into a process. This would again just look like
-this:
+The easiest way to do this is to have your model builder create two actions that reference the same file, one importing
+into the list and the other one importing into the module and then put them into a process. This would again just look
+like this:
 
 /// tab | Synchronous
 
@@ -121,3 +121,28 @@ await anaplan.run_action(112000000001)  # Import into the Module
 ```
 
 ///
+
+This is by some margin the most efficient way to upload larger sets of data.
+
+### Multiple sources | One Action
+
+Conversely, some imports in Anaplan may need to happen in an atomic manner. For this too, we can apply a very similar
+pattern:
+
+/// tab | Synchronous
+
+```python
+anaplan.upload_file(113000000000, b"Hello World!")
+anaplan.upload_file(113000000001, b"Hello World!")
+anaplan.run_action(118000000000)
+```
+
+///
+/// tab | Asynchronous
+
+```python
+await anaplan.upload_file(113000000000, b"Hello World!")
+await anaplan.upload_file(113000000001, b"Hello World!")
+await anaplan.run_action(118000000000)
+
+```
