@@ -5,6 +5,8 @@ Synchronous Client.
 import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
+from copy import copy
+from typing import Self
 
 import httpx
 
@@ -93,7 +95,7 @@ class Client(_BaseClient):
                 "Either `certificate` and `private_key` or `user_email` and `password` must be "
                 "provided."
             )
-        client = httpx.Client(
+        self._client = httpx.Client(
             auth=(
                 AnaplanCertAuth(
                     get_certificate(certificate), get_private_key(private_key, private_key_password)
@@ -103,15 +105,35 @@ class Client(_BaseClient):
             ),
             timeout=timeout,
         )
+        self._retry_count = retry_count
         self._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
         self._transactional_client = (
-            _TransactionalClient(client, model_id, retry_count) if model_id else None
+            _TransactionalClient(self._client, model_id, self._retry_count) if model_id else None
         )
         self.status_poll_delay = status_poll_delay
         self.upload_parallel = upload_parallel
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
-        super().__init__(retry_count, client)
+        super().__init__(self._retry_count, self._client)
+
+    @classmethod
+    def from_existing(cls, existing: Self, workspace_id: str, model_id: str) -> Self:
+        """
+        Create a new instance of the Client from an existing instance. This is useful if you want
+        to interact with multiple models or workspaces in the same script but share the same
+        authentication and configuration. This creates a shallow copy of the existing client and
+        update the relevant attributes to the new workspace and model.
+        :param existing: The existing instance to copy.
+        :param workspace_id: The workspace Id to use.
+        :param model_id: The model Id to use.
+        :return: A new instance of the Client.
+        """
+        client = copy(existing)
+        client._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
+        client._transactional_client = _TransactionalClient(
+            existing._client, model_id, existing._retry_count
+        )
+        return client
 
     @property
     def transactional(self) -> _TransactionalClient:
