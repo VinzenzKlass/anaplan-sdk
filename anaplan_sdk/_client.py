@@ -6,7 +6,7 @@ import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
 from copy import copy
-from typing import Self
+from typing_extensions import Self
 
 import httpx
 
