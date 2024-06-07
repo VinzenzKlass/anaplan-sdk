@@ -6,9 +6,9 @@ import logging
 import time
 from concurrent.futures import ThreadPoolExecutor
 from copy import copy
-from typing_extensions import Self
 
 import httpx
+from typing_extensions import Self
 
 from ._auth import AnaplanBasicAuth, AnaplanCertAuth, get_certificate, get_private_key
 from ._base import _BaseClient
@@ -249,7 +249,7 @@ class Client(_BaseClient):
         ):
             raise AnaplanActionError(f"Task '{task_id}' completed with errors.")
 
-        logger.info(f"Task '{task_id}' completed successfully..")
+        logger.info(f"Task '{task_id}' completed successfully.")
 
     def get_file(self, file_id: int) -> bytes:
         """
@@ -277,7 +277,7 @@ class Client(_BaseClient):
             content[i : i + self.upload_chunk_size]
             for i in range(0, len(content), self.upload_chunk_size)
         ]
-        logger.info(f"Content will be uploaded in {len(chunks)}chunks.")
+        logger.info(f"Content will be uploaded in {len(chunks)} chunks.")
         self._set_chunk_count(file_id, len(chunks))
         if self.upload_parallel:
             with ThreadPoolExecutor(max_workers=4) as executor:
@@ -287,7 +287,6 @@ class Client(_BaseClient):
         else:
             for index, chunk in enumerate(chunks):
                 self._upload_chunk(file_id, index, chunk)
-        logger.info(f"Content loaded to  File '{file_id}'.")
 
     def upload_and_import(self, file_id: int, content: str | bytes, action_id: int) -> None:
         """

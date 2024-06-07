@@ -6,14 +6,14 @@ import logging
 import time
 from asyncio import gather
 from copy import copy
-from typing_extensions import Self
 
 import httpx
+from typing_extensions import Self
 
 from ._async_transactional_client import _AsyncTransactionalClient
 from ._auth import AnaplanCertAuth, get_certificate, get_private_key, AnaplanBasicAuth
 from ._base import _AsyncBaseClient
-from .exceptions import AnaplanActionError
+from .exceptions import AnaplanActionError, InvalidIdentifierException
 from .models import Import, Export, Process, File, Action, Workspace, Model, action_url
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
@@ -247,6 +247,8 @@ class AsyncClient(_AsyncBaseClient):
         ):
             raise AnaplanActionError(f"Task '{task_id}' completed with errors.")
 
+        logger.info(f"Task '{task_id}' completed successfully.")
+
     async def get_file(self, file_id: int) -> bytes:
         """
         Retrieves the content of the specified file.
@@ -271,11 +273,11 @@ class AsyncClient(_AsyncBaseClient):
             content[i : i + self.upload_chunk_size]
             for i in range(0, len(content), self.upload_chunk_size)
         ]
+        logger.info(f"Content will be uploaded in {len(chunks)} chunks.")
         await self._set_chunk_count(file_id, len(chunks))
         await gather(
             *[self._upload_chunk(file_id, index, chunk) for index, chunk in enumerate(chunks)]
         )
-        logger.info(f"Content loaded to  File '{file_id}'.")
 
     async def upload_and_import(self, file_id: int, content: str | bytes, action_id: int) -> None:
         """
@@ -335,6 +337,24 @@ class AsyncClient(_AsyncBaseClient):
         await self._run_with_retry(
             self._put_binary_gzip, f"{self._url}/files/{file_id}/chunks/{index}", content=chunk
         )
+        logger.info(f"Chunk {index} loaded to file '{file_id}'.")
 
     async def _set_chunk_count(self, file_id: int, num_chunks: int) -> None:
-        await self._post(f"{self._url}/files/{file_id}", json={"chunkCount": num_chunks})
+        if not self.allow_file_creation and not (113000000000 <= file_id <= 113999999999):
+            raise InvalidIdentifierException(
+                f"File with Id {file_id} does not exist. If you want to dynamically create files "
+                "to avoid this error, set `allow_file_creation=True` on the calling instance. "
+                "Make sure you have understood the implications of this before doing so. "
+            )
+        response = await self._post(f"{self._url}/files/{file_id}", json={"chunkCount": num_chunks})
+        optionally_new_file = int(response.get("file").get("id"))
+        if optionally_new_file != file_id:
+            if self.allow_file_creation:
+                logger.info(f"Created new file with name '{file_id}', Id is {optionally_new_file}.")
+                return
+            raise InvalidIdentifierException(
+                f"File with Id {file_id} did not exist and was created in Anaplan. You may want to "
+                f"ask a model builder to remove it. If you want to dynamically create files "
+                "to avoid this error, set `allow_file_creation=True` on the calling instance. "
+                "Make sure you have understood the implications of this before doing so."
+            )
