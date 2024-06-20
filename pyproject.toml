@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "anaplan-sdk"
-version = "0.1.6"
+version = "0.1.7"
 description = "Provides pythonic access to the Anaplan API"
 license = "Apache-2.0"
 authors = ["Vinzenz Klass <vinzenz.klass@ba.valantic.com>"]
