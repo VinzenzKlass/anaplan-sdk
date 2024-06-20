@@ -263,6 +263,8 @@ class Client(_BaseClient):
         if not file:
             raise InvalidIdentifierException(f"File {file_id} not found.")
         chunk_count = file.chunk_count
+        if chunk_count <= 1:
+            return self._get_binary(f"{self._url}/files/{file_id}")
         logger.info(f"File {file_id} has {chunk_count} chunks.")
         with ThreadPoolExecutor(max_workers=self._thread_count) as executor:
             chunks = executor.map(

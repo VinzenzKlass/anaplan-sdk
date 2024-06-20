@@ -259,6 +259,8 @@ class AsyncClient(_AsyncBaseClient):
         if not file:
             raise InvalidIdentifierException(f"File {file_id} not found.")
         chunk_count = file.chunk_count
+        if chunk_count <= 1:
+            return await self._get_binary(f"{self._url}/files/{file_id}")
         logger.info(f"File {file_id} has {chunk_count} chunks.")
         return b"".join(
             await gather(
