@@ -59,6 +59,7 @@ class AnaplanBasicAuth(httpx.Auth):
                 httpx.post(
                     url="https://auth.anaplan.com/token/authenticate",
                     headers={"Authorization": f"Basic {credentials}"},
+                    timeout=15,
                 )
                 .json()
                 .get("tokenInfo")
@@ -120,6 +121,7 @@ class AnaplanCertAuth(httpx.Auth):
                         "encodedData": encoded_string,
                         "encodedSignedData": encoded_signed_string,
                     },
+                    timeout=15,
                 )
                 .json()
                 .get("tokenInfo")
