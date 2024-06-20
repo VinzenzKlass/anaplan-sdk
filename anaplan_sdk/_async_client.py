@@ -255,7 +255,19 @@ class AsyncClient(_AsyncBaseClient):
         :param file_id: The identifier of the file to retrieve.
         :return: The content of the file.
         """
-        return await self._get_binary(f"{self._url}/files/{file_id}")
+        file = next(filter(lambda f: f.id == file_id, await self.list_files()))
+        if not file:
+            raise InvalidIdentifierException(f"File {file_id} not found.")
+        chunk_count = file.chunk_count
+        logger.info(f"File {file_id} has {chunk_count} chunks.")
+        return b"".join(
+            await gather(
+                *[
+                    self._get_binary(f"{self._url}/files/{file_id}/chunks/{i}")
+                    for i in range(chunk_count)
+                ]
+            )
+        )
 
     async def upload_file(self, file_id: int, content: str | bytes) -> None:
         """

@@ -3,6 +3,7 @@ Synchronous Client.
 """
 
 import logging
+import multiprocessing
 import time
 from concurrent.futures import ThreadPoolExecutor
 from copy import copy
@@ -110,6 +111,7 @@ class Client(_BaseClient):
         self._transactional_client = (
             _TransactionalClient(self._client, model_id, self._retry_count) if model_id else None
         )
+        self._thread_count = multiprocessing.cpu_count()
         self.status_poll_delay = status_poll_delay
         self.upload_parallel = upload_parallel
         self.upload_chunk_size = upload_chunk_size
@@ -257,7 +259,17 @@ class Client(_BaseClient):
         :param file_id: The identifier of the file to retrieve.
         :return: The content of the file.
         """
-        return self._get_binary(f"{self._url}/files/{file_id}")
+        file = next(filter(lambda f: f.id == file_id, self.list_files()))
+        if not file:
+            raise InvalidIdentifierException(f"File {file_id} not found.")
+        chunk_count = file.chunk_count
+        logger.info(f"File {file_id} has {chunk_count} chunks.")
+        with ThreadPoolExecutor(max_workers=self._thread_count) as executor:
+            chunks = executor.map(
+                self._get_binary,
+                [f"{self._url}/files/{file_id}/chunks/{i}" for i in range(chunk_count)],
+            )
+            return b"".join(chunks)
 
     def upload_file(self, file_id: int, content: str | bytes) -> None:
         """
@@ -280,7 +292,7 @@ class Client(_BaseClient):
         logger.info(f"Content will be uploaded in {len(chunks)} chunks.")
         self._set_chunk_count(file_id, len(chunks))
         if self.upload_parallel:
-            with ThreadPoolExecutor(max_workers=4) as executor:
+            with ThreadPoolExecutor(max_workers=self._thread_count) as executor:
                 executor.map(
                     self._upload_chunk, (file_id,) * len(chunks), range(len(chunks)), chunks
                 )
