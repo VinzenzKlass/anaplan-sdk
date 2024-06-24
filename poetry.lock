@@ -1014,20 +1014,21 @@ dev = ["argcomplete", "attrs (>=19.2)", "hypothesis (>=3.56)", "mock", "pygments
 
 [[package]]
 name = "pytest-asyncio"
-version = "0.16.0"
-description = "Pytest support for asyncio."
+version = "0.23.7"
+description = "Pytest support for asyncio"
 optional = false
-python-versions = ">= 3.6"
+python-versions = ">=3.8"
 files = [
-    {file = "pytest-asyncio-0.16.0.tar.gz", hash = "sha256:7496c5977ce88c34379df64a66459fe395cd05543f0a2f837016e7144391fcfb"},
-    {file = "pytest_asyncio-0.16.0-py3-none-any.whl", hash = "sha256:5f2a21273c47b331ae6aa5b36087047b4899e40f03f18397c0e65fa5cca54e9b"},
+    {file = "pytest_asyncio-0.23.7-py3-none-any.whl", hash = "sha256:009b48127fbe44518a547bddd25611551b0e43ccdbf1e67d12479f569832c20b"},
+    {file = "pytest_asyncio-0.23.7.tar.gz", hash = "sha256:5f5c72948f4c49e7db4f29f2521d4031f1c27f86e57b046126654083d4770268"},
 ]
 
 [package.dependencies]
-pytest = ">=5.4.0"
+pytest = ">=7.0.0,<9"
 
 [package.extras]
-testing = ["coverage", "hypothesis (>=5.7.1)"]
+docs = ["sphinx (>=5.3)", "sphinx-rtd-theme (>=1.0)"]
+testing = ["coverage (>=6.2)", "hypothesis (>=5.7.1)"]
 
 [[package]]
 name = "pytest-xdist"
@@ -1400,4 +1401,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.10.4"
-content-hash = "4af2a22b537be081b6bdea6031198b33287d46347e64db620b639e38bcbad2e0"
+content-hash = "5373a1ac38138dc2a9f531923c2c84da8d25fccce73407c09d0a552a2e617341"
