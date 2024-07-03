@@ -256,7 +256,7 @@ class AsyncClient(_AsyncBaseClient):
         :param file_id: The identifier of the file to retrieve.
         :return: The content of the file.
         """
-        file = next(filter(lambda f: f.id == file_id, await self.list_files()))
+        file = next(filter(lambda f: f.id == file_id, await self.list_files()), None)
         if not file:
             raise InvalidIdentifierException(f"File {file_id} not found.")
         chunk_count = file.chunk_count
