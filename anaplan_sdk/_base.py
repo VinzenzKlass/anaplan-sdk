@@ -9,7 +9,11 @@ from typing import Callable, Coroutine, Any
 import httpx
 from httpx import Response, HTTPError
 
-from .exceptions import raise_error
+from anaplan_sdk.exceptions import (
+    AnaplanTimeoutException,
+    InvalidIdentifierException,
+    AnaplanException,
+)
 
 logger = logging.getLogger("anaplan_sdk")
 
@@ -96,3 +100,16 @@ class _AsyncBaseClient:
             except HTTPError as error:
                 if i >= self._retry_count - 1:
                     raise_error(error)
+
+
+def raise_error(error: HTTPError) -> None:
+    """
+    Raise an appropriate exception based on the error.
+    :param error: The error to raise an exception for.
+    """
+    if isinstance(error, httpx.TimeoutException):
+        raise AnaplanTimeoutException from error
+    if isinstance(error, httpx.HTTPStatusError):
+        if error.response.status_code == 404:
+            raise InvalidIdentifierException from error
+    raise AnaplanException(str(error))

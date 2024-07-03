@@ -41,7 +41,7 @@ class AsyncClient(_AsyncBaseClient):
         certificate: str | bytes | None = None,
         private_key: str | bytes | None = None,
         private_key_password: str | bytes | None = None,
-        timeout: int = 30,
+        timeout: float = 30,
         retry_count: int = 2,
         status_poll_delay: int = 1,
         upload_chunk_size: int = 25_000_000,
@@ -81,7 +81,8 @@ class AsyncClient(_AsyncBaseClient):
                             behaviour in the API altogether. A file that is created this
                             way will not be referenced by any action in anaplan until
                             manually assigned so there is typically no value in dynamically
-                            creating new files and uploading content to them."""
+                            creating new files and uploading content to them.
+        """
         if not ((user_email and password) or (certificate and private_key)):
             raise ValueError(
                 "Must provide `certificate` and `private_key` or `user_email` and `password`."
@@ -154,7 +155,7 @@ class AsyncClient(_AsyncBaseClient):
             Workspace.model_validate(e)
             for e in (
                 await self._get("https://api.anaplan.com/2/0/workspaces?tenantDetails=true")
-            ).get("workspaces")
+            ).get("workspaces", [])
         ]
 
     async def list_models(self) -> list[Model]:
@@ -165,7 +166,7 @@ class AsyncClient(_AsyncBaseClient):
         return [
             Model.model_validate(e)
             for e in (await self._get("https://api.anaplan.com/2/0/models?modelDetails=true")).get(
-                "models"
+                "models", []
             )
         ]
 
@@ -175,7 +176,7 @@ class AsyncClient(_AsyncBaseClient):
         :return: All Files on this model as a list of :py:class:`File`.
         """
         return [
-            File.model_validate(e) for e in (await self._get(f"{self._url}/files")).get("files")
+            File.model_validate(e) for e in (await self._get(f"{self._url}/files")).get("files", [])
         ]
 
     async def list_actions(self) -> list[Action]:
@@ -187,7 +188,7 @@ class AsyncClient(_AsyncBaseClient):
         """
         return [
             Action.model_validate(e)
-            for e in (await self._get(f"{self._url}/actions")).get("actions")
+            for e in (await self._get(f"{self._url}/actions")).get("actions", [])
         ]
 
     async def list_processes(self) -> list[Process]:
@@ -197,7 +198,7 @@ class AsyncClient(_AsyncBaseClient):
         """
         return [
             Process.model_validate(e)
-            for e in (await self._get(f"{self._url}/processes")).get("processes")
+            for e in (await self._get(f"{self._url}/processes")).get("processes", [])
         ]
 
     async def list_imports(self) -> list[Import]:
@@ -207,7 +208,7 @@ class AsyncClient(_AsyncBaseClient):
         """
         return [
             Import.model_validate(e)
-            for e in (await self._get(f"{self._url}/imports")).get("imports")
+            for e in (await self._get(f"{self._url}/imports")).get("imports", [])
         ]
 
     async def list_exports(self) -> list[Export]:
@@ -217,7 +218,7 @@ class AsyncClient(_AsyncBaseClient):
         """
         return [
             Export.model_validate(e)
-            for e in (await self._get(f"{self._url}/exports")).get("exports")
+            for e in (await self._get(f"{self._url}/exports")).get("exports", [])
         ]
 
     async def run_action(self, action_id: int) -> None:

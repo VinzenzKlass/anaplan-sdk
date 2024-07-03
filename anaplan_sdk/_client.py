@@ -45,7 +45,7 @@ class Client(_BaseClient):
         certificate: str | bytes | None = None,
         private_key: str | bytes | None = None,
         private_key_password: str | bytes | None = None,
-        timeout: int = 30,
+        timeout: float = 30,
         retry_count: int = 2,
         status_poll_delay: int = 1,
         upload_parallel: bool = True,
@@ -164,7 +164,7 @@ class Client(_BaseClient):
         return [
             Workspace.model_validate(e)
             for e in self._get("https://api.anaplan.com/2/0/workspaces?tenantDetails=true").get(
-                "workspaces"
+                "workspaces", []
             )
         ]
 
@@ -175,7 +175,9 @@ class Client(_BaseClient):
         """
         return [
             Model.model_validate(e)
-            for e in self._get("https://api.anaplan.com/2/0/models?modelDetails=true").get("models")
+            for e in self._get("https://api.anaplan.com/2/0/models?modelDetails=true").get(
+                "models", []
+            )
         ]
 
     def list_files(self) -> list[File]:
@@ -183,7 +185,7 @@ class Client(_BaseClient):
         Lists all the Files in the Model.
         :return: All Files on this model as a list of :py:class:`File`.
         """
-        return [File.model_validate(e) for e in self._get(f"{self._url}/files").get("files")]
+        return [File.model_validate(e) for e in self._get(f"{self._url}/files").get("files", [])]
 
     def list_actions(self) -> list[Action]:
         """
@@ -193,7 +195,7 @@ class Client(_BaseClient):
         :return: All Actions on this model as a list of :py:class:`Action`.
         """
         return [
-            Action.model_validate(e) for e in (self._get(f"{self._url}/actions")).get("actions")
+            Action.model_validate(e) for e in (self._get(f"{self._url}/actions")).get("actions", [])
         ]
 
     def list_processes(self) -> list[Process]:
@@ -203,7 +205,7 @@ class Client(_BaseClient):
         """
         return [
             Process.model_validate(e)
-            for e in (self._get(f"{self._url}/processes")).get("processes")
+            for e in (self._get(f"{self._url}/processes")).get("processes", [])
         ]
 
     def list_imports(self) -> list[Import]:
@@ -212,7 +214,7 @@ class Client(_BaseClient):
         :return: All Imports on this model as a list of :py:class:`Import`.
         """
         return [
-            Import.model_validate(e) for e in (self._get(f"{self._url}/imports")).get("imports")
+            Import.model_validate(e) for e in (self._get(f"{self._url}/imports")).get("imports", [])
         ]
 
     def list_exports(self) -> list[Export]:
@@ -221,7 +223,7 @@ class Client(_BaseClient):
         :return: All Exports on this model as a list of :py:class:`Export`.
         """
         return [
-            Export.model_validate(e) for e in (self._get(f"{self._url}/exports")).get("exports")
+            Export.model_validate(e) for e in (self._get(f"{self._url}/exports")).get("exports", [])
         ]
 
     def run_action(self, action_id: int) -> None:

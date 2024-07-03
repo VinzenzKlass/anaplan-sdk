@@ -1,13 +1,10 @@
-from httpx import HTTPError, HTTPStatusError
-
-
 class AnaplanException(Exception):
     """
     Base class for all Anaplan SDK Exceptions.
     """
 
     def __init__(self, message: str):
-        self.message = f"\n\n\n{message}\n"
+        self.message = message
         super().__init__(self.message)
 
 
@@ -51,12 +48,17 @@ class AnaplanActionError(AnaplanException):
         super().__init__(self.message)
 
 
-def raise_error(error: HTTPError) -> None:
+class AnaplanTimeoutException(AnaplanException):
     """
-    Raise an appropriate exception based on the error.
-    :param error: The error to raise an exception for.
+    Exception raised when Anaplan produces a Timeout.
     """
-    if isinstance(error, HTTPStatusError):
-        if error.response.status_code == 404:
-            raise InvalidIdentifierException from error
-    raise AnaplanException(str(error))
+
+    def __init__(
+        self,
+        message: str = (
+            "Anaplan failed to complete the request within the given timeout. This will often "
+            "occur if the model was dormant and needs to loaded first."
+        ),
+    ):
+        self.message = message
+        super().__init__(self.message)
