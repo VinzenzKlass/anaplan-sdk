@@ -18,19 +18,6 @@ from anaplan_sdk.exceptions import (
 logger = logging.getLogger("anaplan_sdk")
 
 
-def raise_error(error: HTTPError) -> None:
-    """
-    Raise an appropriate exception based on the error.
-    :param error: The error to raise an exception for.
-    """
-    if isinstance(error, httpx.TimeoutException):
-        raise AnaplanTimeoutException from error
-    if isinstance(error, httpx.HTTPStatusError):
-        if error.response.status_code == 404:
-            raise InvalidIdentifierException from error
-    raise AnaplanException(str(error))
-
-
 class _BaseClient:
     def __init__(self, retry_count: int, client: httpx.Client):
         self._retry_count = retry_count
@@ -113,3 +100,16 @@ class _AsyncBaseClient:
             except HTTPError as error:
                 if i >= self._retry_count - 1:
                     raise_error(error)
+
+
+def raise_error(error: HTTPError) -> None:
+    """
+    Raise an appropriate exception based on the error.
+    :param error: The error to raise an exception for.
+    """
+    if isinstance(error, httpx.TimeoutException):
+        raise AnaplanTimeoutException from error
+    if isinstance(error, httpx.HTTPStatusError):
+        if error.response.status_code == 404:
+            raise InvalidIdentifierException from error
+    raise AnaplanException(str(error))

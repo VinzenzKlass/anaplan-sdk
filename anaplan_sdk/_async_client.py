@@ -41,7 +41,7 @@ class AsyncClient(_AsyncBaseClient):
         certificate: str | bytes | None = None,
         private_key: str | bytes | None = None,
         private_key_password: str | bytes | None = None,
-        timeout: int = 30,
+        timeout: float = 30,
         retry_count: int = 2,
         status_poll_delay: int = 1,
         upload_chunk_size: int = 25_000_000,
