@@ -23,7 +23,7 @@ def raise_error(error: HTTPError) -> None:
     Raise an appropriate exception based on the error.
     :param error: The error to raise an exception for.
     """
-    if isinstance(error, httpx.ReadTimeout):
+    if isinstance(error, httpx.TimeoutException):
         raise AnaplanTimeoutException from error
     if isinstance(error, httpx.HTTPStatusError):
         if error.response.status_code == 404:

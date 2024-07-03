@@ -50,7 +50,7 @@ class AnaplanActionError(AnaplanException):
 
 class AnaplanTimeoutException(AnaplanException):
     """
-    Exception raised when Anaplan produces a ReadTimeout.
+    Exception raised when Anaplan produces a Timeout.
     """
 
     def __init__(
