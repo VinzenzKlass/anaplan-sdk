@@ -1,7 +1,3 @@
-!!! warning "🚧 Work in Progress"
-    While this SDK is stable and Production ready, it is a work in progress and actively being worked on. Alongside new
-    features and improvements, expect breaking changes. Pinning the exact version is recommended for now.
-
 This Project requires Python 3.10.4 or newer.
 
 ### Using pip
