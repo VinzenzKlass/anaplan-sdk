@@ -1,8 +1,4 @@
-from typing import Literal
-
 from pydantic import BaseModel, Field, field_validator
-
-from .exceptions import InvalidIdentifierException
 
 
 class Workspace(BaseModel):
@@ -422,20 +418,3 @@ class InsertionResult(BaseModel):
     ignored: int
     total: int
     failures: list[Failure] = Field([])
-
-
-def action_url(action_id: int) -> Literal["imports", "exports", "actions", "processes"]:
-    """
-    Determine the type of action based on its identifier.
-    :param action_id: The identifier of the action.
-    :return: The type of action.
-    """
-    if 12000000000 <= action_id < 113000000000:
-        return "imports"
-    if 116000000000 <= action_id < 117000000000:
-        return "exports"
-    if 117000000000 <= action_id < 118000000000:
-        return "actions"
-    if 118000000000 <= action_id < 119000000000:
-        return "processes"
-    raise InvalidIdentifierException(f"Action '{action_id}' is not a valid identifier.")

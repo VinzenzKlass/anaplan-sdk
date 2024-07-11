@@ -12,13 +12,10 @@ import httpx
 from typing_extensions import Self
 
 from ._auth import AnaplanBasicAuth, AnaplanCertAuth, get_certificate, get_private_key
-from ._base import _BaseClient
+from ._base import _BaseClient, action_url
 from ._transactional_client import _TransactionalClient
-from .exceptions import (
-    AnaplanActionError,
-    InvalidIdentifierException,
-)
-from .models import Import, Export, Process, File, Action, Workspace, Model, action_url
+from .exceptions import AnaplanActionError, InvalidIdentifierException
+from .models import Import, Export, Process, File, Action, Workspace, Model
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
 logger = logging.getLogger("anaplan_sdk")
