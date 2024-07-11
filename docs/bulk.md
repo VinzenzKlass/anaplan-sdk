@@ -69,7 +69,7 @@ did, this would be a terrible idea. See [this Chapter](bulk_vs_transactional.md/
 
 ///
 
-This standard case will typically cover amost of your needs. Let's now look at some more involved examples, where you
+This standard case will typically cover most of your needs. Let's now look at some more involved examples, where you
 may need some more control over the underlying files and actions to achieve a more efficient exchange.
 
 ## Applications
