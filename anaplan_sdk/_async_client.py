@@ -12,9 +12,9 @@ from typing_extensions import Self
 
 from ._async_transactional_client import _AsyncTransactionalClient
 from ._auth import AnaplanCertAuth, get_certificate, get_private_key, AnaplanBasicAuth
-from ._base import _AsyncBaseClient
+from ._base import _AsyncBaseClient, action_url
 from .exceptions import AnaplanActionError, InvalidIdentifierException
-from .models import Import, Export, Process, File, Action, Workspace, Model, action_url
+from .models import Import, Export, Process, File, Action, Workspace, Model
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
 logger = logging.getLogger("anaplan_sdk")

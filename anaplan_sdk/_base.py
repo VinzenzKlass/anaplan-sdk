@@ -4,7 +4,7 @@ Provides Base Classes for this project.
 
 import logging
 from gzip import compress
-from typing import Callable, Coroutine, Any
+from typing import Callable, Coroutine, Any, Literal
 
 import httpx
 from httpx import Response, HTTPError
@@ -100,6 +100,23 @@ class _AsyncBaseClient:
             except HTTPError as error:
                 if i >= self._retry_count - 1:
                     raise_error(error)
+
+
+def action_url(action_id: int) -> Literal["imports", "exports", "actions", "processes"]:
+    """
+    Determine the type of action based on its identifier.
+    :param action_id: The identifier of the action.
+    :return: The type of action.
+    """
+    if 12000000000 <= action_id < 113000000000:
+        return "imports"
+    if 116000000000 <= action_id < 117000000000:
+        return "exports"
+    if 117000000000 <= action_id < 118000000000:
+        return "actions"
+    if 118000000000 <= action_id < 119000000000:
+        return "processes"
+    raise InvalidIdentifierException(f"Action '{action_id}' is not a valid identifier.")
 
 
 def raise_error(error: HTTPError) -> None:
