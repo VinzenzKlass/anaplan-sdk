@@ -58,10 +58,10 @@ anaplan = anaplan_sdk.Client(
 )
 
 for workspace in anaplan.list_workspaces():
-    print(f"f{workspace.name}: {workspace.id}")
+    print(f"{workspace.name}: {workspace.id}")
 
 for model in anaplan.list_models():
-    print(f"f{model.name}: {model.id}")
+    print(f"{model.name}: {model.id}")
 ```
 
 ### Async Support
@@ -81,9 +81,9 @@ workspaces, models = await asyncio.gather(
     anaplan.list_workspaces(), anaplan.list_models()
 )
 for workspace in workspaces:
-    print(f"f{workspace.name}: {workspace.id}")
+    print(f"{workspace.name}: {workspace.id}")
 for model in models:
-    print(f"f{model.name}: {model.id}")
+    print(f"{model.name}: {model.id}")
 ```
 
 For more information, API reference and detailed guides,
