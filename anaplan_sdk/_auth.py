@@ -55,16 +55,13 @@ class AnaplanBasicAuth(httpx.Auth):
         try:
             logger.info("Creating Authentication Token.")
             credentials = b64encode(f"{self._user_email}:{self._password}".encode()).decode()
-            return (
-                httpx.post(
-                    url="https://auth.anaplan.com/token/authenticate",
-                    headers={"Authorization": f"Basic {credentials}"},
-                    timeout=15,
-                )
-                .json()
-                .get("tokenInfo")
-                .get("tokenValue")
+            res = httpx.post(
+                url="https://auth.anaplan.com/token/authenticate",
+                headers={"Authorization": f"Basic {credentials}"},
+                timeout=15,
             )
+            res.raise_for_status()
+            return res.json().get("tokenInfo").get("tokenValue")
         except HTTPError as error:
             raise InvalidCredentialsException from error
 
@@ -110,23 +107,17 @@ class AnaplanCertAuth(httpx.Auth):
         try:
             logger.info("Creating Authentication Token.")
             encoded_cert, encoded_string, encoded_signed_string = self._prep_credentials()
-            return (
-                httpx.post(
-                    url="https://auth.anaplan.com/token/authenticate",
-                    headers={
-                        "Authorization": f"CACertificate {encoded_cert}",
-                        "Content-Type": "application/json",
-                    },
-                    json={
-                        "encodedData": encoded_string,
-                        "encodedSignedData": encoded_signed_string,
-                    },
-                    timeout=15,
-                )
-                .json()
-                .get("tokenInfo")
-                .get("tokenValue")
+            res = httpx.post(
+                url="https://auth.anaplan.com/token/authenticate",
+                headers={
+                    "Authorization": f"CACertificate {encoded_cert}",
+                    "Content-Type": "application/json",
+                },
+                json={"encodedData": encoded_string, "encodedSignedData": encoded_signed_string},
+                timeout=15,
             )
+            res.raise_for_status()
+            return res.json().get("tokenInfo").get("tokenValue")
         except HTTPError as error:
             raise InvalidCredentialsException from error
 
