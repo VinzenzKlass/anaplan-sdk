@@ -2,7 +2,7 @@ import os
 from uuid import uuid4
 
 import anaplan_sdk
-from anaplan_sdk.models import ListMetadata, ModelStatus, InsertionResult
+from anaplan_sdk.models import InsertionResult, ListMetadata, ModelStatus
 
 client = anaplan_sdk.Client(
     workspace_id=os.getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),

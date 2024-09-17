@@ -4,15 +4,15 @@ Provides Base Classes for this project.
 
 import logging
 from gzip import compress
-from typing import Callable, Coroutine, Any, Literal
+from typing import Any, Callable, Coroutine, Literal
 
 import httpx
-from httpx import Response, HTTPError
+from httpx import HTTPError, Response
 
 from anaplan_sdk.exceptions import (
+    AnaplanException,
     AnaplanTimeoutException,
     InvalidIdentifierException,
-    AnaplanException,
 )
 
 logger = logging.getLogger("anaplan_sdk")

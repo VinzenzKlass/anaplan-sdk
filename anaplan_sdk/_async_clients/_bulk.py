@@ -10,12 +10,13 @@ from copy import copy
 import httpx
 from typing_extensions import Self
 
-from ._transactional import _AsyncTransactionalClient
-from ._alm import _AsyncAlmClient
-from anaplan_sdk._auth import AnaplanCertAuth, get_certificate, get_private_key, AnaplanBasicAuth
+from anaplan_sdk._async_clients import _AsyncTransactionalClient
+from anaplan_sdk._auth import AnaplanBasicAuth, AnaplanCertAuth, get_certificate, get_private_key
 from anaplan_sdk._base import _AsyncBaseClient, action_url
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
-from anaplan_sdk.models import Import, Export, Process, File, Action, Workspace, Model
+from anaplan_sdk.models import Action, Export, File, Import, Model, Process, Workspace
+
+from ._alm import _AsyncAlmClient
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
 logger = logging.getLogger("anaplan_sdk")
@@ -23,14 +24,14 @@ logger = logging.getLogger("anaplan_sdk")
 
 class AsyncClient(_AsyncBaseClient):
     """
-    An asynchronous Client for pythonic access to the Anaplan Integration API v2:
-    https://anaplan.docs.apiary.io/. This Client provides high-level abstractions over the API, so
-    you can deal with python objects and simple functions rather than implementation details like
-    http, json, compression, chunking etc.
+    An asynchronous Client for pythonic access to the
+    [Anaplan Integration API v2](https://anaplan.docs.apiary.io/). This Client provides high-level
+    abstractions over the API, so you can deal with python objects and simple functions rather than
+    implementation details like http, json, compression, chunking etc.
 
 
     For more information, quick start guides and detailed instructions refer to:
-    https://vinzenzklass.github.io/anaplan-sdk.
+    [Anaplan SDK](https://vinzenzklass.github.io/anaplan-sdk).
     """
 
     def __init__(
@@ -160,7 +161,7 @@ class AsyncClient(_AsyncBaseClient):
         cases where you need retrieve Meta Information for yours models, read or create revisions,
         spawn sync tasks or generate comparison reports.
 
-        :return:
+        :return: The ALM Client.
         """
         if not self._alm_client:
             raise ValueError(

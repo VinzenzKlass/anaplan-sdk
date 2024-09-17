@@ -7,13 +7,13 @@ theme:
   palette:
     - scheme: 'default'
       media: '(prefers-color-scheme: light)'
-      primary: blue'
+      primary: indigo
       toggle:
         icon: 'material/lightbulb'
         name: "Switch to dark mode"
     - scheme: 'slate'
       media: '(prefers-color-scheme: dark)'
-      primary: blue'
+      primary: indigo
       toggle:
         icon: 'material/lightbulb-outline'
         name: 'Switch to light mode'
@@ -37,10 +37,14 @@ nav:
       - Logging: 'logging.md'
   - API Reference:
       - Developer Interface:
-          - AsyncClient: 'async_client.md'
-          - Client: 'client.md'
-          - Async Transactional Client: 'async_transactional_client.md'
-          - Transactional Client: 'transactional_client.md'
+          - Asynchronous:
+              - Async ALM Client: 'async_alm_client.md'
+              - Async Client: 'async_client.md'
+              - Async Transactional Client: 'async_transactional_client.md'
+          - Synchronous:
+              - ALM Client: 'alm_client.md'
+              - Client: 'client.md'
+              - Transactional Client: 'transactional_client.md'
       - Models: 'models.md'
       - Exceptions: 'exceptions.md'
 

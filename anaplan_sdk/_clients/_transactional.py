@@ -2,12 +2,12 @@ import httpx
 
 from anaplan_sdk._base import _BaseClient
 from anaplan_sdk.models import (
-    ModelStatus,
+    InsertionResult,
     LineItem,
     List,
-    ListMetadata,
     ListItem,
-    InsertionResult,
+    ListMetadata,
+    ModelStatus,
     Module,
 )
 

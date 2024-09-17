@@ -32,4 +32,4 @@ jobs:
       - name: "Setup Poetry"
         run: "poetry install"
       - name: "Run tests"
-        run: "poetry run python -m pytest -n 4 --dist loadfile  tests/"
+        run: "poetry run python -m pytest -n 6 --dist loadfile  tests/"

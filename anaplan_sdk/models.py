@@ -451,6 +451,35 @@ class Revision(BaseModel):
     applied_by: str = Field(alias="appliedBy")
 
 
+class ModelRevision(BaseModel):
+    """
+    Object representing a Model Revision in Anaplan.
+
+    **model_id (str):** The unique identifier of the model this revision belongs to.
+
+    **model_name (str):** The name of the model this revision belongs to.
+
+    **workspace_id (str):** The unique identifier of the workspace this revision belongs to.
+
+    **applied_by (str):** The unique identifier of the user who applied this revision.
+
+    **applied_on (str):** The application date of this revision in ISO format.
+
+    **applied_method (str):** The application method of this revision.
+
+    **model_deleted (bool):** Whether the model has been deleted or not.
+    """
+
+    id: str = Field(alias="modelId")
+    """The unique identifier of the model this revision belongs to."""
+    name: str = Field(alias="modelName")
+    workspace_id: str = Field(alias="workspaceId")
+    applied_by: str = Field(alias="appliedBy")
+    applied_on: str = Field(alias="appliedOn")
+    applied_method: str = Field(alias="appliedMethod")
+    deleted: bool | None = Field(None, alias="modelDeleted")
+
+
 class SyncTask(BaseModel):
     """
     Object representing a sync task in Anaplan.

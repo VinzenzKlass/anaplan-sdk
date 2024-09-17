@@ -1,6 +1,3 @@
-!!! warning "🚧 Work in Progress"
-    This page is a work in progress.
-
 ## Intro
 
 If you need to go beyond the standard flows of importing and exporting data to and from Anaplan, you likely will need
