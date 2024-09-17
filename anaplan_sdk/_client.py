@@ -11,6 +11,7 @@ from copy import copy
 import httpx
 from typing_extensions import Self
 
+from ._alm_client import _AlmClient
 from ._auth import AnaplanBasicAuth, AnaplanCertAuth, get_certificate, get_private_key
 from ._base import _BaseClient, action_url
 from ._transactional_client import _TransactionalClient
@@ -108,6 +109,9 @@ class Client(_BaseClient):
         self._transactional_client = (
             _TransactionalClient(self._client, model_id, self._retry_count) if model_id else None
         )
+        self._alm_client = (
+            _AlmClient(self._client, model_id, self._retry_count) if model_id else None
+        )
         self._thread_count = multiprocessing.cpu_count()
         self.status_poll_delay = status_poll_delay
         self.upload_parallel = upload_parallel
@@ -152,6 +156,26 @@ class Client(_BaseClient):
                 "is instantiated correctly with a valid `model_id`."
             )
         return self._transactional_client
+
+    @property
+    def alm(self) -> _AlmClient:
+        """
+        **To use the Application Lifecycle Management (ALM) API, you need a Professional or
+        Enterprise subscription.**
+
+        The ALM Client provides access to the Anaplan ALM API. This is useful for more advanced use
+        cases where you need retrieve Meta Information for yours models, read or create revisions,
+        spawn sync tasks or generate comparison reports.
+
+        :return:
+        """
+        if not self._alm_client:
+            raise ValueError(
+                "Cannot use the ALM Client (Anaplan ALM API) "
+                "without field `model_id`. Make sure the instance you are trying to call this on "
+                "is instantiated correctly with a valid `model_id`."
+            )
+        return self._alm_client
 
     def list_workspaces(self) -> list[Workspace]:
         """
