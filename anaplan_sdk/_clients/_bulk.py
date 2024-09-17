@@ -181,7 +181,7 @@ class Client(_BaseClient):
     def list_workspaces(self) -> list[Workspace]:
         """
         Lists all the Workspaces the authenticated user has access to.
-        :return: All Workspaces as a list of :py:class:`Workspace`.
+        :return: The List of Workspaces.
         """
         return [
             Workspace.model_validate(e)
@@ -193,7 +193,7 @@ class Client(_BaseClient):
     def list_models(self) -> list[Model]:
         """
         Lists all the Models the authenticated user has access to.
-        :return: All Models in the Workspace as a list of :py:class:`Model`.
+        :return: The List of Models.
         """
         return [
             Model.model_validate(e)
@@ -205,7 +205,7 @@ class Client(_BaseClient):
     def list_files(self) -> list[File]:
         """
         Lists all the Files in the Model.
-        :return: All Files on this model as a list of :py:class:`File`.
+        :return: The List of Files.
         """
         return [File.model_validate(e) for e in self._get(f"{self._url}/files").get("files", [])]
 
@@ -214,7 +214,7 @@ class Client(_BaseClient):
         Lists all the Actions in the Model. This will only return the Actions listed under
         `Other Actions` in Anaplan. For Imports, exports, and processes, see their respective
         methods instead.
-        :return: All Actions on this model as a list of :py:class:`Action`.
+        :return: The List of Actions.
         """
         return [
             Action.model_validate(e) for e in (self._get(f"{self._url}/actions")).get("actions", [])
@@ -223,7 +223,7 @@ class Client(_BaseClient):
     def list_processes(self) -> list[Process]:
         """
         Lists all the Processes in the Model.
-        :return: All Processes on this model as a list of :py:class:`Process`.
+        :return: The List of Processes.
         """
         return [
             Process.model_validate(e)
@@ -233,7 +233,7 @@ class Client(_BaseClient):
     def list_imports(self) -> list[Import]:
         """
         Lists all the Imports in the Model.
-        :return: All Imports on this model as a list of :py:class:`Import`.
+        :return: The List of Imports.
         """
         return [
             Import.model_validate(e) for e in (self._get(f"{self._url}/imports")).get("imports", [])
@@ -242,7 +242,7 @@ class Client(_BaseClient):
     def list_exports(self) -> list[Export]:
         """
         Lists all the Exports in the Model.
-        :return: All Exports on this model as a list of :py:class:`Export`.
+        :return: The List of Exports.
         """
         return [
             Export.model_validate(e) for e in (self._get(f"{self._url}/exports")).get("exports", [])

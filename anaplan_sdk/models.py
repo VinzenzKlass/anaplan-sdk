@@ -411,7 +411,7 @@ class InsertionResult(BaseModel):
 
     **total (int):** The total number of items.
 
-    **failures (list):** The list of failures, see :py:class:`Failure`.
+    **failures (list):** The list of failures.
     """
 
     added: int

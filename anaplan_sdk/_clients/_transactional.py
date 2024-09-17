@@ -21,14 +21,14 @@ class _TransactionalClient(_BaseClient):
     def list_modules(self) -> list[Module]:
         """
         Lists all the Modules in the Model.
-        :return: All Modules on this model as a list of :py:class:`Module`.
+        :return: The List of Modules.
         """
         return [Module.model_validate(e) for e in self._get(f"{self._url}/modules").get("modules")]
 
     def get_model_status(self) -> ModelStatus:
         """
         Gets the current status of the Model.
-        :return: The current status of the Model as a :py:class:`ModelStatus`.
+        :return: The current status of the Mode.
         """
         return ModelStatus.model_validate(self._get(f"{self._url}/status").get("requestStatus"))
 
@@ -36,7 +36,7 @@ class _TransactionalClient(_BaseClient):
         """
         Lists all the Line Items in the Model.
         :param only_module_id: If provided, only Line Items from this Module will be returned.
-        :return: All Line Items on this model as a list of :py:class:`LineItem`.
+        :return: The List of Line Items.
         """
         url = (
             f"{self._url}/modules/{only_module_id}/lineItems?includeAll=true"
@@ -48,7 +48,7 @@ class _TransactionalClient(_BaseClient):
     def list_lists(self) -> list[List]:
         """
         Lists all the Lists in the Model.
-        :return: All Lists on this model as a list of :py:class:`List`.
+        :return: All Lists on this Model.
         """
         return [List.model_validate(e) for e in self._get(f"{self._url}/lists").get("lists")]
 
@@ -56,7 +56,7 @@ class _TransactionalClient(_BaseClient):
         """
         Gets the metadata for a List.
         :param list_id: The ID of the List.
-        :return: The metadata for the List as a :py:class:`ListMetadata`.
+        :return: The Metadata for the List.
         """
         return ListMetadata.model_validate(
             self._get(f"{self._url}/lists/{list_id}").get("metadata")
@@ -66,7 +66,7 @@ class _TransactionalClient(_BaseClient):
         """
         Gets all the items in a List.
         :param list_id: The ID of the List.
-        :return: All items in the List as a list of :py:class:`ListItem`.
+        :return: The List of Items.
         """
         return [
             ListItem.model_validate(e)
@@ -82,7 +82,7 @@ class _TransactionalClient(_BaseClient):
         Adds items to a List.
         :param list_id: The ID of the List.
         :param items: The items to add to the List.
-        :return: The result of the insertion as an :py:class:`InsertionResult`.
+        :return: The result of the insertion.
         """
         # TODO: Paginate by 100k records.
         return InsertionResult.model_validate(
