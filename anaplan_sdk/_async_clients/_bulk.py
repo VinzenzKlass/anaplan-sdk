@@ -10,13 +10,13 @@ from copy import copy
 import httpx
 from typing_extensions import Self
 
-from anaplan_sdk._async_clients import _AsyncTransactionalClient
 from anaplan_sdk._auth import AnaplanBasicAuth, AnaplanCertAuth, get_certificate, get_private_key
 from anaplan_sdk._base import _AsyncBaseClient, action_url
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
 from anaplan_sdk.models import Action, Export, File, Import, Model, Process, Workspace
 
 from ._alm import _AsyncAlmClient
+from ._transactional import _AsyncTransactionalClient
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
 logger = logging.getLogger("anaplan_sdk")
