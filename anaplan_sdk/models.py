@@ -411,10 +411,114 @@ class InsertionResult(BaseModel):
 
     **total (int):** The total number of items.
 
-    **failures (list):** The list of failures, see :py:class:`Failure`.
+    **failures (list):** The list of failures.
     """
 
     added: int
     ignored: int
     total: int
     failures: list[Failure] = Field([])
+
+
+class Revision(BaseModel):
+    """
+    Object representing an Anaplan revision.
+
+    **id (str):** The unique identifier of this revision.
+
+    **name (str):** The name of this revision.
+
+    **description (str):** The description of this revision. Not always present.
+
+    **created_on (str):** The creation date of this revision in ISO format.
+
+    **created_by (str):** The unique identifier of the user who created this revision.
+
+    **creation_method (str):** The creation method of this revision.
+
+    **applied_on (str):** The application date of this revision in ISO format.
+
+    **applied_by (str):** The unique identifier of the user who applied this revision.
+    """
+
+    id: str
+    name: str
+    description: str | None = Field(None)
+    created_on: str = Field(alias="createdOn")
+    created_by: str = Field(alias="createdBy")
+    creation_method: str = Field(alias="creationMethod")
+    applied_on: str = Field(alias="appliedOn")
+    applied_by: str = Field(alias="appliedBy")
+
+
+class ModelRevision(BaseModel):
+    """
+    Object representing a Model Revision in Anaplan.
+
+    **model_id (str):** The unique identifier of the model this revision belongs to.
+
+    **model_name (str):** The name of the model this revision belongs to.
+
+    **workspace_id (str):** The unique identifier of the workspace this revision belongs to.
+
+    **applied_by (str):** The unique identifier of the user who applied this revision.
+
+    **applied_on (str):** The application date of this revision in ISO format.
+
+    **applied_method (str):** The application method of this revision.
+
+    **model_deleted (bool):** Whether the model has been deleted or not.
+    """
+
+    id: str = Field(alias="modelId")
+    """The unique identifier of the model this revision belongs to."""
+    name: str = Field(alias="modelName")
+    workspace_id: str = Field(alias="workspaceId")
+    applied_by: str = Field(alias="appliedBy")
+    applied_on: str = Field(alias="appliedOn")
+    applied_method: str = Field(alias="appliedMethod")
+    deleted: bool | None = Field(None, alias="modelDeleted")
+
+
+class SyncTask(BaseModel):
+    """
+    Object representing a sync task in Anaplan.
+
+    **task_id (str):** The unique identifier of this task.
+
+    **task_state (str):** The state of this task.
+
+    **creation_time (int):** The creation time of this task.
+    """
+
+    task_id: str = Field(alias="taskId")
+    task_state: str = Field(alias="taskState")
+    creation_time: int = Field(alias="creationTime")
+
+
+class User(BaseModel):
+    """
+    Object representing an Anaplan User.
+
+    **id (str):** The unique identifier of this user.
+
+    **active (bool):** Whether this user is active or not.
+
+    **email (str):** The email address of this user.
+
+    **email_opt_in (bool):** Whether this user has opted in to receive emails or not.
+
+    **first_name (str):** The first name of this user.
+
+    **last_name (str):** The last name of this user.
+
+    **last_login_date (str):** The last login date of this user in ISO format.
+    """
+
+    id: str
+    active: bool
+    email: str
+    email_opt_in: bool = Field(alias="emailOptIn")
+    first_name: str = Field(alias="firstName")
+    last_name: str = Field(alias="lastName")
+    last_login_date: str | None = Field(None, alias="lastLoginDate")

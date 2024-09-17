@@ -4,15 +4,15 @@ Provides Base Classes for this project.
 
 import logging
 from gzip import compress
-from typing import Callable, Coroutine, Any, Literal
+from typing import Any, Callable, Coroutine, Literal
 
 import httpx
-from httpx import Response, HTTPError
+from httpx import HTTPError, Response
 
 from anaplan_sdk.exceptions import (
+    AnaplanException,
     AnaplanTimeoutException,
     InvalidIdentifierException,
-    AnaplanException,
 )
 
 logger = logging.getLogger("anaplan_sdk")
@@ -129,4 +129,4 @@ def raise_error(error: HTTPError) -> None:
     if isinstance(error, httpx.HTTPStatusError):
         if error.response.status_code == 404:
             raise InvalidIdentifierException from error
-    raise AnaplanException(str(error))
+    raise AnaplanException from error

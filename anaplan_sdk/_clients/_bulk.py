@@ -1,35 +1,38 @@
 """
-Asynchronous Client.
+Synchronous Client.
 """
 
 import logging
+import multiprocessing
 import time
-from asyncio import gather
+from concurrent.futures import ThreadPoolExecutor
 from copy import copy
 
 import httpx
 from typing_extensions import Self
 
-from ._async_transactional_client import _AsyncTransactionalClient
-from ._auth import AnaplanCertAuth, get_certificate, get_private_key, AnaplanBasicAuth
-from ._base import _AsyncBaseClient, action_url
-from .exceptions import AnaplanActionError, InvalidIdentifierException
-from .models import Import, Export, Process, File, Action, Workspace, Model
+from anaplan_sdk._auth import AnaplanBasicAuth, AnaplanCertAuth, get_certificate, get_private_key
+from anaplan_sdk._base import _BaseClient, action_url
+from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
+from anaplan_sdk.models import Action, Export, File, Import, Model, Process, Workspace
+
+from ._alm import _AlmClient
+from ._transactional import _TransactionalClient
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
 logger = logging.getLogger("anaplan_sdk")
 
 
-class AsyncClient(_AsyncBaseClient):
+class Client(_BaseClient):
     """
-    An asynchronous Client for pythonic access to the Anaplan Integration API v2:
-    https://anaplan.docs.apiary.io/. This Client provides high-level abstractions over the API, so
-    you can deal with python objects and simple functions rather than implementation details like
-    http, json, compression, chunking etc.
+    A synchronous Client for pythonic access to the
+    [Anaplan Integration API v2](https://anaplan.docs.apiary.io/). This Client provides high-level
+    abstractions over the API, so you can deal with python objects and simple functions rather
+    than implementation details like http, json, compression, chunking etc.
 
 
     For more information, quick start guides and detailed instructions refer to:
-    https://vinzenzklass.github.io/anaplan-sdk.
+    [Anaplan SDK](https://vinzenzklass.github.io/anaplan-sdk).
     """
 
     def __init__(
@@ -44,18 +47,19 @@ class AsyncClient(_AsyncBaseClient):
         timeout: float = 30,
         retry_count: int = 2,
         status_poll_delay: int = 1,
+        upload_parallel: bool = True,
         upload_chunk_size: int = 25_000_000,
         allow_file_creation: bool = False,
     ) -> None:
         """
-        An asynchronous Client for pythonic access to the Anaplan Integration API v2:
-        https://anaplan.docs.apiary.io/. This Client provides high-level abstractions over the API,
-        so you can deal with python objects and simple functions rather than implementation details
-        like http, json, compression, chunking etc.
+        A synchronous Client for pythonic access to the
+        [Anaplan Integration API v2](https://anaplan.docs.apiary.io/). This Client provides
+        high-level abstractions over the API, so you can deal with python objects and simple
+        functions rather than implementation details like http, json, compression, chunking etc.
 
 
         For more information, quick start guides and detailed instructions refer to:
-        https://vinzenzklass.github.io/anaplan-sdk.
+        [Anaplan SDK](https://vinzenzklass.github.io/anaplan-sdk).
 
         :param workspace_id: The Anaplan workspace Id. You can copy this from the browser URL or
                              find them using an HTTP Client like Postman, Paw, Insomnia etc.
@@ -74,21 +78,24 @@ class AsyncClient(_AsyncBaseClient):
                             to never retry. Defaults to 2, meaning each HTTP Operation will be
                             tried a total number of 2 times.
         :param status_poll_delay: The delay between polling the status of a task.
+        :param upload_parallel: Whether to upload the chunks in parallel. Defaults to True. **If
+                                you are heavily network bound or are experiencing rate limiting
+                                issues, set this to False.**
         :param upload_chunk_size: The size of the chunks to upload. This is the maximum size of
                                   each chunk. Defaults to 25MB.
         :param allow_file_creation: Whether to allow the creation of new files. Defaults to False
-                            since this is typically unintentional and may well be unwanted
-                            behaviour in the API altogether. A file that is created this
-                            way will not be referenced by any action in anaplan until
-                            manually assigned so there is typically no value in dynamically
-                            creating new files and uploading content to them.
+                                    since this is typically unintentional and may well be unwanted
+                                    behaviour in the API altogether. A file that is created this
+                                    way will not be referenced by any action in anaplan until
+                                    manually assigned so there is typically no value in dynamically
+                                    creating new files and uploading content to them.
         """
         if not ((user_email and password) or (certificate and private_key)):
             raise ValueError(
-                "Must provide `certificate` and `private_key` or `user_email` and `password`."
-                "If you Private Key is Password protected, must also pass `private_key_password`."
+                "Either `certificate` and `private_key` or `user_email` and `password` must be "
+                "provided."
             )
-        self._client = httpx.AsyncClient(
+        self._client = httpx.Client(
             auth=(
                 AnaplanCertAuth(
                     get_certificate(certificate), get_private_key(private_key, private_key_password)
@@ -101,12 +108,17 @@ class AsyncClient(_AsyncBaseClient):
         self._retry_count = retry_count
         self._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
         self._transactional_client = (
-            _AsyncTransactionalClient(self._client, model_id, retry_count) if model_id else None
+            _TransactionalClient(self._client, model_id, self._retry_count) if model_id else None
         )
+        self._alm_client = (
+            _AlmClient(self._client, model_id, self._retry_count) if model_id else None
+        )
+        self._thread_count = multiprocessing.cpu_count()
         self.status_poll_delay = status_poll_delay
+        self.upload_parallel = upload_parallel
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
-        super().__init__(retry_count, self._client)
+        super().__init__(self._retry_count, self._client)
 
     @classmethod
     def from_existing(cls, existing: Self, workspace_id: str, model_id: str) -> Self:
@@ -122,13 +134,13 @@ class AsyncClient(_AsyncBaseClient):
         """
         client = copy(existing)
         client._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
-        client._transactional_client = _AsyncTransactionalClient(
+        client._transactional_client = _TransactionalClient(
             existing._client, model_id, existing._retry_count
         )
         return client
 
     @property
-    def transactional(self) -> _AsyncTransactionalClient:
+    def transactional(self) -> _TransactionalClient:
         """
         The Transactional Client provides access to the Anaplan Transactional API. This is useful
         for more advanced use cases where you need to interact with the Anaplan Model in a more
@@ -146,82 +158,97 @@ class AsyncClient(_AsyncBaseClient):
             )
         return self._transactional_client
 
-    async def list_workspaces(self) -> list[Workspace]:
+    @property
+    def alm(self) -> _AlmClient:
+        """
+        **To use the Application Lifecycle Management (ALM) API, you need a Professional or
+        Enterprise subscription.**
+
+        The ALM Client provides access to the Anaplan ALM API. This is useful for more advanced use
+        cases where you need retrieve Meta Information for yours models, read or create revisions,
+        spawn sync tasks or generate comparison reports.
+
+        :return: The ALM Client.
+        """
+        if not self._alm_client:
+            raise ValueError(
+                "Cannot use the ALM Client (Anaplan ALM API) "
+                "without field `model_id`. Make sure the instance you are trying to call this on "
+                "is instantiated correctly with a valid `model_id`."
+            )
+        return self._alm_client
+
+    def list_workspaces(self) -> list[Workspace]:
         """
         Lists all the Workspaces the authenticated user has access to.
-        :return: All Workspaces as a list of :py:class:`Workspace`.
+        :return: The List of Workspaces.
         """
         return [
             Workspace.model_validate(e)
-            for e in (
-                await self._get("https://api.anaplan.com/2/0/workspaces?tenantDetails=true")
-            ).get("workspaces", [])
+            for e in self._get("https://api.anaplan.com/2/0/workspaces?tenantDetails=true").get(
+                "workspaces", []
+            )
         ]
 
-    async def list_models(self) -> list[Model]:
+    def list_models(self) -> list[Model]:
         """
         Lists all the Models the authenticated user has access to.
-        :return: All Models in the Workspace as a list of :py:class:`Model`.
+        :return: The List of Models.
         """
         return [
             Model.model_validate(e)
-            for e in (await self._get("https://api.anaplan.com/2/0/models?modelDetails=true")).get(
+            for e in self._get("https://api.anaplan.com/2/0/models?modelDetails=true").get(
                 "models", []
             )
         ]
 
-    async def list_files(self) -> list[File]:
+    def list_files(self) -> list[File]:
         """
         Lists all the Files in the Model.
-        :return: All Files on this model as a list of :py:class:`File`.
+        :return: The List of Files.
         """
-        return [
-            File.model_validate(e) for e in (await self._get(f"{self._url}/files")).get("files", [])
-        ]
+        return [File.model_validate(e) for e in self._get(f"{self._url}/files").get("files", [])]
 
-    async def list_actions(self) -> list[Action]:
+    def list_actions(self) -> list[Action]:
         """
         Lists all the Actions in the Model. This will only return the Actions listed under
         `Other Actions` in Anaplan. For Imports, exports, and processes, see their respective
         methods instead.
-        :return: All Actions on this model as a list of :py:class:`Action`.
+        :return: The List of Actions.
         """
         return [
-            Action.model_validate(e)
-            for e in (await self._get(f"{self._url}/actions")).get("actions", [])
+            Action.model_validate(e) for e in (self._get(f"{self._url}/actions")).get("actions", [])
         ]
 
-    async def list_processes(self) -> list[Process]:
+    def list_processes(self) -> list[Process]:
         """
         Lists all the Processes in the Model.
-        :return: All Processes on this model as a list of :py:class:`Process`.
+        :return: The List of Processes.
         """
         return [
             Process.model_validate(e)
-            for e in (await self._get(f"{self._url}/processes")).get("processes", [])
+            for e in (self._get(f"{self._url}/processes")).get("processes", [])
         ]
 
-    async def list_imports(self) -> list[Import]:
+    def list_imports(self) -> list[Import]:
         """
         Lists all the Imports in the Model.
-        :return: All Imports on this model as a list of :py:class:`Import`.
+        :return: The List of Imports.
         """
         return [
-            Import.model_validate(e)
-            for e in (await self._get(f"{self._url}/imports")).get("imports", [])
+            Import.model_validate(e) for e in (self._get(f"{self._url}/imports")).get("imports", [])
         ]
 
-    async def list_exports(self) -> list[Export]:
+    def list_exports(self) -> list[Export]:
         """
         Lists all the Exports in the Model.
-        :return: All Exports on this model as a list of :py:class:`Export`.
+        :return: The List of Exports.
         """
         return [
-            Export.model_validate(e)
-            for e in (await self._get(f"{self._url}/exports")).get("exports", [])
+            Export.model_validate(e) for e in (self._get(f"{self._url}/exports")).get("exports", [])
         ]
 
-    async def run_action(self, action_id: int) -> None:
+    def run_action(self, action_id: int) -> None:
         """
         Runs the specified Anaplan Action and validates the spawned task. If the Action fails or
         completes with errors, will raise an :py:class:`AnaplanActionError`. Failed Tasks are
@@ -236,12 +263,12 @@ class AsyncClient(_AsyncBaseClient):
         :param action_id: The identifier of the Action to run. Can be any Anaplan Invokable;
                           Processes, Imports, Exports, Other Actions.
         """
-        task_id = await self.invoke_action(action_id)
-        task_status = await self.get_task_status(action_id, task_id)
+        task_id = self.invoke_action(action_id)
+        task_status = self.get_task_status(action_id, task_id)
 
         while "COMPLETE" not in task_status.get("taskState"):
             time.sleep(self.status_poll_delay)
-            task_status = await self.get_task_status(action_id, task_id)
+            task_status = self.get_task_status(action_id, task_id)
 
         if task_status.get("taskState") == "COMPLETE" and not task_status.get("result").get(
             "successful"
@@ -250,32 +277,32 @@ class AsyncClient(_AsyncBaseClient):
 
         logger.info(f"Task '{task_id}' completed successfully.")
 
-    async def get_file(self, file_id: int) -> bytes:
+    def get_file(self, file_id: int) -> bytes:
         """
         Retrieves the content of the specified file.
         :param file_id: The identifier of the file to retrieve.
         :return: The content of the file.
         """
-        file = next(filter(lambda f: f.id == file_id, await self.list_files()), None)
+        file = next(filter(lambda f: f.id == file_id, self.list_files()), None)
         if not file:
             raise InvalidIdentifierException(f"File {file_id} not found.")
         chunk_count = file.chunk_count
         if chunk_count <= 1:
-            return await self._get_binary(f"{self._url}/files/{file_id}")
+            return self._get_binary(f"{self._url}/files/{file_id}")
         logger.info(f"File {file_id} has {chunk_count} chunks.")
-        return b"".join(
-            await gather(
-                *[
-                    self._get_binary(f"{self._url}/files/{file_id}/chunks/{i}")
-                    for i in range(chunk_count)
-                ]
+        with ThreadPoolExecutor(max_workers=self._thread_count) as executor:
+            chunks = executor.map(
+                self._get_binary,
+                [f"{self._url}/files/{file_id}/chunks/{i}" for i in range(chunk_count)],
             )
-        )
+            return b"".join(chunks)
 
-    async def upload_file(self, file_id: int, content: str | bytes) -> None:
+    def upload_file(self, file_id: int, content: str | bytes) -> None:
         """
-        Uploads the content to the specified file. If there are several chunks, upload of
-        individual chunks are concurrent.
+        Uploads the content to the specified file. If `upload_parallel` is set to True on the
+        instance you are invoking this from, will attempt to upload the chunks in parallel for
+        better performance. If you are network bound or are experiencing rate limiting issues, set
+        `upload_parallel` to False.
 
         :param file_id: The identifier of the file to upload to.
         :param content: The content to upload. **This Content will be compressed before uploading.
@@ -289,12 +316,17 @@ class AsyncClient(_AsyncBaseClient):
             for i in range(0, len(content), self.upload_chunk_size)
         ]
         logger.info(f"Content will be uploaded in {len(chunks)} chunks.")
-        await self._set_chunk_count(file_id, len(chunks))
-        await gather(
-            *[self._upload_chunk(file_id, index, chunk) for index, chunk in enumerate(chunks)]
-        )
+        self._set_chunk_count(file_id, len(chunks))
+        if self.upload_parallel:
+            with ThreadPoolExecutor(max_workers=self._thread_count) as executor:
+                executor.map(
+                    self._upload_chunk, (file_id,) * len(chunks), range(len(chunks)), chunks
+                )
+        else:
+            for index, chunk in enumerate(chunks):
+                self._upload_chunk(file_id, index, chunk)
 
-    async def upload_and_import(self, file_id: int, content: str | bytes, action_id: int) -> None:
+    def upload_and_import(self, file_id: int, content: str | bytes, action_id: int) -> None:
         """
         Convenience wrapper around `upload_file()` and `run_action()` to upload content to a file
         and run an import action in one call.
@@ -304,20 +336,20 @@ class AsyncClient(_AsyncBaseClient):
                         redundant work.**
         :param action_id: The identifier of the action to run after uploading the content.
         """
-        await self.upload_file(file_id, content)
-        await self.run_action(action_id)
+        self.upload_file(file_id, content)
+        self.run_action(action_id)
 
-    async def export_and_download(self, action_id: int) -> bytes:
+    def export_and_download(self, action_id: int) -> bytes:
         """
-        Convenience wrapper around `run_action()` a     nd `get_file()` to run an export action and
+        Convenience wrapper around `run_action()` and `get_file()` to run an export action and
         download the exported content in one call.
         :param action_id: The identifier of the action to run.
         :return: The content of the exported file.
         """
-        await self.run_action(action_id)
-        return await self.get_file(action_id)
+        self.run_action(action_id)
+        return self.get_file(action_id)
 
-    async def get_task_status(
+    def get_task_status(
         self, action_id: int, task_id: str
     ) -> dict[str, float | int | str | list | dict | bool]:
         """
@@ -327,11 +359,11 @@ class AsyncClient(_AsyncBaseClient):
         :return: The status of the task as returned by the API. For more information
                  see: https://anaplan.docs.apiary.io.
         """
-        return (
-            await self._get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks/{task_id}")
-        ).get("task")
+        return self._get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks/{task_id}").get(
+            "task"
+        )
 
-    async def invoke_action(self, action_id: int) -> str:
+    def invoke_action(self, action_id: int) -> str:
         """
         You may want to consider using `run_action()` instead.
 
@@ -341,27 +373,26 @@ class AsyncClient(_AsyncBaseClient):
         :param action_id: The identifier of the Action to run. Can be any Anaplan Invokable.
         :return: The identifier of the spawned Task.
         """
-        response = await self._post(
-            f"{self._url}/{action_url(action_id)}/{action_id}/tasks", json={"localeName": "en_US"}
+        response = self._post(
+            f"{self._url}/{action_url(action_id)}/{action_id}/tasks",
+            json={"localeName": "en_US"},
         )
         task_id = response.get("task").get("taskId")
         logger.info(f"Invoked Action '{action_id}', spawned Task: '{task_id}'.")
         return task_id
 
-    async def _upload_chunk(self, file_id: int, index: int, chunk: bytes) -> None:
-        await self._run_with_retry(
-            self._put_binary_gzip, f"{self._url}/files/{file_id}/chunks/{index}", content=chunk
-        )
+    def _upload_chunk(self, file_id: int, index: int, chunk: bytes) -> None:
+        self._put_binary_gzip(f"{self._url}/files/{file_id}/chunks/{index}", content=chunk)
         logger.info(f"Chunk {index} loaded to file '{file_id}'.")
 
-    async def _set_chunk_count(self, file_id: int, num_chunks: int) -> None:
+    def _set_chunk_count(self, file_id: int, num_chunks: int) -> None:
         if not self.allow_file_creation and not (113000000000 <= file_id <= 113999999999):
             raise InvalidIdentifierException(
                 f"File with Id {file_id} does not exist. If you want to dynamically create files "
                 "to avoid this error, set `allow_file_creation=True` on the calling instance. "
                 "Make sure you have understood the implications of this before doing so. "
             )
-        response = await self._post(f"{self._url}/files/{file_id}", json={"chunkCount": num_chunks})
+        response = self._post(f"{self._url}/files/{file_id}", json={"chunkCount": num_chunks})
         optionally_new_file = int(response.get("file").get("id"))
         if optionally_new_file != file_id:
             if self.allow_file_creation:
