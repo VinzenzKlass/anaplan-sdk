@@ -418,3 +418,50 @@ class InsertionResult(BaseModel):
     ignored: int
     total: int
     failures: list[Failure] = Field([])
+
+
+class Revision(BaseModel):
+    """
+    Object representing an Anaplan revision.
+
+    **id (str):** The unique identifier of this revision.
+
+    **name (str):** The name of this revision.
+
+    **description (str):** The description of this revision. Not always present.
+
+    **created_on (str):** The creation date of this revision in ISO format.
+
+    **created_by (str):** The unique identifier of the user who created this revision.
+
+    **creation_method (str):** The creation method of this revision.
+
+    **applied_on (str):** The application date of this revision in ISO format.
+
+    **applied_by (str):** The unique identifier of the user who applied this revision.
+    """
+
+    id: str
+    name: str
+    description: str | None = Field(None)
+    created_on: str = Field(alias="createdOn")
+    created_by: str = Field(alias="createdBy")
+    creation_method: str = Field(alias="creationMethod")
+    applied_on: str = Field(alias="appliedOn")
+    applied_by: str = Field(alias="appliedBy")
+
+
+class SyncTask(BaseModel):
+    """
+    Object representing a sync task in Anaplan.
+
+    **task_id (str):** The unique identifier of this task.
+
+    **task_state (str):** The state of this task.
+
+    **creation_time (int):** The creation time of this task.
+    """
+
+    task_id: str = Field(alias="taskId")
+    task_state: str = Field(alias="taskState")
+    creation_time: int = Field(alias="creationTime")
