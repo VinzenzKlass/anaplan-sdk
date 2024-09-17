@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "anaplan-sdk"
-version = "0.1.12"
+version = "0.2.0"
 description = "Provides pythonic access to the Anaplan API"
 license = "Apache-2.0"
 authors = ["Vinzenz Klass <vinzenz.klass@ba.valantic.com>"]
@@ -8,7 +8,7 @@ readme = "README.md"
 homepage = "https://vinzenzklass.github.io/anaplan-sdk/"
 repository = "https://github.com/VinzenzKlass/anaplan-sdk"
 documentation = "https://vinzenzklass.github.io/anaplan-sdk/"
-keywords = ["anaplan", "anaplan-api", "anaplan-bulk-api", "anaplan integration"]
+keywords = ["anaplan", "anaplan api", "anaplan bulk api", "anaplan integration", "anaplan alm api"]
 
 [tool.poetry.dependencies]
 python = ">=3.10.4"
