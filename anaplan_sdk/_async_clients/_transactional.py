@@ -1,7 +1,15 @@
 import httpx
 
-from ._base import _AsyncBaseClient
-from .models import ModelStatus, List, ListItem, ListMetadata, LineItem, Module, InsertionResult
+from anaplan_sdk._base import _AsyncBaseClient
+from anaplan_sdk.models import (
+    ModelStatus,
+    List,
+    ListItem,
+    ListMetadata,
+    LineItem,
+    Module,
+    InsertionResult,
+)
 
 
 class _AsyncTransactionalClient(_AsyncBaseClient):

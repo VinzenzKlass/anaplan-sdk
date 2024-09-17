@@ -1,7 +1,7 @@
 import httpx
 
-from ._base import _AsyncBaseClient
-from .models import Revision, SyncTask
+from anaplan_sdk._base import _AsyncBaseClient
+from anaplan_sdk.models import Revision, SyncTask
 
 
 class _AsyncAlmClient(_AsyncBaseClient):

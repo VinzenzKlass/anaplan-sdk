@@ -1,4 +1,4 @@
-from ._async_client import AsyncClient
-from ._client import Client
+from ._async_clients import AsyncClient
+from ._clients import Client
 
-__all__ = ["AsyncClient", "Client"]
+__all__ = ["AsyncClient", "Client", "models", "exceptions"]
