@@ -494,3 +494,31 @@ class SyncTask(BaseModel):
     task_id: str = Field(alias="taskId")
     task_state: str = Field(alias="taskState")
     creation_time: int = Field(alias="creationTime")
+
+
+class User(BaseModel):
+    """
+    Object representing an Anaplan User.
+
+    **id (str):** The unique identifier of this user.
+
+    **active (bool):** Whether this user is active or not.
+
+    **email (str):** The email address of this user.
+
+    **email_opt_in (bool):** Whether this user has opted in to receive emails or not.
+
+    **first_name (str):** The first name of this user.
+
+    **last_name (str):** The last name of this user.
+
+    **last_login_date (str):** The last login date of this user in ISO format.
+    """
+
+    id: str
+    active: bool
+    email: str
+    email_opt_in: bool = Field(alias="emailOptIn")
+    first_name: str = Field(alias="firstName")
+    last_name: str = Field(alias="lastName")
+    last_login_date: str | None = Field(None, alias="lastLoginDate")
