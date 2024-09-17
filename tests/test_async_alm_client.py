@@ -4,6 +4,7 @@ import os
 import pytest
 
 import anaplan_sdk
+from anaplan_sdk.models import User
 
 client = anaplan_sdk.AsyncClient(
     workspace_id=os.getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),
@@ -17,6 +18,13 @@ client = anaplan_sdk.AsyncClient(
 @pytest.fixture(scope="session")
 def event_loop():
     yield asyncio.get_event_loop()
+
+
+@pytest.mark.asyncio
+async def test_list_users():
+    revs = await client.list_users()
+    assert isinstance(revs, list)
+    assert isinstance(revs[0], User)
 
 
 @pytest.mark.asyncio

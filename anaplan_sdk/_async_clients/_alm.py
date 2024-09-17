@@ -1,7 +1,7 @@
 import httpx
 
 from anaplan_sdk._base import _AsyncBaseClient
-from anaplan_sdk.models import ModelRevision, Revision, SyncTask
+from anaplan_sdk.models import ModelRevision, Revision, SyncTask, User
 
 
 class _AsyncAlmClient(_AsyncBaseClient):
@@ -9,6 +9,16 @@ class _AsyncAlmClient(_AsyncBaseClient):
         self._client = client
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}/alm"
         super().__init__(retry_count, client)
+
+    async def list_users(self) -> list[User]:
+        """
+        Lists all the Users in the authenticated users default tenant.
+        :return: The List of Users.
+        """
+        return [
+            User.model_validate(e)
+            for e in (await self._get("https://api.anaplan.com/2/0/users")).get("users")
+        ]
 
     async def get_syncable_revisions(self, source_model_id: str) -> list[Revision]:
         """

@@ -129,9 +129,4 @@ def raise_error(error: HTTPError) -> None:
     if isinstance(error, httpx.HTTPStatusError):
         if error.response.status_code == 404:
             raise InvalidIdentifierException from error
-    message = (
-        error.response.json().get("status", {}).get("message") or None
-        if error.response.content
-        else None
-    )
-    raise AnaplanException(message) if message else AnaplanException(str(error))
+    raise AnaplanException from error

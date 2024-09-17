@@ -1,6 +1,7 @@
 import os
 
 import anaplan_sdk
+from anaplan_sdk.models import User
 
 client = anaplan_sdk.Client(
     workspace_id=os.getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),
@@ -9,6 +10,13 @@ client = anaplan_sdk.Client(
     private_key=os.getenv("ANAPLAN_SDK_TEST_PK"),
     retry_count=3,
 ).alm
+
+
+def test_list_users():
+    revs = client.list_users()
+    assert isinstance(revs, list)
+    assert isinstance(revs[0], User)
+    assert len(revs) > 0
 
 
 def test_get_revisions():
