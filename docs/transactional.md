@@ -58,7 +58,6 @@ anaplan = anaplan_sdk.Client(
 trans_anaplan = anaplan.transactional
 lists = trans_anaplan.list_lists()
 modules = trans_anaplan.list_modules()
-... 
 ```
 
 ///
@@ -74,7 +73,6 @@ anaplan = anaplan_sdk.AsyncClient(
 trans_anaplan = anaplan.transactional
 lists = await trans_anaplan.list_lists()
 modules = await trans_anaplan.list_modules()
-... 
 ```
 
 ///
