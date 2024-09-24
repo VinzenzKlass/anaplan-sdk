@@ -12,7 +12,7 @@ in many ways. Support for the Transactional API is planned for the future but ge
 
 
 <p align="center" style="margin: 40px 0 40px 0;">
-    <img src="../img/anaplan-overview.png" alt='Anaplan high-level view' style="border-radius: 15px">
+    <img src="../img/anaplan-overview.webp" alt='Anaplan high-level view' style="border-radius: 15px">
 </p>
 
 ## Basic Concepts

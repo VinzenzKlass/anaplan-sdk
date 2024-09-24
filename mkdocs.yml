@@ -1,6 +1,9 @@
 site_name: Anaplan SDK
 site_description: Provides pythonic access to the Anaplan API.
 site_url: https://vinzenzklass.github.io/anaplan-sdk/
+repo_name: VinzenzKlass/anaplan-sdk
+repo_url: https://github.com/VinzenzKlass/anaplan-sdk
+
 
 theme:
   name: 'material'
@@ -20,9 +23,10 @@ theme:
   features:
     - content.code.copy
     - content.tabs.link
-
-repo_name: VinzenzKlass/anaplan-sdk
-repo_url: https://github.com/VinzenzKlass/anaplan-sdk
+  icon:
+    repo: fontawesome/brands/github
+  favicon: img/anaplan-sdk.webp
+  logo: img/anaplan-sdk.webp
 
 nav:
   - Introduction: 'index.md'
