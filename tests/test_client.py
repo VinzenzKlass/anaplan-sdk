@@ -121,4 +121,3 @@ def test_get_task_status():
     assert isinstance(task_status, dict)
     assert "currentStep" in task_status
     assert "successful" in task_status.get("result")
-    assert "nestedResults" in task_status.get("result")

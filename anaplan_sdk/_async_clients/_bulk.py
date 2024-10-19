@@ -342,7 +342,8 @@ class AsyncClient(_AsyncBaseClient):
         case, you can pass a generator that yields the chunks of the file one by one to this method.
 
         :param file_id: The identifier of the file to upload to.
-        :param content: An Iterator or AsyncIterator yielding the chunks of the file. (Most likely a generator).
+        :param content: An Iterator or AsyncIterator yielding the chunks of the file.
+               (Most likely a generator).
         """
         await self._set_chunk_count(file_id, -1)
         if isinstance(content, Iterator):
