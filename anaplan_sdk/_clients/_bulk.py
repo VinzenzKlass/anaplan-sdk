@@ -7,6 +7,7 @@ import multiprocessing
 import time
 from concurrent.futures import ThreadPoolExecutor
 from copy import copy
+from typing import Iterator
 
 import httpx
 from typing_extensions import Self
@@ -283,10 +284,7 @@ class Client(_BaseClient):
         :param file_id: The identifier of the file to retrieve.
         :return: The content of the file.
         """
-        file = next(filter(lambda f: f.id == file_id, self.list_files()), None)
-        if not file:
-            raise InvalidIdentifierException(f"File {file_id} not found.")
-        chunk_count = file.chunk_count
+        chunk_count = self._file_pre_check(file_id)
         if chunk_count <= 1:
             return self._get_binary(f"{self._url}/files/{file_id}")
         logger.info(f"File {file_id} has {chunk_count} chunks.")
@@ -296,6 +294,22 @@ class Client(_BaseClient):
                 [f"{self._url}/files/{file_id}/chunks/{i}" for i in range(chunk_count)],
             )
             return b"".join(chunks)
+
+    def get_file_stream(self, file_id: int) -> Iterator[bytes]:
+        """
+        Retrieves the content of the specified file as a stream of chunks. The chunks are yielded
+        one by one, so you can process them as they arrive. This is useful for large files where
+        you don't want to or cannot load the entire file into memory at once.
+        :param file_id: The identifier of the file to retrieve.
+        :return: A generator yielding the chunks of the file.
+        """
+        chunk_count = self._file_pre_check(file_id)
+        if chunk_count <= 1:
+            yield self._get_binary(f"{self._url}/files/{file_id}")
+            return
+        logger.info(f"File {file_id} has {chunk_count} chunks.")
+        for i in range(chunk_count):
+            yield self._get_binary(f"{self._url}/files/{file_id}/chunks/{i}")
 
     def upload_file(self, file_id: int, content: str | bytes) -> None:
         """
@@ -325,6 +339,22 @@ class Client(_BaseClient):
         else:
             for index, chunk in enumerate(chunks):
                 self._upload_chunk(file_id, index, chunk)
+
+    def upload_file_stream(self, file_id: int, content: Iterator[bytes | str]) -> None:
+        """
+        Uploads the content to the specified file as a stream of chunks. This is useful for large
+        files where you don't want to or cannot load the entire file into memory at once. In this
+        case, you can pass a generator that yields the chunks of the file one by one to this method.
+
+        :param file_id: The identifier of the file to upload to.
+        :param content: An Iterator yielding the chunks of the file. (Most likely a generator).
+        """
+        self._set_chunk_count(file_id, -1)
+        for index, chunk in enumerate(content):
+            self._upload_chunk(file_id, index, chunk.encode() if isinstance(chunk, str) else chunk)
+
+        self._post(f"{self._url}/files/{file_id}/complete", json={"id": file_id})
+        logger.info(f"Marked all chunks as complete for file '{file_id}'.")
 
     def upload_and_import(self, file_id: int, content: str | bytes, action_id: int) -> None:
         """
@@ -380,6 +410,12 @@ class Client(_BaseClient):
         task_id = response.get("task").get("taskId")
         logger.info(f"Invoked Action '{action_id}', spawned Task: '{task_id}'.")
         return task_id
+
+    def _file_pre_check(self, file_id: int) -> int:
+        file = next(filter(lambda f: f.id == file_id, self.list_files()), None)
+        if not file:
+            raise InvalidIdentifierException(f"File {file_id} not found.")
+        return file.chunk_count
 
     def _upload_chunk(self, file_id: int, index: int, chunk: bytes) -> None:
         self._put_binary_gzip(f"{self._url}/files/{file_id}/chunks/{index}", content=chunk)
