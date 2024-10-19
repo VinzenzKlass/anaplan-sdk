@@ -96,13 +96,13 @@ def test_upload_and_download_file():
 
 
 def test_upload_file_stream():
-    client.upload_file_stream(test_file, (str(i) for i in range(10)))
-    out = client.get_file(test_file)
+    client.upload_file_stream(113000000000, (str(i) for i in range(10)))
+    out = client.get_file(113000000000)
     assert out == b"0123456789"
 
 
 def test_get_file_stream():
-    for chunk in client.get_file_stream(test_file):
+    for chunk in client.get_file_stream(113000000000):
         assert isinstance(chunk, bytes)
 
 

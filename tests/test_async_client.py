@@ -117,14 +117,14 @@ async def test_upload_and_download_file():
 
 @pytest.mark.asyncio
 async def test_upload_file_stream():
-    await client.upload_file_stream(test_file, (i async for i in _async_range(10)))
-    out = await client.get_file(test_file)
+    await client.upload_file_stream(113000000000, (i async for i in _async_range(10)))
+    out = await client.get_file(113000000000)
     assert out == b"0123456789"
 
 
 @pytest.mark.asyncio
 async def test_get_file_stream():
-    async for chunk in client.get_file_stream(test_file):
+    async for chunk in client.get_file_stream(113000000000):
         assert isinstance(chunk, bytes)
 
 
