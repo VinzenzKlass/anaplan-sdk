@@ -34,22 +34,22 @@ nav:
   - Quick Start: 'quickstart.md'
   - Anaplan Explained: 'anaplan_explained.md'
   - Guides:
-      - Bulk vs Transactional: 'bulk_vs_transactional.md'
-      - Use the ALM API: 'alm.md'
       - Use the Bulk API: 'bulk.md'
+      - Bulk vs Transactional: 'bulk_vs_transactional.md'
       - Use the Transactional API: 'transactional.md'
+      - Use the ALM API: 'alm.md'
       - Multiple Models: 'multiple_models.md'
       - Logging: 'logging.md'
   - API Reference:
       - Developer Interface:
           - Asynchronous:
-              - Async ALM Client: 'async_alm_client.md'
               - Async Client: 'async_client.md'
               - Async Transactional Client: 'async_transactional_client.md'
+              - Async ALM Client: 'async_alm_client.md'
           - Synchronous:
-              - ALM Client: 'alm_client.md'
               - Client: 'client.md'
               - Transactional Client: 'transactional_client.md'
+              - ALM Client: 'alm_client.md'
       - Models: 'models.md'
       - Exceptions: 'exceptions.md'
 

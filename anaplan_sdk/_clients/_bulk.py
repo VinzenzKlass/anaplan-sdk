@@ -342,10 +342,11 @@ class Client(_BaseClient):
 
     def upload_file_stream(self, file_id: int, content: Iterator[bytes | str]) -> None:
         """
-        Uploads the content to the specified file as a stream of chunks. This is useful for large
-        files where you don't want to or cannot load the entire file into memory at once. In this
-        case, you can pass a generator that yields the chunks of the file one by one to this method.
-
+        Uploads the content to the specified file as a stream of chunks. This is useful either for
+        large files where you don't want to or cannot load the entire file into memory at once, or
+        if you simply do not know the number of chunks ahead of time and instead just want to pass
+        on chunks i.e. consumed from a queue until it is exhausted. In this case, you can pass a
+        generator that yields the chunks of the file one by one to this method.
         :param file_id: The identifier of the file to upload to.
         :param content: An Iterator yielding the chunks of the file. (Most likely a generator).
         """
