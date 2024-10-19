@@ -206,7 +206,7 @@ small enough to fit into memory. It will work equally well with any other source
 especially well with sources that can be read lazily or return the results sets in chunks by default.
 
 
-You can in the same way use the `download_file_stream` method to download files in chunks.
+You can in the same way use the `get_file_stream` method to download files in chunks.
 
 /// tab | Synchronous
 
