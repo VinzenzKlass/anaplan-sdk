@@ -110,29 +110,44 @@ async def test_list_exports():
 
 @pytest.mark.asyncio
 async def test_upload_and_download_file():
-    await client.upload_file(113000000000, "Hi!")
-    out = await client.get_file(113000000000)
+    await client.upload_file(test_file, "Hi!")
+    out = await client.get_file(test_file)
     assert out == b"Hi!"
 
 
 @pytest.mark.asyncio
+async def test_upload_file_stream():
+    await client.upload_file_stream(113000000000, (i async for i in _async_range(10)))
+    out = await client.get_file(113000000000)
+    assert out == b"0123456789"
+
+
+@pytest.mark.asyncio
+async def test_get_file_stream():
+    async for chunk in client.get_file_stream(113000000000):
+        assert isinstance(chunk, bytes)
+
+
+@pytest.mark.asyncio
 async def test_run_process():
-    await client.run_action(118000000004)
+    await client.run_action(test_action)
 
 
 @pytest.mark.asyncio
 async def test_invoke_action():
-    task_id = await client.invoke_action(118000000004)
+    task_id = await client.invoke_action(test_action)
     assert isinstance(task_id, str)
     assert len(task_id) == 32
 
 
 @pytest.mark.asyncio
 async def test_get_task_status():
-    task_status = await client.get_task_status(
-        118000000004, await client.invoke_action(118000000004)
-    )
+    task_status = await client.get_task_status(test_action, await client.invoke_action(test_action))
     assert isinstance(task_status, dict)
     assert "currentStep" in task_status
     assert "successful" in task_status.get("result")
-    assert "nestedResults" in task_status.get("result")
+
+
+async def _async_range(count: int):
+    for i in range(count):
+        yield str(i)

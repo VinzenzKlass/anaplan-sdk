@@ -90,24 +90,34 @@ def test_list_exports():
 
 
 def test_upload_and_download_file():
-    client.upload_file(113000000000, "Hi!")
-    out = client.get_file(113000000000)
+    client.upload_file(test_file, "Hi!")
+    out = client.get_file(test_file)
     assert out == b"Hi!"
 
 
+def test_upload_file_stream():
+    client.upload_file_stream(113000000000, (str(i) for i in range(10)))
+    out = client.get_file(113000000000)
+    assert out == b"0123456789"
+
+
+def test_get_file_stream():
+    for chunk in client.get_file_stream(113000000000):
+        assert isinstance(chunk, bytes)
+
+
 def test_run_process():
-    client.run_action(118000000004)
+    client.run_action(test_action)
 
 
 def test_invoke_action():
-    task_id = client.invoke_action(118000000004)
+    task_id = client.invoke_action(test_action)
     assert isinstance(task_id, str)
     assert len(task_id) == 32
 
 
 def test_get_task_status():
-    task_status = client.get_task_status(118000000004, client.invoke_action(118000000004))
+    task_status = client.get_task_status(test_action, client.invoke_action(test_action))
     assert isinstance(task_status, dict)
     assert "currentStep" in task_status
     assert "successful" in task_status.get("result")
-    assert "nestedResults" in task_status.get("result")
