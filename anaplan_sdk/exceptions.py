@@ -3,7 +3,7 @@ class AnaplanException(Exception):
     Base class for all Anaplan SDK Exceptions.
     """
 
-    def __init__(self, message: str):
+    def __init__(self, message: str = "An error occurred in Anaplan."):
         self.message = message
         super().__init__(self.message)
 
