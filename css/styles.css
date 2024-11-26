@@ -1,0 +1,13 @@
+:root {
+    --md-primary-fg-color: #3C67EA;
+}
+
+.md-typeset .tabbed-labels:before {
+    border-bottom: .1rem solid;
+    border-bottom-color: var(--md-primary-fg-color);
+}
+
+.md-header__button.md-logo > img {
+    border-radius: 5px;
+    box-shadow: rgba(46, 46, 46, 0.3) 0 0 5px 2px;
+}
