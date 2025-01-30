@@ -39,7 +39,7 @@ else:
     test_action = 118000000006
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def event_loop():
     yield asyncio.get_event_loop()
 

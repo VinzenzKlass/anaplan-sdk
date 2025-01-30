@@ -73,6 +73,7 @@ skip-magic-trailing-comma = false
 select = ["E", "F", "B", "I"]
 
 [tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "module"
 minversion = "8.0"
 addopts = "-ra -q"
 pythonpath = "anaplan_sdk/"
