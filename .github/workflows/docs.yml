@@ -16,7 +16,7 @@ jobs:
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.x
+          python-version: 3.13
       - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV
       - uses: actions/cache@v4
         with:
@@ -24,9 +24,9 @@ jobs:
           path: .cache
           restore-keys: |
             mkdocs-material-
-      - name: "Install Poetry"
-        run: "pip install poetry"
-      - name: "Setup Poetry"
-        run: "poetry install"
+      - name: "Setup"
+        run: |
+          pip install uv
+          uv sync
       - name: "Build & Publish"
-        run: poetry run mkdocs gh-deploy --force
+        run: uv run mkdocs gh-deploy --force

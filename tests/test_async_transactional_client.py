@@ -16,7 +16,7 @@ client = anaplan_sdk.AsyncClient(
 ).transactional
 
 
-@pytest.fixture(scope="session")
+@pytest.fixture(scope="module")
 def event_loop():
     yield asyncio.get_event_loop()
 
