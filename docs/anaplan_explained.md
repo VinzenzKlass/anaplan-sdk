@@ -8,7 +8,7 @@ dataflows and structures are the way they are, obtaining a well-founded understa
 essential.
 
 This page list tries to condense the fundamentals of using the Anaplan Bulk API. The transactional API is different
-in many ways. Support for the Transactional API is planned for the future but generally has way fewer applications.
+in many ways.
 
 
 <p align="center" style="margin: 40px 0 40px 0;">
