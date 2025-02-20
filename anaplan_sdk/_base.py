@@ -29,7 +29,9 @@ class _BaseClient:
     def _get_binary(self, url: str) -> bytes:
         return self._run_with_retry(self._client.get, url).content
 
-    def _post(self, url: str, json: dict) -> dict[str, float | int | str | list | dict | bool]:
+    def _post(
+        self, url: str, json: dict | list
+    ) -> dict[str, float | int | str | list | dict | bool]:
         return self._run_with_retry(
             self._client.post, url, headers={"Content-Type": "application/json"}, json=json
         ).json()
@@ -70,7 +72,7 @@ class _AsyncBaseClient:
         return (await self._run_with_retry(self._client.get, url)).content
 
     async def _post(
-        self, url: str, json: dict
+        self, url: str, json: dict | list
     ) -> dict[str, float | int | str | list | dict | bool]:
         return (
             await self._run_with_retry(

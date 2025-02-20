@@ -44,7 +44,7 @@ lists = await anaplan.transactional.list_lists()
 ///
 
 For brevity, if you need to access only the Transactional API or need to do so repeatedly, you can assign the
-Transactional Client to it's own variable.
+Transactional Client to its own variable.
 
 /// tab | Synchronous
 
