@@ -13,7 +13,7 @@ requires-python = ">=3.10.4"
 dependencies = [
     "pydantic>=2.7.2,<3.0.0",
     "httpx>=0.27.0,<1.0.0",
-    "cryptography>=42.0.7,<44.0.0"
+    "cryptography>=42.0.7,<45.0.0"
 ]
 
 [dependency-groups]
