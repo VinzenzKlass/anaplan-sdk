@@ -1,3 +1,5 @@
+from typing import Any
+
 import httpx
 
 from anaplan_sdk._base import _AsyncBaseClient
@@ -112,3 +114,18 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :param list_id: The ID of the List.
         """
         await self._post_empty(f"{self._url}/lists/{list_id}/resetIndex")
+
+    async def write_to_module(
+        self, module_id: int, data: list[dict[str, Any]]
+    ) -> int | dict[str, Any]:
+        """
+        Write the passed items to the specified module. If successful, the number of cells changed
+        is returned, if only partially successful or unsuccessful, the response with the according
+        details is returned instead. For more details,
+        see: https://anaplan.docs.apiary.io/#UpdateModuleCellData.
+        :param module_id: The ID of the Module.
+        :param data: The data to write to the Module.
+        :return: The number of cells changed or the response with the according error details.
+        """
+        res = await self._post(f"{self._url}/modules/{module_id}/data", json=data)
+        return res if "failures" in res else res["numberOfCellsChanged"]
