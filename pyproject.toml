@@ -5,9 +5,6 @@ description = "Provides pythonic access to the Anaplan API"
 license = "Apache-2.0"
 authors = [{ name = "Vinzenz Klass", email = "vinzenz.klass@ba.valantic.com" }]
 readme = "README.md"
-homepage = "https://vinzenzklass.github.io/anaplan-sdk/"
-repository = "https://github.com/VinzenzKlass/anaplan-sdk"
-documentation = "https://vinzenzklass.github.io/anaplan-sdk/"
 keywords = ["anaplan", "anaplan api", "anaplan bulk api", "anaplan integration", "anaplan alm api"]
 requires-python = ">=3.10.4"
 dependencies = [
@@ -27,6 +24,11 @@ dev = [
     "mkdocs-material>=9.5.41",
     "mkdocstrings[python]>=0.26.2"
 ]
+
+[project.urls]
+Homepage = "https://vinzenzklass.github.io/anaplan-sdk/"
+Repository = "https://github.com/VinzenzKlass/anaplan-sdk"
+Documentation = "https://vinzenzklass.github.io/anaplan-sdk/"
 
 [build-system]
 requires = ["hatchling"]
