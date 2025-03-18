@@ -54,9 +54,9 @@ class _BaseClient:
                 response.raise_for_status()
                 return response
             except HTTPError as error:
-                url = args[0] or kwargs.get("url")
                 if i >= self._retry_count - 1:
                     raise_error(error)
+                url = args[0] or kwargs.get("url")
                 logger.info(f"Retrying for: {url}")
 
 
@@ -102,6 +102,8 @@ class _AsyncBaseClient:
             except HTTPError as error:
                 if i >= self._retry_count - 1:
                     raise_error(error)
+                url = args[0] or kwargs.get("url")
+                logger.info(f"Retrying for: {url}")
 
 
 def action_url(action_id: int) -> Literal["imports", "exports", "actions", "processes"]:
@@ -131,4 +133,8 @@ def raise_error(error: HTTPError) -> None:
     if isinstance(error, httpx.HTTPStatusError):
         if error.response.status_code == 404:
             raise InvalidIdentifierException from error
+        logger.error(f"Anaplan Error: [{error.response.status_code}]: {error.response.text}")
+        raise AnaplanException(error.response.text) from error
+
+    logger.error(f"Error: {error}")
     raise AnaplanException from error
