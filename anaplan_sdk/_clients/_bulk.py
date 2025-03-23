@@ -18,6 +18,7 @@ from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierExceptio
 from anaplan_sdk.models import Action, Export, File, Import, Model, Process, Workspace
 
 from ._alm import _AlmClient
+from ._audit import _AuditClient
 from ._transactional import _TransactionalClient
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
@@ -115,6 +116,7 @@ class Client(_BaseClient):
             _AlmClient(self._client, model_id, self._retry_count) if model_id else None
         )
         self._thread_count = multiprocessing.cpu_count()
+        self.audit = _AuditClient(self._client, self._retry_count, self._thread_count)
         self.status_poll_delay = status_poll_delay
         self.upload_parallel = upload_parallel
         self.upload_chunk_size = upload_chunk_size
