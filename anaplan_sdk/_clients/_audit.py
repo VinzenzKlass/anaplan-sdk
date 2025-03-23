@@ -6,7 +6,7 @@ import httpx
 
 from anaplan_sdk._base import _BaseClient
 
-type Event = Literal["all", "byok", "user_activity"]
+Event = Literal["all", "byok", "user_activity"]
 
 
 class _AuditClient(_BaseClient):
