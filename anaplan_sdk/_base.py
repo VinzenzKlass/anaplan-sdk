@@ -23,8 +23,8 @@ class _BaseClient:
         self._retry_count = retry_count
         self._client = client
 
-    def _get(self, url: str) -> dict[str, float | int | str | list | dict | bool]:
-        return self._run_with_retry(self._client.get, url).json()
+    def _get(self, url: str, **kwargs) -> dict[str, float | int | str | list | dict | bool]:
+        return self._run_with_retry(self._client.get, url, **kwargs).json()
 
     def _get_binary(self, url: str) -> bytes:
         return self._run_with_retry(self._client.get, url).content
@@ -59,14 +59,16 @@ class _BaseClient:
                 url = args[0] or kwargs.get("url")
                 logger.info(f"Retrying for: {url}")
 
+        raise AnaplanException("Exhausted all retries without a successful response or Error.")
+
 
 class _AsyncBaseClient:
     def __init__(self, retry_count: int, client: httpx.AsyncClient):
         self._retry_count = retry_count
         self._client = client
 
-    async def _get(self, url: str) -> dict[str, float | int | str | list | dict | bool]:
-        return (await self._run_with_retry(self._client.get, url)).json()
+    async def _get(self, url: str, **kwargs) -> dict[str, float | int | str | list | dict | bool]:
+        return (await self._run_with_retry(self._client.get, url, **kwargs)).json()
 
     async def _get_binary(self, url: str) -> bytes:
         return (await self._run_with_retry(self._client.get, url)).content
@@ -104,6 +106,8 @@ class _AsyncBaseClient:
                     raise_error(error)
                 url = args[0] or kwargs.get("url")
                 logger.info(f"Retrying for: {url}")
+
+        raise AnaplanException("Exhausted all retries without a successful response or Error.")
 
 
 def action_url(action_id: int) -> Literal["imports", "exports", "actions", "processes"]:

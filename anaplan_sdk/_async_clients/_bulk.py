@@ -17,6 +17,7 @@ from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierExceptio
 from anaplan_sdk.models import Action, Export, File, Import, Model, Process, Workspace
 
 from ._alm import _AsyncAlmClient
+from ._audit import _AuditClient
 from ._transactional import _AsyncTransactionalClient
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
@@ -109,6 +110,7 @@ class AsyncClient(_AsyncBaseClient):
         self._alm_client = (
             _AsyncAlmClient(self._client, model_id, self._retry_count) if model_id else None
         )
+        self.audit = _AuditClient(self._client, self._retry_count)
         self.status_poll_delay = status_poll_delay
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
