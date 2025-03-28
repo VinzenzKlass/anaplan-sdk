@@ -4,10 +4,10 @@ look at the individual steps, how to perform them individually and how one can p
 the greatest efficiency.
 
 !!! tip "Client Settings"
-Anaplan SDK comes with a set of default options that are efficient for most use cases and general purpose. Mainly, it
-will compress all data before uploading and leverage Concurrency to speed up- and downloads, with a chunk size of 25MB.
-However, you can configure the client to better fit your needs. For more information,
-see [Client Parameters](client.md#anaplan_sdk.Client.__init__).
+    Anaplan SDK comes with a set of default options that are efficient for most use cases and general purpose. Mainly, it
+    will compress all data before uploading and leverage Concurrency to speed up- and downloads, with a chunk size of 25MB.
+    However, you can configure the client to better fit your needs. For more information,
+    see [Client Parameters](../api/client.md#anaplan_sdk.Client.__init__).
 
 ## Basic Usage
 
@@ -225,7 +225,7 @@ await anaplan.run_action(118000000000)
 If you have a file that is larger than your available RAM, or you are consuming chunks from i.e. a queue until it is
 exhausted and thus cannot know the number of expected chunks ahead of time, you can use the `upload_file_stream` method.
 You can pass an Iterator - in this case a Generator - that yields the chunks to this method, and it will handle the
-rest. The `upload_file_stream` method on the [AsyncClient](async_client.md#anaplan_sdk.AsyncClient.upload_file_stream)
+rest. The `upload_file_stream` method on the [AsyncClient](../api/async_client.md#anaplan_sdk.AsyncClient.upload_file_stream)
 accepts both `AsyncIterator[bytes | str]` and `Iterator[str | bytes]`.
 
 This will work nicely with i.e. [`scan_parquet()`](https://docs.pola.rs/user-guide/io/parquet/#scan)

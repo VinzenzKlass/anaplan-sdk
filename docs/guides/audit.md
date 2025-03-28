@@ -1,5 +1,3 @@
-## Intro
-
 You can use the Audit API to get fine-grained information about the changes made to any model, usage, user sign-ins,
 most frequently visited pages and much more. The Audit API exposes most the logs collected by Anaplan.
 

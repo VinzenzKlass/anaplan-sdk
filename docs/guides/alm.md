@@ -1,5 +1,3 @@
-## Intro
-
 The purpose of the Application Lifecycle Management (ALM) API is to make model change management more scalable,
 automatable, and integrate with other systems.
 
@@ -80,5 +78,5 @@ revisions, syncs = await asyncio.gather(alm.get_revisions(), alm.get_sync_tasks(
 ///
  
 !!! note
-      While you can instantiate a [Client](client.md) without the workspace or model parameters, trying to access
-      the [Transactional Client](transactional_client.md) on an instance without the `model_id` will raise a `ValueError`.
+      While you can instantiate a [Client](../api/client.md) without the workspace or model parameters, trying to access
+      the [Transactional Client](../api/transactional_client.md) on an instance without the `model_id` will raise a `ValueError`.

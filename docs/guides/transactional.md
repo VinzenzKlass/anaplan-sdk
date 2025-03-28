@@ -1,5 +1,3 @@
-## Intro
-
 If you need to go beyond the standard flows of importing and exporting data to and from Anaplan, you likely will need
 some functionality of the Transactional APIs. The Transactional APIs can provide a lot of Information about the Model,
 the data that resides in the model, ongoing Tasks etc. You can also use them to insert data directly into Lists and
@@ -78,8 +76,8 @@ modules = await trans_anaplan.list_modules()
 ///
 
 !!! note
-While you can instantiate a [Client](client.md) without the workspace or model parameters, trying to access
-the [Transactional Client](transactional_client.md) on an instance without the `model_id` will raise a `ValueError`.
+While you can instantiate a [Client](../api/client.md) without the workspace or model parameters, trying to access
+the [Transactional Client](../api/transactional_client.md) on an instance without the `model_id` will raise a `ValueError`.
 
 ## Basic Usage
 

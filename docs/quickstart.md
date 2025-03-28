@@ -8,7 +8,7 @@ It further assumes you have a valid user with credentials and required permissio
 ## Initializing the Client
 
 To get started, you can use basic authentication with your email and password. Refer to
-the [Bulk API Guide](bulk.md#instantiate-a-client) to understand why this is not a good idea for production use.
+the [Bulk API Guide](guides/bulk.md#instantiate-a-client) to understand why this is not a good idea for production use.
 
 /// tab | Synchronous
 
@@ -98,5 +98,5 @@ content = await anaplan.export_and_download(116000000000)
 To gain a better understanding of how Anaplan handles data, head over to the [Anaplan Explained](anaplan_explained.md)
 section.
 
-For a more detailed guide on how to use both the [Bulk APIs](bulk.md) and [Transactional APIs](transactional.md), refer
+For a more detailed guide on how to use both the [Bulk APIs](guides/bulk.md) and [Transactional APIs](guides/transactional.md), refer
 to the Guides.
