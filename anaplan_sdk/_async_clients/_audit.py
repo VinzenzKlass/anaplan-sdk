@@ -10,7 +10,7 @@ from anaplan_sdk._base import _AsyncBaseClient
 Event = Literal["all", "byok", "user_activity"]
 
 
-class _AuditClient(_AsyncBaseClient):
+class _AsyncAuditClient(_AsyncBaseClient):
     def __init__(self, client: httpx.AsyncClient, retry_count: int) -> None:
         self._client = client
         self._limit = 10_000

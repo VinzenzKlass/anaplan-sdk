@@ -382,6 +382,14 @@ class Client(_BaseClient):
         self.run_action(action_id)
         return self.get_file(action_id)
 
+    def list_task_status(self, action_id: int) -> list:
+        """
+        Retrieves the status of all tasks spawned by the specified action.
+        :param action_id: The identifier of the action that was invoked.
+        :return: The list of tasks spawned by the action.
+        """
+        return self._get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks").get("tasks", [])
+
     def get_task_status(
         self, action_id: int, task_id: str
     ) -> dict[str, float | int | str | list | dict | bool]:

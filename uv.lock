@@ -3,7 +3,7 @@ requires-python = ">=3.10.4"
 
 [[package]]
 name = "anaplan-sdk"
-version = "0.2.6"
+version = "0.2.7"
 source = { editable = "." }
 dependencies = [
     { name = "cryptography" },

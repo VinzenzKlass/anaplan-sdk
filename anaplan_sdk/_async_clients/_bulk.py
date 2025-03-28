@@ -17,7 +17,7 @@ from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierExceptio
 from anaplan_sdk.models import Action, Export, File, Import, Model, Process, Workspace
 
 from ._alm import _AsyncAlmClient
-from ._audit import _AuditClient
+from ._audit import _AsyncAuditClient
 from ._transactional import _AsyncTransactionalClient
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
@@ -110,7 +110,7 @@ class AsyncClient(_AsyncBaseClient):
         self._alm_client = (
             _AsyncAlmClient(self._client, model_id, self._retry_count) if model_id else None
         )
-        self.audit = _AuditClient(self._client, self._retry_count)
+        self.audit = _AsyncAuditClient(self._client, self._retry_count)
         self.status_poll_delay = status_poll_delay
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
@@ -381,13 +381,23 @@ class AsyncClient(_AsyncBaseClient):
 
     async def export_and_download(self, action_id: int) -> bytes:
         """
-        Convenience wrapper around `run_action()` a     nd `get_file()` to run an export action and
+        Convenience wrapper around `run_action()` and `get_file()` to run an export action and
         download the exported content in one call.
         :param action_id: The identifier of the action to run.
         :return: The content of the exported file.
         """
         await self.run_action(action_id)
         return await self.get_file(action_id)
+
+    async def list_task_status(self, action_id: int) -> list:
+        """
+        Retrieves the status of all tasks spawned by the specified action.
+        :param action_id: The identifier of the action that was invoked.
+        :return: The list of tasks spawned by the action.
+        """
+        return (await self._get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks")).get(
+            "tasks", []
+        )
 
     async def get_task_status(
         self, action_id: int, task_id: str
