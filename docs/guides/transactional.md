@@ -1,5 +1,3 @@
-## Intro
-
 If you need to go beyond the standard flows of importing and exporting data to and from Anaplan, you likely will need
 some functionality of the Transactional APIs. The Transactional APIs can provide a lot of Information about the Model,
 the data that resides in the model, ongoing Tasks etc. You can also use them to insert data directly into Lists and
@@ -78,8 +76,127 @@ modules = await trans_anaplan.list_modules()
 ///
 
 !!! note
-      While you can instantiate a [Client](client.md) without the workspace or model parameters, trying to access
-      the [Transactional Client](transactional_client.md) on an instance without the `model_id` will raise a `ValueError`.
+While you can instantiate a [Client](../api/client.md) without the workspace or model parameters, trying to access
+the [Transactional Client](../api/transactional_client.md) on an instance without the `model_id` will raise a `ValueError`.
+
+## Basic Usage
+
+### Read List Items
+
+/// tab | Synchronous
+
+```python
+products = anaplan.transactional.get_list_items(101000000299)
+```
+
+///
+/// tab | Asynchronous
+
+```python
+products = await anaplan.transactional.get_list_items(101000000299)
+```
+
+///
+
+### Add Items to a List
+
+/// tab | Synchronous
+These dicts must at least hold `code` or `id`and the name.
+
+```python
+anaplan.transactional.add_items_to_list(
+    101000000299,
+    [
+        {"code": "A", "name": "A"},
+        {"code": "B", "name": "B"},
+        {"code": "C", "name": "C"},
+        {"code": "D", "name": "D"},
+    ],
+)
+```
+
+///
+/// tab | Asynchronous
+
+These dicts must at least hold `code` or `id`and the name.
+
+```python
+await anaplan.transactional.add_items_to_list(
+    101000000299,
+    [
+        {"code": "A", "name": "A"},
+        {"code": "B", "name": "B"},
+        {"code": "C", "name": "C"},
+        {"code": "D", "name": "D"},
+    ],
+)
+```
+
+///
+
+### Write to a Module
+
+You can manipulate individual cells in a module using the `write_to_module` method. This method takes a list of
+dictionaries, each specifying the "coordinates" as a combination of the module to write to, the line item to update and
+the list of dimensions. The combination of these three will uniquely identify the cell to be updated. The value to be
+written is specified in the `value` key of the dictionary. The Line Items and Dimensions can be specified by either
+their `id` or `name`. The `value` can be a string, number or boolean.
+
+/// tab | Synchronous
+
+```python
+anaplan.transactional.write_to_module(
+    101000000299,
+    [
+        {
+            "lineItemName": "Products",
+            "dimensions": [
+                {"dimensionName": "Product", "itemCode": "18"},
+                {"dimensionName": "Time", "itemName": "Jan 21"},
+            ],
+            "value": 1000,
+        },
+        {
+            "lineItemName": "Sales",
+            "dimensions": [
+                {"dimensionName": "Region", "itemName": "Uganda"},
+                {"dimensionName": "Time", "itemName": "Jan 21"},
+            ],
+            "value": 1000,
+        },
+    ],
+)
+
+```
+
+///
+/// tab | Asynchronous
+
+```python
+await anaplan.transactional.write_to_module(
+    101000000299,
+    [
+        {
+            "lineItemName": "Products",
+            "dimensions": [
+                {"dimensionName": "Product", "itemCode": "18"},
+                {"dimensionName": "Time", "itemName": "Jan 21"},
+            ],
+            "value": 1000,
+        },
+        {
+            "lineItemName": "Sales",
+            "dimensions": [
+                {"dimensionName": "Region", "itemName": "Uganda"},
+                {"dimensionName": "Time", "itemName": "Jan 21"},
+            ],
+            "value": 1000,
+        },
+    ],
+)
+```
+
+///
 
 ## Applications
 
@@ -98,10 +215,14 @@ Warning. To automate this tedious task without losing any data, we can perform f
 
 ```python
 items = anaplan.transactional.get_list_items(101000000000)
-anaplan.transactional.delete_list_items(101000000000, [{"id": e.id} for e in items])
+anaplan.transactional.delete_list_items(
+   101000000000,
+   [{"id": e.id} for e in items],
+)
 anaplan.transactional.reset_list_index(101000000000)
-result = anaplan.transactional.add_items_to_list(101000000008, [{"code": e.code} for e in items])
-
+result = anaplan.transactional.add_items_to_list(
+    101000000008, [{"code": e.code} for e in items]
+)
 ```
 
 ///
@@ -109,7 +230,9 @@ result = anaplan.transactional.add_items_to_list(101000000008, [{"code": e.code}
 
 ```python
 items = await anaplan.transactional.get_list_items(101000000000)
-await anaplan.transactional.delete_list_items(101000000000, [{"id": e.id} for e in items])
+await anaplan.transactional.delete_list_items(
+    101000000000, [{"id": e.id} for e in items]
+)
 await anaplan.transactional.reset_list_index(101000000000)
 result = await anaplan.transactional.add_items_to_list(
     101000000008, [{"code": e.code} for e in items]

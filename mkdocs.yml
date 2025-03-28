@@ -34,24 +34,27 @@ nav:
   - Quick Start: 'quickstart.md'
   - Anaplan Explained: 'anaplan_explained.md'
   - Guides:
-      - Use the Bulk API: 'bulk.md'
-      - Bulk vs Transactional: 'bulk_vs_transactional.md'
-      - Use the Transactional API: 'transactional.md'
-      - Use the ALM API: 'alm.md'
-      - Multiple Models: 'multiple_models.md'
-      - Logging: 'logging.md'
+      - Bulk vs Transactional: 'guides/bulk_vs_transactional.md'
+      - Use the Bulk API: 'guides/bulk.md'
+      - Use the Transactional API: 'guides/transactional.md'
+      - Use the ALM API: 'guides/alm.md'
+      - Use the Audit API: 'guides/audit.md'
+      - Multiple Models: 'guides/multiple_models.md'
+      - Logging: 'guides/logging.md'
   - API Reference:
       - Developer Interface:
           - Asynchronous:
-              - Async Client: 'async_client.md'
-              - Async Transactional Client: 'async_transactional_client.md'
-              - Async ALM Client: 'async_alm_client.md'
+              - Async Client: 'api/async_client.md'
+              - Async Transactional Client: 'api/async_transactional_client.md'
+              - Async ALM Client: 'api/async_alm_client.md'
+              - Async Audit Client: 'api/async_audit_client.md'
           - Synchronous:
-              - Client: 'client.md'
-              - Transactional Client: 'transactional_client.md'
-              - ALM Client: 'alm_client.md'
-      - Models: 'models.md'
-      - Exceptions: 'exceptions.md'
+              - Client: 'api/client.md'
+              - Transactional Client: 'api/transactional_client.md'
+              - ALM Client: 'api/alm_client.md'
+              - Audit Client: 'api/audit_client.md'
+      - Models: 'api/models.md'
+      - Exceptions: 'api/exceptions.md'
 
 plugins:
   - search
