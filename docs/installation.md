@@ -1,15 +1,22 @@
-This Project requires Python 3.10.4 or newer.
+This Project requires Python 3.10.4 or higher.
 
-### Using pip
+### pip
 
 ```shell
 pip install anaplan-sdk
 ```
 
-### Using poetry
+### Poetry
 
 ```shell
 poetry add anaplan-sdk
+```
+
+### uv
+
+```shell
+uv add anaplan-sdk
+
 ```
 
 ### Dependencies

@@ -1,19 +1,18 @@
-This section tries to explain Anaplan specific concepts and design choices to Developers to enable a better
-understanding of the API. It is less interesting for people
-already familiar with Anaplan.
+This section tries to explain Anaplan specific concepts and design choices to Developers. It is less interesting for
+people already familiar with Anaplan. Most of this page applies to the Bulk API, but some concepts are also
+applicable to the Transactional API. To understand how Anaplan handles data, you are going to have to wrap your head
+around some fundamental concepts, as well as gain a basic understanding of some Anaplan specific terminology.
 
-To understand how Anaplan handles data, you are going to have to wrap your head around some fundamental concepts, as
-well as gain a basic understanding of some Anaplan specific terminology. To truly understand the Anaplan API and why the
-dataflows and structures are the way they are, obtaining a well-founded understanding of how Anaplan handles data, is
-essential.
-
-This page list tries to condense the fundamentals of using the Anaplan Bulk API. The transactional API is different
-in many ways.
-
-
-<p align="center" style="margin: 40px 0 40px 0;">
+The basic high-level view of any Anaplan Integration looks like this:
+<p align="center" style="margin: 20px 0 40px 0;">
     <img src="../img/anaplan-overview.webp" alt='Anaplan high-level view' style="border-radius: 15px">
 </p>
+!!! tip "TLDR"
+    You upload contents to files. Import Actions import the content from these files into Lists and Modules. Export
+    Actions export the content of Lists and Modules to files. You can download these files. Processes are just sequences
+    of actions. Anything that references the same file must not be run concurrently.
+
+
 
 ## Basic Concepts
 
@@ -26,7 +25,7 @@ in many ways.
     - Exports - 116000000000 IDs.
     - Processes - 118000000000 IDs.
     - Other Actions - 117000000000 IDs.
-  
+
 - Imports read data from a file and load it into a module. Exports conversely load data from a module to a file. The
   file id of the resulting file is identical to the export id. "Other Actions" move things around in Anaplan and can
   also delete data etc. Processes are simply a sequence of the other three.

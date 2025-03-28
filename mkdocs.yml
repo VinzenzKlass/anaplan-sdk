@@ -34,10 +34,11 @@ nav:
   - Quick Start: 'quickstart.md'
   - Anaplan Explained: 'anaplan_explained.md'
   - Guides:
-      - Use the Bulk API: 'bulk.md'
       - Bulk vs Transactional: 'bulk_vs_transactional.md'
+      - Use the Bulk API: 'bulk.md'
       - Use the Transactional API: 'transactional.md'
       - Use the ALM API: 'alm.md'
+      - Use the Audit API: 'audit.md'
       - Multiple Models: 'multiple_models.md'
       - Logging: 'logging.md'
   - API Reference:
