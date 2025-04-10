@@ -49,11 +49,18 @@ class _AuditClient(_BaseClient):
         ).get("response", [])
 
     def get_events(self, days_into_past: int = 30, event_type: Event = "all") -> list:
+        """
+        Get audit events from Anaplan Audit API.
+        :param days_into_past: The nuber of days into the past to get events for. The API provides
+        data for up to 30 days.
+        :param event_type: The type of events to get.
+        :return: A list of audit events.
+        """
         total = self._get_total(days_into_past, event_type)
         if total == 0:
             return []
         if total <= 10_000:
-            return self._get_result_page(total)
+            return self._get_result_page(days_into_past, event_type)
 
         from concurrent.futures import ThreadPoolExecutor
 
