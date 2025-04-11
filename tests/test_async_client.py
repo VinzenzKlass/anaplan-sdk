@@ -144,8 +144,8 @@ async def test_invoke_action():
 async def test_get_task_status():
     task_status = await client.get_task_status(test_action, await client.invoke_action(test_action))
     assert isinstance(task_status, dict)
-    assert "currentStep" in task_status
-    assert "successful" in task_status.get("result")
+    assert "progress" in task_status
+    assert "successful" in task_status.get("result", {})
 
 
 async def _async_range(count: int):

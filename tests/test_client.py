@@ -119,5 +119,5 @@ def test_invoke_action():
 def test_get_task_status():
     task_status = client.get_task_status(test_action, client.invoke_action(test_action))
     assert isinstance(task_status, dict)
-    assert "currentStep" in task_status
-    assert "successful" in task_status.get("result")
+    assert "progress" in task_status
+    assert "successful" in task_status.get("result", {})
