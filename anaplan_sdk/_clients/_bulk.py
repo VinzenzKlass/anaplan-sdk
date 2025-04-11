@@ -140,6 +140,7 @@ class Client(_BaseClient):
         client._transactional_client = _TransactionalClient(
             existing._client, model_id, existing._retry_count
         )
+        client._alm_client = _AlmClient(existing._client, model_id, existing._retry_count)
         return client
 
     @property
