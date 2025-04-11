@@ -29,3 +29,6 @@ providing both synchronous and asynchronous Clients.
 
 Head over to the [Quick Start](quickstart.md) to get started with the basics.
 
+If you find any issues or feel that this SDK is not adequately covering your use case,
+please [open an issue](https://github.com/VinzenzKlass/anaplan-sdk/issues/new).
+

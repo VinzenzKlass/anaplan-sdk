@@ -133,6 +133,7 @@ class AsyncClient(_AsyncBaseClient):
         client._transactional_client = _AsyncTransactionalClient(
             existing._client, model_id, existing._retry_count
         )
+        client._alm_client = _AsyncAlmClient(existing._client, model_id, existing._retry_count)
         return client
 
     @property
