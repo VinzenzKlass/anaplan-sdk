@@ -1,11 +1,11 @@
 [project]
 name = "anaplan-sdk"
-version = "0.2.8"
+version = "0.2.9"
 description = "Provides pythonic access to the Anaplan API"
 license = "Apache-2.0"
-authors = [{ name = "Vinzenz Klass", email = "vinzenz.klass@ba.valantic.com" }]
+authors = [{ name = "Vinzenz Klass", email = "vinzenz.klass@valantic.com" }]
 readme = "README.md"
-keywords = ["anaplan", "anaplan api", "anaplan bulk api", "anaplan integration", "anaplan alm api"]
+keywords = ["anaplan", "anaplan api", "anaplan bulk api", "anaplan integration", "anaplan alm api", "anaplan audit api"]
 requires-python = ">=3.10.4"
 dependencies = [
     "pydantic>=2.7.2,<3.0.0",

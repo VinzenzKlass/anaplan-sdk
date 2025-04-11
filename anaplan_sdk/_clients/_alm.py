@@ -1,7 +1,11 @@
+import warnings
+
 import httpx
 
 from anaplan_sdk._base import _BaseClient
 from anaplan_sdk.models import ModelRevision, Revision, SyncTask, User
+
+warnings.filterwarnings("always", category=DeprecationWarning)
 
 
 class _AlmClient(_BaseClient):
@@ -15,6 +19,12 @@ class _AlmClient(_BaseClient):
         Lists all the Users in the authenticated users default tenant.
         :return: The List of Users.
         """
+        warnings.warn(
+            "`list_users()` on the ALM client is deprecated and will be removed in a "
+            "future version. Use `list_users()` on the Audit client instead.",
+            DeprecationWarning,
+            stacklevel=1,
+        )
         return [
             User.model_validate(e)
             for e in self._get("https://api.anaplan.com/2/0/users").get("users")
