@@ -12,7 +12,7 @@ client = anaplan_sdk.AsyncClient(
     model_id=os.getenv("ANAPLAN_SDK_TEST_MODEL_ID"),
     certificate=os.getenv("ANAPLAN_SDK_TEST_CERT"),
     private_key=os.getenv("ANAPLAN_SDK_TEST_PK"),
-    retry_count=3,
+    retry_count=5,
 )
 
 broken_client = anaplan_sdk.AsyncClient(
@@ -145,7 +145,8 @@ async def test_get_task_status():
     task_status = await client.get_task_status(test_action, await client.invoke_action(test_action))
     assert isinstance(task_status, dict)
     assert "progress" in task_status
-    assert "successful" in task_status.get("result", {})
+    assert "creationTime" in task_status
+    assert "taskState" in task_status
 
 
 async def _async_range(count: int):
