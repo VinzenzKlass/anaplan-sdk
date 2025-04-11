@@ -32,4 +32,4 @@ jobs:
           pip install uv
           uv sync
       - name: "Run tests"
-        run: "uv run python -m pytest -n 6 --dist loadfile  tests/"
+        run: "uv run python -m pytest -n 8 --dist loadfile tests/"

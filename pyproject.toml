@@ -18,7 +18,7 @@ dev = [
     "ruff>=0.9.2",
     "pre-commit>=4.0.1",
     "pytest>=8.3.3",
-    "pytest-asyncio>=0.24.0",
+    "pytest-asyncio>=0.26.0",
     "pytest-xdist>=3.6.1",
     "mkdocs>=1.6.1",
     "mkdocs-material>=9.5.41",
@@ -76,7 +76,9 @@ skip-magic-trailing-comma = false
 select = ["E", "F", "B", "I"]
 
 [tool.pytest.ini_options]
-asyncio_default_fixture_loop_scope = "module"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
 minversion = "8.0"
 addopts = "-ra -q"
 pythonpath = "anaplan_sdk/"
