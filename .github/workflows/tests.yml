@@ -18,7 +18,7 @@ jobs:
     runs-on: "ubuntu-latest"
 
     strategy:
-      max-parallel: 2
+      max-parallel: 4
       matrix:
         python-version: [ "3.10.4", "3.11", "3.12", "3.13" ]
 
@@ -32,4 +32,4 @@ jobs:
           pip install uv
           uv sync
       - name: "Run tests"
-        run: "uv run python -m pytest -n 6 --dist loadfile  tests/"
+        run: "uv run python -m pytest -n 8 --dist loadfile tests/"
