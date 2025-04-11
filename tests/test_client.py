@@ -2,6 +2,8 @@ import logging
 import os
 import sys
 
+import pytest
+
 import anaplan_sdk
 from anaplan_sdk.exceptions import InvalidIdentifierException
 
@@ -96,18 +98,21 @@ def test_list_exports():
     assert len(exports) > 0
 
 
+@pytest.mark.order(1)
 def test_upload_and_download_file():
     client.upload_file(test_file, "Hi!")
     out = client.get_file(test_file)
     assert out == b"Hi!"
 
 
+@pytest.mark.order(2)
 def test_upload_file_stream():
     client.upload_file_stream(test_file, (str(i) for i in range(10)))
     out = client.get_file(test_file)
     assert out == b"0123456789"
 
 
+@pytest.mark.order(3)
 def test_get_file_stream():
     for chunk in client.get_file_stream(test_file):
         assert isinstance(chunk, bytes)

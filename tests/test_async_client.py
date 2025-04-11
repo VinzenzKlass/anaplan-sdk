@@ -115,6 +115,7 @@ async def test_list_exports():
     assert len(exports) > 0
 
 
+@pytest.mark.order(1)
 @pytest.mark.asyncio
 async def test_upload_and_download_file():
     await client.upload_file(test_file, "Hi!")
@@ -122,6 +123,7 @@ async def test_upload_and_download_file():
     assert out == b"Hi!"
 
 
+@pytest.mark.order(2)
 @pytest.mark.asyncio
 async def test_upload_file_stream():
     await client.upload_file_stream(test_file, (i async for i in _async_range(10)))
@@ -129,6 +131,7 @@ async def test_upload_file_stream():
     assert out == b"0123456789"
 
 
+@pytest.mark.order(3)
 @pytest.mark.asyncio
 async def test_get_file_stream():
     async for chunk in client.get_file_stream(test_file):
