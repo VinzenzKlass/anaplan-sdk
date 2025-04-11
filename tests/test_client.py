@@ -21,16 +21,18 @@ broken_client = anaplan_sdk.Client(
 )
 
 py_version = sys.version.split(" ")[0]
-if "3.12" in py_version:
-    test_file = 113000000031
-    test_action = 118000000007
-
+if "3.10" in py_version:
+    test_file = 113000000029
+    test_action = 118000000006
 elif "3.11" in py_version:
     test_file = 113000000030
     test_action = 118000000008
+if "3.12" in py_version:
+    test_file = 113000000031
+    test_action = 118000000007
 else:
-    test_file = 113000000029
-    test_action = 118000000006
+    test_file = 113000000059
+    test_action = 118000000020
 
 
 def test_unauthorized_client_raises_value_error():

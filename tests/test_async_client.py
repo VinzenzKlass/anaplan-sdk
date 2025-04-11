@@ -27,16 +27,18 @@ broken_client = anaplan_sdk.AsyncClient(
 pytest_plugins = ("pytest_asyncio",)
 
 py_version = sys.version.split(" ")[0]
-if "3.12" in py_version:
-    test_file = 113000000031
-    test_action = 118000000007
-
+if "3.10" in py_version:
+    test_file = 113000000029
+    test_action = 118000000006
 elif "3.11" in py_version:
     test_file = 113000000030
     test_action = 118000000008
+if "3.12" in py_version:
+    test_file = 113000000031
+    test_action = 118000000007
 else:
-    test_file = 113000000029
-    test_action = 118000000006
+    test_file = 113000000059
+    test_action = 118000000020
 
 
 @pytest.fixture(scope="module")
@@ -117,14 +119,14 @@ async def test_upload_and_download_file():
 
 @pytest.mark.asyncio
 async def test_upload_file_stream():
-    await client.upload_file_stream(113000000000, (i async for i in _async_range(10)))
-    out = await client.get_file(113000000000)
+    await client.upload_file_stream(test_file, (i async for i in _async_range(10)))
+    out = await client.get_file(test_file)
     assert out == b"0123456789"
 
 
 @pytest.mark.asyncio
 async def test_get_file_stream():
-    async for chunk in client.get_file_stream(113000000000):
+    async for chunk in client.get_file_stream(test_file):
         assert isinstance(chunk, bytes)
 
 
