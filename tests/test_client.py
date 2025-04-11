@@ -1,8 +1,13 @@
+import logging
 import os
 import sys
 
 import anaplan_sdk
 from anaplan_sdk.exceptions import InvalidIdentifierException
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logging.getLogger("httpx").setLevel(logging.ERROR)
+logging.getLogger("anaplan_sdk").setLevel(logging.INFO)
 
 client = anaplan_sdk.Client(
     workspace_id=os.getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),
