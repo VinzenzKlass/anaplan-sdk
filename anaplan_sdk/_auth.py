@@ -12,86 +12,67 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
-from httpx import HTTPError
 
-from .exceptions import InvalidCredentialsException, InvalidPrivateKeyException
+from .exceptions import AnaplanException, InvalidCredentialsException, InvalidPrivateKeyException
 
 logger = logging.getLogger("anaplan_sdk")
 
 
-class AnaplanBasicAuth(httpx.Auth):
+class _AnaplanAuth(httpx.Auth):
     requires_response_body = True
 
-    def __init__(
-        self,
-        user_email: str,
-        password: str,
-    ):
-        self._user_email = user_email
-        self._password = password
-        self._token = self._init_token()
+    def __init__(self):
+        self._auth_request = self._build_auth_request()
+        logger.info("Creating Authentication Token.")
+        with httpx.Client(timeout=15.0) as client:
+            res = client.send(self._auth_request)
+            self._parse_auth_response(res)
+
+    def _build_auth_request(self) -> httpx.Request:
+        raise NotImplementedError("Must be implemented in subclass.")
 
     def auth_flow(self, request):
         request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
         response = yield request
         if response.status_code == 401:
             logger.info("Token expired, refreshing.")
-            response = yield self._basic_auth_request()
-            if "tokenInfo" not in response.json():
-                raise InvalidCredentialsException
-            self._token = response.json().get("tokenInfo").get("tokenValue")
+            auth_res = yield self._auth_request
+            self._parse_auth_response(auth_res)
             request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
             yield request
 
-    def _basic_auth_request(self):
-        credentials = b64encode(f"{self._user_email}:{self._password}".encode()).decode()
+    def _parse_auth_response(self, response: httpx.Response) -> None:
+        if response.status_code == 401:
+            raise InvalidCredentialsException
+        if not response.is_success:
+            raise AnaplanException(f"Authentication failed: {response.status_code} {response.text}")
+        self._token: str = response.json()["tokenInfo"]["tokenValue"]
+
+
+class AnaplanBasicAuth(_AnaplanAuth):
+    def __init__(self, user_email: str, password: str):
+        self.user_email = user_email
+        self.password = password
+        super().__init__()
+
+    def _build_auth_request(self) -> httpx.Request:
+        cred = b64encode(f"{self.user_email}:{self.password}".encode()).decode()
         return httpx.Request(
             method="post",
             url="https://auth.anaplan.com/token/authenticate",
-            headers={"Authorization": f"Basic {credentials}"},
+            headers={"Authorization": f"Basic {cred}"},
         )
 
-    def _init_token(self) -> str:
-        try:
-            logger.info("Creating Authentication Token.")
-            credentials = b64encode(f"{self._user_email}:{self._password}".encode()).decode()
-            res = httpx.post(
-                url="https://auth.anaplan.com/token/authenticate",
-                headers={"Authorization": f"Basic {credentials}"},
-                timeout=15,
-            )
-            res.raise_for_status()
-            return res.json().get("tokenInfo").get("tokenValue")
-        except HTTPError as error:
-            raise InvalidCredentialsException from error
 
-
-class AnaplanCertAuth(httpx.Auth):
-    requires_response_body = True
+class AnaplanCertAuth(_AnaplanAuth):
     requires_request_body = True
 
-    def __init__(
-        self,
-        certificate: bytes,
-        private_key: RSAPrivateKey,
-    ):
+    def __init__(self, certificate: bytes, private_key: RSAPrivateKey):
         self._certificate = certificate
         self._private_key = private_key
-        self._token = self._init_token()
+        super().__init__()
 
-    def auth_flow(self, request):
-        request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
-        response = yield request
-        if response.status_code == 401:
-            logger.info("Token expired or invalid, refreshing.")
-            response = yield self._cert_auth_request()
-            if "tokenInfo" not in response.json():
-                raise InvalidCredentialsException
-            self._token = response.json().get("tokenInfo").get("tokenValue")
-            request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
-            yield request
-
-    def _cert_auth_request(self):
+    def _build_auth_request(self) -> httpx.Request:
         encoded_cert, encoded_string, encoded_signed_string = self._prep_credentials()
         return httpx.Request(
             method="post",
@@ -102,24 +83,6 @@ class AnaplanCertAuth(httpx.Auth):
             },
             json={"encodedData": encoded_string, "encodedSignedData": encoded_signed_string},
         )
-
-    def _init_token(self) -> str:
-        try:
-            logger.info("Creating Authentication Token.")
-            encoded_cert, encoded_string, encoded_signed_string = self._prep_credentials()
-            res = httpx.post(
-                url="https://auth.anaplan.com/token/authenticate",
-                headers={
-                    "Authorization": f"CACertificate {encoded_cert}",
-                    "Content-Type": "application/json",
-                },
-                json={"encodedData": encoded_string, "encodedSignedData": encoded_signed_string},
-                timeout=15,
-            )
-            res.raise_for_status()
-            return res.json().get("tokenInfo").get("tokenValue")
-        except HTTPError as error:
-            raise InvalidCredentialsException from error
 
     def _prep_credentials(self) -> tuple[str, str, str]:
         message = os.urandom(150)
