@@ -100,8 +100,7 @@ class Client(_BaseClient):
         self._client = httpx.Client(
             auth=(
                 AnaplanCertAuth(
-                    get_certificate(certificate),
-                    get_private_key(private_key, private_key_password),
+                    get_certificate(certificate), get_private_key(private_key, private_key_password)
                 )
                 if certificate
                 else AnaplanBasicAuth(user_email=user_email, password=password)
