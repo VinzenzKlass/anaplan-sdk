@@ -2,7 +2,10 @@
 Provides Base Classes for this project.
 """
 
+import asyncio
 import logging
+import random
+import time
 from gzip import compress
 from typing import Any, Callable, Coroutine, Literal
 
@@ -51,6 +54,13 @@ class _BaseClient:
         for i in range(max(self._retry_count, 1)):
             try:
                 response = func(*args, **kwargs)
+                if response.status_code == 429:
+                    if i >= self._retry_count - 1:
+                        raise AnaplanException("Rate limit exceeded.")
+                    backoff_time = max(i, 1) * random.randint(2, 5)
+                    logger.info(f"Rate limited. Retrying in {backoff_time} seconds.")
+                    time.sleep(backoff_time)
+                    continue
                 response.raise_for_status()
                 return response
             except HTTPError as error:
@@ -99,6 +109,13 @@ class _AsyncBaseClient:
         for i in range(max(self._retry_count, 1)):
             try:
                 response = await func(*args, **kwargs)
+                if response.status_code == 429:
+                    if i >= self._retry_count - 1:
+                        raise AnaplanException("Rate limit exceeded.")
+                    backoff_time = (i + 1) * random.randint(3, 5)
+                    logger.info(f"Rate limited. Retrying in {backoff_time} seconds.")
+                    await asyncio.sleep(backoff_time)
+                    continue
                 response.raise_for_status()
                 return response
             except HTTPError as error:
