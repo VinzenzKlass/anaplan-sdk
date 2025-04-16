@@ -14,7 +14,6 @@ dependencies = [
 [package.dev-dependencies]
 dev = [
     { name = "griffe-fieldz" },
-    { name = "griffe-pydantic" },
     { name = "mkdocs" },
     { name = "mkdocs-material" },
     { name = "mkdocstrings", extra = ["python"] },
@@ -36,7 +35,6 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "griffe-fieldz", specifier = ">=0.2.1" },
-    { name = "griffe-pydantic", specifier = ">=1.1.4" },
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.5.41" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=0.26.2" },
@@ -379,18 +377,6 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/95/95/5c47b6c54d106c76aad9b51177401ad4215a0de910c6853b689a2c6d07da/griffe_fieldz-0.2.1.tar.gz", hash = "sha256:7371693cdd045ac95aaebd16a81586d8dfa72c30e2d4519e0dde0d80f8ef0dc7", size = 8148 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6f/fc/c059d128d77a369f54a3753162a38cd7668e5b4d14464672001a50cf2e9d/griffe_fieldz-0.2.1-py3-none-any.whl", hash = "sha256:04ae78b487c832a38b0495f971784d513da413b867c51e429f39d74f76d4f941", size = 5691 },
-]
-
-[[package]]
-name = "griffe-pydantic"
-version = "1.1.4"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "griffe" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/ad/88/f7b8558568eb11369383b4fdf91cf9f2ecf375e57193dd69673d553dc4d8/griffe_pydantic-1.1.4.tar.gz", hash = "sha256:3ce97cedb2c15b696e0c1c4bb901411f5b83b8e4d57b1fc0f2becde678ab4870", size = 42359 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0b/a0/496e4f4f3af322171913b77f1789f479535abedf9f08359f1918219e03c8/griffe_pydantic-1.1.4-py3-none-any.whl", hash = "sha256:a4b9933579e14a8296cae90e71dace2742d91cb6792e5cd583047a6079f94e78", size = 12614 },
 ]
 
 [[package]]

@@ -3,8 +3,7 @@ Asynchronous Client.
 """
 
 import logging
-import time
-from asyncio import gather
+from asyncio import gather, sleep
 from copy import copy
 from typing import AsyncIterator, Iterator
 
@@ -14,7 +13,17 @@ from typing_extensions import Self
 from anaplan_sdk._auth import AnaplanBasicAuth, AnaplanCertAuth, get_certificate, get_private_key
 from anaplan_sdk._base import _AsyncBaseClient, action_url
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
-from anaplan_sdk.models import Action, Export, File, Import, Model, Process, Workspace
+from anaplan_sdk.models import (
+    Action,
+    Export,
+    File,
+    Import,
+    Model,
+    Process,
+    TaskStatus,
+    TaskSummary,
+    Workspace,
+)
 
 from ._alm import _AsyncAlmClient
 from ._audit import _AsyncAuditClient
@@ -250,7 +259,7 @@ class AsyncClient(_AsyncBaseClient):
             for e in (await self._get(f"{self._url}/exports")).get("exports", [])
         ]
 
-    async def run_action(self, action_id: int) -> None:
+    async def run_action(self, action_id: int) -> TaskStatus:
         """
         Runs the specified Anaplan Action and validates the spawned task. If the Action fails or
         completes with errors, will raise an :py:class:`AnaplanActionError`. Failed Tasks are
@@ -268,16 +277,15 @@ class AsyncClient(_AsyncBaseClient):
         task_id = await self.invoke_action(action_id)
         task_status = await self.get_task_status(action_id, task_id)
 
-        while "COMPLETE" not in task_status.get("taskState"):
-            time.sleep(self.status_poll_delay)
+        while task_status.task_state != "COMPLETE":
+            await sleep(self.status_poll_delay)
             task_status = await self.get_task_status(action_id, task_id)
 
-        if task_status.get("taskState") == "COMPLETE" and not task_status.get("result").get(
-            "successful"
-        ):
+        if task_status.task_state == "COMPLETE" and not task_status.result.successful:
             raise AnaplanActionError(f"Task '{task_id}' completed with errors.")
 
         logger.info(f"Task '{task_id}' completed successfully.")
+        return task_status
 
     async def get_file(self, file_id: int) -> bytes:
         """
@@ -390,29 +398,31 @@ class AsyncClient(_AsyncBaseClient):
         await self.run_action(action_id)
         return await self.get_file(action_id)
 
-    async def list_task_status(self, action_id: int) -> list:
+    async def list_task_status(self, action_id: int) -> list[TaskSummary]:
         """
         Retrieves the status of all tasks spawned by the specified action.
         :param action_id: The identifier of the action that was invoked.
         :return: The list of tasks spawned by the action.
         """
-        return (await self._get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks")).get(
-            "tasks", []
-        )
+        return [
+            TaskSummary.model_validate(e)
+            for e in (
+                await self._get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks")
+            ).get("tasks", [])
+        ]
 
-    async def get_task_status(
-        self, action_id: int, task_id: str
-    ) -> dict[str, float | int | str | list | dict | bool]:
+    async def get_task_status(self, action_id: int, task_id: str) -> TaskStatus:
         """
         Retrieves the status of the specified task.
         :param action_id: The identifier of the action that was invoked.
         :param task_id: The identifier of the spawned task.
-        :return: The status of the task as returned by the API. For more information
-                 see: https://anaplan.docs.apiary.io.
+        :return: The status of the task.
         """
-        return (
-            await self._get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks/{task_id}")
-        ).get("task")
+        return TaskStatus.model_validate(
+            (
+                await self._get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks/{task_id}")
+            ).get("task")
+        )
 
     async def invoke_action(self, action_id: int) -> str:
         """

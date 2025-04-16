@@ -1,5 +1,6 @@
 from anaplan_sdk import Client
 from anaplan_sdk.exceptions import InvalidIdentifierException
+from anaplan_sdk.models import TaskStatus
 
 
 def test_list_workspaces(client: Client):
@@ -80,7 +81,4 @@ def test_invoke_action(client: Client, test_action):
 
 def test_get_task_status(client: Client, test_action):
     task_status = client.get_task_status(test_action, client.invoke_action(test_action))
-    assert isinstance(task_status, dict)
-    assert "progress" in task_status
-    assert "creationTime" in task_status
-    assert "taskState" in task_status
+    assert isinstance(task_status, TaskStatus)

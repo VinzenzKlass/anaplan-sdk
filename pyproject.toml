@@ -25,7 +25,6 @@ dev = [
     "mkdocstrings[python]>=0.26.2",
     "polars>=1.25.2",
     "griffe-fieldz>=0.2.1",
-    "griffe-pydantic>=1.1.4",
 ]
 
 [project.urls]
