@@ -48,14 +48,14 @@ class _TransactionalClient(_BaseClient):
             if only_module_id
             else f"{self._url}/lineItems?includeAll=true"
         )
-        return [LineItem.model_validate(e) for e in self._get(url).get("items")]
+        return [LineItem.model_validate(e) for e in self._get(url).get("items", [])]
 
     def list_lists(self) -> list[List]:
         """
         Lists all the Lists in the Model.
         :return: All Lists on this Model.
         """
-        return [List.model_validate(e) for e in self._get(f"{self._url}/lists").get("lists")]
+        return [List.model_validate(e) for e in self._get(f"{self._url}/lists").get("lists", [])]
 
     def get_list_metadata(self, list_id: int) -> ListMetadata:
         """
@@ -76,7 +76,7 @@ class _TransactionalClient(_BaseClient):
         return [
             ListItem.model_validate(e)
             for e in self._get(f"{self._url}/lists/{list_id}/items?includeAll=true").get(
-                "listItems"
+                "listItems", []
             )
         ]
 

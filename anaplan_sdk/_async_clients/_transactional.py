@@ -32,7 +32,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         """
         return [
             Module.model_validate(e)
-            for e in (await self._get(f"{self._url}/modules")).get("modules")
+            for e in (await self._get(f"{self._url}/modules")).get("modules", [])
         ]
 
     async def get_model_status(self) -> ModelStatus:
@@ -55,7 +55,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
             if only_module_id
             else f"{self._url}/lineItems?includeAll=true"
         )
-        return [LineItem.model_validate(e) for e in (await self._get(url)).get("items")]
+        return [LineItem.model_validate(e) for e in (await self._get(url)).get("items", [])]
 
     async def list_lists(self) -> list[List]:
         """
@@ -63,7 +63,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :return: All Lists on this model.
         """
         return [
-            List.model_validate(e) for e in (await self._get(f"{self._url}/lists")).get("lists")
+            List.model_validate(e) for e in (await self._get(f"{self._url}/lists")).get("lists", [])
         ]
 
     async def get_list_metadata(self, list_id: int) -> ListMetadata:
