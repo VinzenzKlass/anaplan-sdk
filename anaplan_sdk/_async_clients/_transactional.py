@@ -1,3 +1,6 @@
+import warnings
+from asyncio import gather
+from itertools import chain
 from typing import Any
 
 import httpx
@@ -12,6 +15,8 @@ from anaplan_sdk.models import (
     ModelStatus,
     Module,
 )
+
+warnings.filterwarnings("always", category=DeprecationWarning)
 
 
 class _AsyncTransactionalClient(_AsyncBaseClient):
@@ -85,28 +90,64 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
             )
         ]
 
-    async def add_items_to_list(
-        self, list_id: int, items: list[dict[str, str | dict]]
+    async def insert_list_items(
+        self, list_id: int, items: list[dict[str, str | int | dict]]
     ) -> InsertionResult:
         """
-        Adds items to a List.
+        Insert new items to the given list. The items must be a list of dictionaries with at least
+        the keys `code` and `name`. You can optionally pass further keys for parents, extra
+        properties etc.
         :param list_id: The ID of the List.
-        :param items: The items to add to the List.
-        :return: The result of the insertion.
+        :param items: The items to insert into the List.
+        :return: The result of the insertion, indicating how many items were added,
+                 ignored or failed.
         """
-        # TODO: Paginate by 100k records.
-        return InsertionResult.model_validate(
-            await self._post(f"{self._url}/lists/{list_id}/items?action=add", json={"items": items})
+        if len(items) <= 100_000:
+            return InsertionResult.model_validate(
+                await self._post(
+                    f"{self._url}/lists/{list_id}/items?action=add", json={"items": items}
+                )
+            )
+        responses = await gather(
+            *(
+                self._post(f"{self._url}/lists/{list_id}/items?action=add", json={"items": chunk})
+                for chunk in (items[i : i + 100_000] for i in range(0, len(items), 100_000))
+            )
+        )
+        failures, added, ignored, total = [], 0, 0, 0
+        for res in responses:
+            failures.append(res.get("failures", []))
+            added += res.get("added", 0)
+            total += res.get("total", 0)
+            ignored += res.get("ignored", 0)
+
+        return InsertionResult(
+            added=added, ignored=ignored, total=total, failures=list(chain.from_iterable(failures))
         )
 
-    async def delete_list_items(self, list_id: int, items: list[dict[str, str | int]]) -> None:
+    async def delete_list_items(self, list_id: int, items: list[dict[str, str | int]]) -> int:
         """
         Deletes items from a List.
         :param list_id: The ID of the List.
         :param items: The items to delete from the List. Must be a dict with either `code` or `id`
                       as the keys to identify the records to delete.
         """
-        await self._post(f"{self._url}/lists/{list_id}/items?action=delete", json={"items": items})
+        if len(items) <= 100_000:
+            return (
+                await self._post(
+                    f"{self._url}/lists/{list_id}/items?action=delete", json={"items": items}
+                )
+            ).get("deleted", 0)
+
+        responses = await gather(
+            *(
+                self._post(
+                    f"{self._url}/lists/{list_id}/items?action=delete", json={"items": chunk}
+                )
+                for chunk in (items[i : i + 100_000] for i in range(0, len(items), 100_000))
+            )
+        )
+        return sum(res.get("deleted", 0) for res in responses)
 
     async def reset_list_index(self, list_id: int) -> None:
         """
@@ -129,3 +170,14 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         """
         res = await self._post(f"{self._url}/modules/{module_id}/data", json=data)
         return res if "failures" in res else res["numberOfCellsChanged"]
+
+    async def add_items_to_list(
+        self, list_id: int, items: list[dict[str, str | int | dict]]
+    ) -> InsertionResult:
+        warnings.warn(
+            "`add_items_to_list()` is deprecated and will be removed in a future version. "
+            "Use `insert_list_items()` instead.",
+            DeprecationWarning,
+            stacklevel=1,
+        )
+        return await self.insert_list_items(list_id, items)

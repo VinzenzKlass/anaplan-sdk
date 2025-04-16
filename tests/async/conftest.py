@@ -1,4 +1,3 @@
-import logging
 import os
 import sys
 from os import getenv
@@ -6,10 +5,6 @@ from os import getenv
 import pytest
 
 import anaplan_sdk
-
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-logging.getLogger("httpx").setLevel(logging.ERROR)
-logging.getLogger("anaplan_sdk").setLevel(logging.INFO)
 
 
 @pytest.fixture(scope="session")
@@ -32,6 +27,18 @@ def broken_client():
         private_key=os.getenv("ANAPLAN_SDK_TEST_PK"),
         retry_count=1,
     )
+
+
+@pytest.fixture(scope="session")
+def test_list():
+    py_version = sys.version.split(" ")[0]
+    if "3.10" in py_version:
+        return 101000000309
+    if "3.11" in py_version:
+        return 101000000310
+    if "3.12" in py_version:
+        return 101000000311
+    return 101000000312
 
 
 @pytest.fixture(scope="session")
