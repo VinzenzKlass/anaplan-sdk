@@ -1,5 +1,3 @@
-from uuid import uuid4
-
 from anaplan_sdk import Client
 from anaplan_sdk.models import InsertionResult, ListMetadata, ModelStatus
 
@@ -22,11 +20,6 @@ def test_list_line_items(client: Client):
     assert len(items) > 0
 
 
-def test_get_list_items(client: Client):
-    items = client.transactional.get_list_items(101000000009)
-    assert isinstance(items, list)
-
-
 def test_get_list_meta(client: Client):
     meta = client.transactional.get_list_metadata(101000000009)
     assert isinstance(meta, ListMetadata)
@@ -37,22 +30,37 @@ def test_get_model_status(client: Client):
     assert isinstance(status, ModelStatus)
 
 
-def test_list_insertion(client: Client):
-    result = client.transactional.add_items_to_list(
-        101000000009, [{"code": str(uuid4()), "name": str(uuid4())}]
-    )
+def test_long_list_insertion(client: Client, test_list, list_items_long):
+    result = client.transactional.insert_list_items(test_list, list_items_long)
     assert isinstance(result, InsertionResult)
     assert result.failures == []
-    assert result.added == 1
-    assert result.ignored == 0
-    assert result.total == 1
+    assert result.added == 200_000
+    assert result.total == 200_000
 
 
-def test_delete_list_items(client: Client):
-    code = str(uuid4())
-    client.transactional.add_items_to_list(101000000009, [{"code": code, "name": str(uuid4())}])
-    client.transactional.delete_list_items(101000000009, [{"code": code}])
+def test_long_list_deletion(client: Client, test_list, list_items_long):
+    result = client.transactional.delete_list_items(test_list, list_items_long)
+    assert result == 200_000
 
 
-def test_reset_list_index(client: Client):
-    client.transactional.reset_list_index(101000000010)
+def test_short_list_insertion(client: Client, test_list, list_items_short):
+    result = client.transactional.insert_list_items(test_list, list_items_short)
+    assert isinstance(result, InsertionResult)
+    assert result.failures == []
+    assert result.added == 1_000
+    assert result.total == 1_000
+
+
+def test_get_list_items(client: Client, test_list):
+    items = client.transactional.get_list_items(test_list)
+    assert isinstance(items, list)
+    assert len(items) == 1_000
+
+
+def test_short_list_deletion(client: Client, test_list, list_items_short):
+    result = client.transactional.delete_list_items(test_list, list_items_short)
+    assert result == 1_000
+
+
+def test_reset_list_index(client: Client, test_list):
+    client.transactional.reset_list_index(test_list)
