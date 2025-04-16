@@ -116,7 +116,7 @@ class ListItem(BaseModel):
 
 
 class Action(BaseModel):
-    id: int
+    id: int = Field(description="The unique identifier of this action.")
     """The unique identifier of this action."""
     name: str
     """The name of this action."""

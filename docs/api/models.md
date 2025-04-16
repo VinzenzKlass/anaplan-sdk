@@ -2,3 +2,4 @@ This Project uses [Pydantic](https://docs.pydantic.dev/latest/) Models. Methods 
 and `Client` will return one of the models documented below - or list thereof where applicable.
 
 ::: anaplan_sdk.models
+    options:

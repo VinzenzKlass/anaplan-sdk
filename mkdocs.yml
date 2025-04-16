@@ -64,9 +64,12 @@ plugins:
           options:
             separate_signature: true
             show_signature_annotations: true
-            docstring_style: "sphinx"
+            line_length: 88
+            docstring_style: sphinx
             show_source: false
             show_bases: false
+            extensions:
+              - griffe_fieldz
 
 extra_css:
   - css/styles.css

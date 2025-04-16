@@ -21,7 +21,7 @@ implementation details like authentication, error handling, chunking, compressio
 This Projects supports
 the [Bulk APIs](https://help.anaplan.com/use-the-bulk-apis-93218e5e-00e5-406e-8361-09ab861889a7),
 the [Transactional APIs](https://help.anaplan.com/use-the-transactional-apis-cc1c1e91-39fc-4272-a4b5-16bc91e9c313) and
-the [ALM APsI](https://help.anaplan.com/application-lifecycle-management-api-2565cfa6-e0c2-4e24-884e-d0df957184d6),
+the [ALM APIs](https://help.anaplan.com/application-lifecycle-management-api-2565cfa6-e0c2-4e24-884e-d0df957184d6),
 the [Audit APIs](https://auditservice.docs.apiary.io/#),
 providing both synchronous and asynchronous Clients.
 
