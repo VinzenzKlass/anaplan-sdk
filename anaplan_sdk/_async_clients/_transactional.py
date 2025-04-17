@@ -156,7 +156,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         """
         await self._post_empty(f"{self._url}/lists/{list_id}/resetIndex")
 
-    async def write_to_module(
+    async def update_module_data(
         self, module_id: int, data: list[dict[str, Any]]
     ) -> int | dict[str, Any]:
         """
@@ -170,6 +170,17 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         """
         res = await self._post(f"{self._url}/modules/{module_id}/data", json=data)
         return res if "failures" in res else res["numberOfCellsChanged"]
+
+    async def write_to_module(
+        self, module_id: int, data: list[dict[str, Any]]
+    ) -> int | dict[str, Any]:
+        warnings.warn(
+            "`write_to_module()` is deprecated and will be removed in a future version. "
+            "Use `update_module_data()` instead.",
+            DeprecationWarning,
+            stacklevel=1,
+        )
+        return await self.update_module_data(module_id, data)
 
     async def add_items_to_list(
         self, list_id: int, items: list[dict[str, str | int | dict]]

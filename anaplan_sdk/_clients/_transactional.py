@@ -149,7 +149,9 @@ class _TransactionalClient(_BaseClient):
         """
         self._post_empty(f"{self._url}/lists/{list_id}/resetIndex")
 
-    def write_to_module(self, module_id: int, data: list[dict[str, Any]]) -> int | dict[str, Any]:
+    def update_module_data(
+        self, module_id: int, data: list[dict[str, Any]]
+    ) -> int | dict[str, Any]:
         """
         Write the passed items to the specified module. If successful, the number of cells changed
         is returned, if only partially successful or unsuccessful, the response with the according
@@ -161,6 +163,15 @@ class _TransactionalClient(_BaseClient):
         """
         res = self._post(f"{self._url}/modules/{module_id}/data", json=data)
         return res if "failures" in res else res["numberOfCellsChanged"]
+
+    def write_to_module(self, module_id: int, data: list[dict[str, Any]]) -> int | dict[str, Any]:
+        warnings.warn(
+            "`write_to_module()` is deprecated and will be removed in a future version. "
+            "Use `update_module_data()` instead.",
+            DeprecationWarning,
+            stacklevel=1,
+        )
+        return self.update_module_data(module_id, data)
 
     def add_items_to_list(
         self, list_id: int, items: list[dict[str, str | int | dict]]

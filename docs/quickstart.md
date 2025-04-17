@@ -5,8 +5,6 @@ can use an HTTP Client like Postman, Insomnia, or Paw.
 
 It further assumes you have a valid user with credentials and required permissions.
 
-## Initializing the Client
-
 To get started, you can use basic authentication with your email and password. Refer to
 the [Bulk API Guide](guides/bulk.md#instantiate-a-client) to understand why this is not a good idea for production use.
 
@@ -40,54 +38,115 @@ anaplan = anaplan_sdk.AsyncClient(
 
 ///
 
-## Getting Started
+## Importing Data
 
-### Importing data
+Start by listing available assets in our model. Typically, these will have already been created, and you will be
+searching for a specific name provided by your Model Builder. Here, we will use one file and one process, which is
+common practice.
 
 /// tab | Synchronous
 
 ```python
-anaplan.upload_file(113000000000, b"Hello Anaplan")
-anaplan.run_action(112000000000)
-
-# Or in short:
-anaplan.upload_and_import(113000000000, b"Hello Anaplan", 112000000000)
+file, processes = anaplan.list_files(), anaplan.list_processes()
+print(files, processes, sep="\n")
 ```
 
 ///
+
 /// tab | Asynchronous
 
 ```python
-await anaplan.upload_file(113000000000, b"Hello Anaplan")
-await anaplan.run_action(112000000000)
-
-# Or in short:
-await anaplan.upload_and_import(113000000000, b"Hello Anaplan", 112000000000)
-
+files, processes = await gather(anaplan.list_files(), anaplan.list_processes())
+print(files, processes, sep="\n")
 ```
 
 ///
 
-### Exporting data
+```python
+[
+    File(
+        id=113000000000,
+        name="Quickstart.csv",
+        chunk_count=0,
+        delimiter='"',
+        encoding="UTF-8",
+        first_data_row=2,
+        format="txt",
+        header_row=1,
+        separator=",",
+    )
+]
+[Process(id=118000000000, name="Quickstart")]
+```
+
+With these two, you're ready to run your first import.
 
 /// tab | Synchronous
 
 ```python
-anaplan.run_action(116000000000)
-content = anaplan.get_file(116000000000)
+anaplan.upload_and_import(
+    file_id=113000000000, action_id=118000000000, content=b"Hello, Anaplan!"
+)
+```
 
-# Or in short:
+///
+
+/// tab | Asynchronous
+
+```python
+await anaplan.upload_and_import(
+    file_id=113000000000, action_id=118000000000, content=b"Hello, Anaplan!"
+)
+```
+
+///
+
+## Exporting Data
+
+Conversely, for exporting data, we start by listing the available exports.
+
+/// tab | Synchronous
+
+```python
+exports = anaplan.list_exports()
+print(exports)
+```
+
+///
+
+/// tab | Asynchronous
+
+```python
+exports = await anaplan.list_exports()
+print(exports)
+```
+
+///
+
+```python
+[
+    Export(
+        id=116000000000,
+        name="Quickstart Export",
+        type="GRID_CURRENT_PAGE",
+        format="text/csv",
+        encoding="UTF-8",
+        layout="GRID_CURRENT_PAGE",
+    )
+]
+```
+
+/// tab | Synchronous
+
+```python
 content = anaplan.export_and_download(116000000000)
 ```
 
 ///
+
 /// tab | Asynchronous
 
 ```python
-await anaplan.run_action(116000000000)
-content = await anaplan.get_file(116000000000)
-
-# Or in short:
 content = await anaplan.export_and_download(116000000000)
 ```
 
@@ -98,5 +157,6 @@ content = await anaplan.export_and_download(116000000000)
 To gain a better understanding of how Anaplan handles data, head over to the [Anaplan Explained](anaplan_explained.md)
 section.
 
-For a more detailed guide on how to use both the [Bulk APIs](guides/bulk.md) and [Transactional APIs](guides/transactional.md), refer
+For a more detailed guide on how to use both the [Bulk APIs](guides/bulk.md)
+and [Transactional APIs](guides/transactional.md), refer
 to the Guides.
