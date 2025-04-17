@@ -71,12 +71,15 @@ plugins:
             extensions:
               - griffe_fieldz
 
+
+extra_javascript:
+  - js/highlight.js
+
 extra_css:
   - css/styles.css
 
 markdown_extensions:
   - pymdownx.superfences
-  - pymdownx.highlight
   - pymdownx.blocks.tab:
       alternate_style: true
   - admonition
