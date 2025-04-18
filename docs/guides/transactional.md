@@ -99,7 +99,7 @@ products = await anaplan.transactional.get_list_items(101000000299)
 
 ///
 
-### Add Items to a List
+### Insert new List Items
 
 /// tab | Synchronous
 These dicts must at least hold `code` or `id`and the name.
@@ -135,7 +135,7 @@ await anaplan.transactional.insert_list_items(
 
 ///
 
-### Write to a Module
+### Update Module Data
 
 You can manipulate individual cells in a module using the `write_to_module` method. This method takes a list of
 dictionaries, each specifying the "coordinates" as a combination of the module to write to, the line item to update and
@@ -217,12 +217,11 @@ Warning. To automate this tedious task without losing any data, we can perform f
 ```python
 items = anaplan.transactional.get_list_items(101000000000)
 anaplan.transactional.delete_list_items(
-    101000000000,
-    [{"id": e.id} for e in items],
+    101000000000, [{"id": e.id} for e in items]
 )
 anaplan.transactional.reset_list_index(101000000000)
-result = anaplan.transactional.add_items_to_list(
-    101000000008, [{"code": e.code} for e in items]
+result = anaplan.transactional.insert_list_items(
+    101000000008, [e.model_dump() for e in items] # Reimport all fields.
 )
 ```
 
@@ -235,8 +234,8 @@ await anaplan.transactional.delete_list_items(
     101000000000, [{"id": e.id} for e in items]
 )
 await anaplan.transactional.reset_list_index(101000000000)
-result = await anaplan.transactional.add_items_to_list(
-    101000000008, [{"code": e.code} for e in items]
+result = await anaplan.transactional.insert_list_items(
+    101000000008, [e.model_dump() for e in items] # Reimport all fields. 
 )
 ```
 

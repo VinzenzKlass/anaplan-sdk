@@ -13,14 +13,6 @@
     box-shadow: rgba(46, 46, 46, 0.3) 0 0 5px 2px;
 }
 
-:root > * {
-    --md-code-hl-special-color: #2AAFB0;
-    --md-code-hl-constant-color: #2AAFB0;
-    --md-code-hl-keyword-color: #D55FDE;
-    --md-code-hl-function-color: var(--md-code-fg-color);
-    --md-code-hl-number-color: #CC7548;
-}
-
 .hljs-comment, .hljs-quote {
     color: #5c6370;
     font-weight: 500;
@@ -48,11 +40,11 @@
 
 
 .hljs-number, .hljs-selector-attr, .hljs-selector-class, .hljs-selector-pseudo, .hljs-template-variable, .hljs-variable {
-    color: #CC7548
+    color: #d0864a
 }
 
 .hljs-bullet, .hljs-link, .hljs-meta, .hljs-selector-id, .hljs-symbol, .hljs-title, .hljs-class .hljs-title, .hljs-title.class_ {
-    color: #3E81D8
+    color: #5488e8
 }
 
 .hljs-built_in {
