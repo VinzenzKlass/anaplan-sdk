@@ -21,15 +21,9 @@
     --md-code-hl-number-color: #CC7548;
 }
 
-
-.hljs {
-    color: #abb2bf;
-    background: #282c34
-}
-
 .hljs-comment, .hljs-quote {
     color: #5c6370;
-    font-style: italic
+    font-weight: 500;
 }
 
 .hljs-doctag, .hljs-formula, .hljs-keyword, .hljs-literal {

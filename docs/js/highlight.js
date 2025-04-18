@@ -2,7 +2,7 @@ document$.subscribe(() => {
     Promise.all([
         import('./assets/hljs.js'),
         import('./assets/python.js')
-    ]).then(([hljsModule,pyModule]) => {
+    ]).then(([hljsModule, pyModule]) => {
         const hljs = hljsModule.default;
         const python = pyModule.default;
         hljs.configure({
