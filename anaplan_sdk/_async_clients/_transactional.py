@@ -32,7 +32,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         """
         return [
             Module.model_validate(e)
-            for e in (await self._get(f"{self._url}/modules")).get("modules")
+            for e in (await self._get(f"{self._url}/modules")).get("modules", [])
         ]
 
     async def get_model_status(self) -> ModelStatus:
@@ -55,7 +55,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
             if only_module_id
             else f"{self._url}/lineItems?includeAll=true"
         )
-        return [LineItem.model_validate(e) for e in (await self._get(url)).get("items")]
+        return [LineItem.model_validate(e) for e in (await self._get(url)).get("items", [])]
 
     async def list_lists(self) -> list[List]:
         """
@@ -63,7 +63,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :return: All Lists on this model.
         """
         return [
-            List.model_validate(e) for e in (await self._get(f"{self._url}/lists")).get("lists")
+            List.model_validate(e) for e in (await self._get(f"{self._url}/lists")).get("lists", [])
         ]
 
     async def get_list_metadata(self, list_id: int) -> ListMetadata:
@@ -156,7 +156,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         """
         await self._post_empty(f"{self._url}/lists/{list_id}/resetIndex")
 
-    async def write_to_module(
+    async def update_module_data(
         self, module_id: int, data: list[dict[str, Any]]
     ) -> int | dict[str, Any]:
         """
@@ -170,6 +170,17 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         """
         res = await self._post(f"{self._url}/modules/{module_id}/data", json=data)
         return res if "failures" in res else res["numberOfCellsChanged"]
+
+    async def write_to_module(
+        self, module_id: int, data: list[dict[str, Any]]
+    ) -> int | dict[str, Any]:
+        warnings.warn(
+            "`write_to_module()` is deprecated and will be removed in a future version. "
+            "Use `update_module_data()` instead.",
+            DeprecationWarning,
+            stacklevel=1,
+        )
+        return await self.update_module_data(module_id, data)
 
     async def add_items_to_list(
         self, list_id: int, items: list[dict[str, str | int | dict]]

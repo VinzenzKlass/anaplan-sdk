@@ -64,16 +64,23 @@ plugins:
           options:
             separate_signature: true
             show_signature_annotations: true
-            docstring_style: "sphinx"
+            line_length: 88
+            docstring_style: sphinx
+            members_order: source
             show_source: false
             show_bases: false
+            extensions:
+              - griffe_fieldz
+
+
+extra_javascript:
+  - js/highlight.js
 
 extra_css:
   - css/styles.css
 
 markdown_extensions:
   - pymdownx.superfences
-  - pymdownx.highlight
   - pymdownx.blocks.tab:
       alternate_style: true
   - admonition

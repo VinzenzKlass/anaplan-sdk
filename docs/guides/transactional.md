@@ -69,15 +69,16 @@ anaplan = anaplan_sdk.AsyncClient(
     private_key="~/keys/anaplan.pem",
 )
 trans_anaplan = anaplan.transactional
-lists = await trans_anaplan.list_lists()
-modules = await trans_anaplan.list_modules()
+lists, modules = await gather(
+   trans_anaplan.list_lists(), trans_anaplan.list_modules()
+)
 ```
 
 ///
 
 !!! note
-While you can instantiate a [Client](../api/client.md) without the workspace or model parameters, trying to access
-the [Transactional Client](../api/transactional_client.md) on an instance without the `model_id` will raise a `ValueError`.
+    While you can instantiate a [Client](../api/client.md) without the workspace or model parameters, trying to access
+    the [Transactional Client](../api/transactional_client.md) on an instance without the `model_id` will raise a `ValueError`.
 
 ## Basic Usage
 
@@ -98,13 +99,13 @@ products = await anaplan.transactional.get_list_items(101000000299)
 
 ///
 
-### Add Items to a List
+### Insert new List Items
 
 /// tab | Synchronous
 These dicts must at least hold `code` or `id`and the name.
 
 ```python
-anaplan.transactional.add_items_to_list(
+anaplan.transactional.insert_list_items(
     101000000299,
     [
         {"code": "A", "name": "A"},
@@ -121,7 +122,7 @@ anaplan.transactional.add_items_to_list(
 These dicts must at least hold `code` or `id`and the name.
 
 ```python
-await anaplan.transactional.add_items_to_list(
+await anaplan.transactional.insert_list_items(
     101000000299,
     [
         {"code": "A", "name": "A"},
@@ -134,7 +135,7 @@ await anaplan.transactional.add_items_to_list(
 
 ///
 
-### Write to a Module
+### Update Module Data
 
 You can manipulate individual cells in a module using the `write_to_module` method. This method takes a list of
 dictionaries, each specifying the "coordinates" as a combination of the module to write to, the line item to update and
@@ -145,7 +146,7 @@ their `id` or `name`. The `value` can be a string, number or boolean.
 /// tab | Synchronous
 
 ```python
-anaplan.transactional.write_to_module(
+anaplan.transactional.update_module_data(
     101000000299,
     [
         {
@@ -173,7 +174,7 @@ anaplan.transactional.write_to_module(
 /// tab | Asynchronous
 
 ```python
-await anaplan.transactional.write_to_module(
+await anaplan.transactional.update_module_data(
     101000000299,
     [
         {
@@ -216,12 +217,11 @@ Warning. To automate this tedious task without losing any data, we can perform f
 ```python
 items = anaplan.transactional.get_list_items(101000000000)
 anaplan.transactional.delete_list_items(
-   101000000000,
-   [{"id": e.id} for e in items],
+    101000000000, [{"id": e.id} for e in items]
 )
 anaplan.transactional.reset_list_index(101000000000)
-result = anaplan.transactional.add_items_to_list(
-    101000000008, [{"code": e.code} for e in items]
+result = anaplan.transactional.insert_list_items(
+    101000000008, [e.model_dump() for e in items] # Reimport all fields.
 )
 ```
 
@@ -234,8 +234,8 @@ await anaplan.transactional.delete_list_items(
     101000000000, [{"id": e.id} for e in items]
 )
 await anaplan.transactional.reset_list_index(101000000000)
-result = await anaplan.transactional.add_items_to_list(
-    101000000008, [{"code": e.code} for e in items]
+result = await anaplan.transactional.insert_list_items(
+    101000000008, [e.model_dump() for e in items] # Reimport all fields. 
 )
 ```
 

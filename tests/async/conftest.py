@@ -21,8 +21,8 @@ def client():
 @pytest.fixture(scope="session")
 def broken_client():
     return anaplan_sdk.AsyncClient(
-        workspace_id="random",
-        model_id="nonsense",
+        workspace_id="",
+        model_id="",
         certificate=os.getenv("ANAPLAN_SDK_TEST_CERT"),
         private_key=os.getenv("ANAPLAN_SDK_TEST_PK"),
         retry_count=1,
