@@ -1,3 +1,10 @@
+/*
+Language: Python
+Description: Python is an interpreted, object-oriented, high-level programming language with dynamic semantics.
+Website: https://www.python.org
+Category: common
+*/
+
 export default function (hljs) {
     const regex = hljs.regex;
     const IDENT_RE = /[\p{XID_Start}_]\p{XID_Continue}*/u;
@@ -119,10 +126,10 @@ export default function (hljs) {
         'True'
     ];
     const KEYWORDS = {
-        $pattern: /(?<!\.)([A-Za-z]\w+)(?!\s*=)|__\w+__/,
-        literal: LITERALS,
-        built_in: BUILT_INS,
+        $pattern: /(?:[A-Za-z]\w*|__\w+__)(?!=)/,
         keyword: RESERVED_WORDS,
+        built_in: BUILT_INS,
+        literal: LITERALS,
     };
 
     const PROMPT = {
@@ -340,24 +347,8 @@ export default function (hljs) {
         keywords: KEYWORDS,
         illegal: /(<\/|\?)|=>/,
         contains: [
-            {
-                // Match CamelCase types (starts with capital letter or _Capital)
-                // but exclude keywords/literals and instantiations
-                match: /\b(?![TFN](?:rue|alse|one)\b)(?:[A-Z][a-zA-Z0-9]*|_[A-Z][a-zA-Z0-9]*)\b(?!\s*\()/,
-                scope: 'type'
-            },
             PROMPT,
             NUMBER,
-            {
-                match: [
-                    /\./, // Not preceded by a dot (avoid method calls)
-                    IDENT_RE,  // The function name
-                    /\s*\(/    // Followed by optional whitespace and open parenthesis
-                ],
-                scope: {
-                    2: "title.function"
-                }
-            },
             {
                 scope: 'variable.language',
                 match: /\bself\b/
@@ -412,7 +403,35 @@ export default function (hljs) {
                     PARAMS,
                     STRING
                 ]
-            }
+            },
+            {
+                // Match CamelCase types (starts with capital letter or _Capital)
+                // but exclude keywords/literals and instantiations
+                match: /\b(?![TFN](?:rue|alse|one)\b)(?:[A-Z][a-zA-Z0-9]*|_[A-Z][a-zA-Z0-9]*)\b(?!\s*\()/,
+                scope: 'type'
+            },
+            {
+
+                match: [
+                    /\./,
+                    IDENT_RE,
+                    /\s*\(/
+                ],
+                scope: {
+                    2: "title.function"
+                }
+            },
+            {
+
+                match: [
+                    /[A-Z]/,
+                    IDENT_RE,
+                    /\s*\(/
+                ],
+                scope: {
+                    2: "title.function"
+                }
+            },
         ]
     };
 }
