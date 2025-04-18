@@ -1,5 +1,11 @@
+import pytest
+
 from anaplan_sdk import AsyncClient
-from anaplan_sdk.exceptions import InvalidIdentifierException
+from anaplan_sdk.exceptions import (
+    AnaplanException,
+    InvalidCredentialsException,
+    InvalidIdentifierException,
+)
 from anaplan_sdk.models import TaskStatus
 
 
@@ -9,11 +15,14 @@ async def test_list_workspaces(client: AsyncClient):
     assert len(workspaces) > 0
 
 
-async def test_broken_list_workspaces_raises_invalid_identifier_error(broken_client):
-    try:
-        await broken_client.list_workspaces()
-    except Exception as error:
-        assert isinstance(error, InvalidIdentifierException)
+async def test_broken_list_files_raises_invalid_identifier_error(broken_client):
+    with pytest.raises(InvalidIdentifierException):
+        await broken_client.list_files()
+
+
+async def unauthenticated_client_raises_exception():
+    with pytest.raises(InvalidCredentialsException):
+        _ = AsyncClient(user_email="invalid_email", password="pass")
 
 
 async def test_list_models(client: AsyncClient):
@@ -82,6 +91,25 @@ async def test_invoke_action(client, test_action):
 async def test_get_task_status(client, test_action):
     task_status = await client.get_task_status(test_action, await client.invoke_action(test_action))
     assert isinstance(task_status, TaskStatus)
+
+
+async def test_invalid_file_id_raises_exception(client: AsyncClient):
+    with pytest.raises(InvalidIdentifierException):
+        await client.get_file(1)
+
+
+async def test_run_nonexistent_action_raises_exception(client: AsyncClient):
+    with pytest.raises(InvalidIdentifierException):
+        await client.run_action(1)
+
+
+async def test_upload_empty_file(client: AsyncClient, test_file):
+    with pytest.raises(AnaplanException):
+        await client.upload_file(test_file, b"")
+        result = await client.get_file(
+            test_file
+        )  # Error occurs here, since the file does not actually exist
+        assert result == b""
 
 
 async def _async_range(count: int):

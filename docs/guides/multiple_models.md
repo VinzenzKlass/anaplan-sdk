@@ -1,6 +1,6 @@
-If you find yourself working with several Models at the same time, you may want to reuse a Client Instance instead of
+If you find yourself working with several Models at the same time, you will want to reuse a Client Instance instead of
 creating an entirely new one. This will be more efficient by avoiding duplicate authentication and sharing underlying
-resources that can safely be shared. For this Purpose, you can use the `from_existing()` Classmethod:
+resources that can safely be shared. For this Purpose, you can use the `from_existing()` Class method:
 
 /// tab | Synchronous
 

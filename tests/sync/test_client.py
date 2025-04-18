@@ -1,5 +1,11 @@
+import pytest
+
 from anaplan_sdk import Client
-from anaplan_sdk.exceptions import InvalidIdentifierException
+from anaplan_sdk.exceptions import (
+    AnaplanException,
+    InvalidCredentialsException,
+    InvalidIdentifierException,
+)
 from anaplan_sdk.models import TaskStatus
 
 
@@ -9,11 +15,14 @@ def test_list_workspaces(client: Client):
     assert len(workspaces) > 0
 
 
-def test_broken_list_workspaces_raises_invalid_identifier_error(broken_client: Client):
-    try:
-        broken_client.list_workspaces()
-    except Exception as error:
-        assert isinstance(error, InvalidIdentifierException)
+def test_broken_list_files_raises_invalid_identifier_error(broken_client):
+    with pytest.raises(InvalidIdentifierException):
+        broken_client.list_files()
+
+
+def unauthenticated_client_raises_exception():
+    with pytest.raises(InvalidCredentialsException):
+        _ = Client(user_email="invalid_email", password="pass")
 
 
 def test_list_models(client: Client):
@@ -82,3 +91,22 @@ def test_invoke_action(client: Client, test_action):
 def test_get_task_status(client: Client, test_action):
     task_status = client.get_task_status(test_action, client.invoke_action(test_action))
     assert isinstance(task_status, TaskStatus)
+
+
+def test_invalid_file_id_raises_exception(client: Client):
+    with pytest.raises(InvalidIdentifierException):
+        client.get_file(1)
+
+
+def test_run_nonexistent_action_raises_exception(client: Client):
+    with pytest.raises(InvalidIdentifierException):
+        client.run_action(1)
+
+
+def test_upload_empty_file(client: Client, test_file):
+    with pytest.raises(AnaplanException):
+        client.upload_file(test_file, b"")
+        result = client.get_file(
+            test_file
+        )  # Error occurs here, since the file does not actually exist
+        assert result == b""

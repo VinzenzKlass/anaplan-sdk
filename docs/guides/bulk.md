@@ -87,28 +87,75 @@ anaplan = anaplan_sdk.AsyncClient(
 
 ///
 
-### Importing data
+### Listing Resources
+
+You can list all the global resources available in the given users **default tenant**. You cannot list workspaces or 
+models that reside in a different tenant. You can still instantiate a client for a different workspace and model, but 
+you will need grab these IDs from the Anaplan UI or have them provided to you.
+
+You can list model specific resources like imports, exports, actions and processes on any model, but you will need to
+provide the workspace and model IDs.
+
 
 /// tab | Synchronous
 
 ```python
-anaplan.upload_file(113000000000, b"Hello Anaplan")
-anaplan.run_action(112000000000)
+workspaces, models = (
+    anaplan.list_workspaces(), anaplan.list_models()
+) # Globals, this will work on an instance with auth info only
 
-# Or in short:
-anaplan.upload_and_import(113000000000, b"Hello Anaplan", 112000000000)
+imports, exports, actions, processes = (
+    anaplan.list_imports(),
+    anaplan.list_exports(),
+    anaplan.list_actions(),
+    anaplan.list_processes(),
+) # These require an instance with workspace and model info
 ```
 
 ///
 /// tab | Asynchronous
 
 ```python
-await anaplan.upload_file(113000000000, b"Hello Anaplan")
-await anaplan.run_action(112000000000)
+workspaces, models = await gather(
+    anaplan.list_workspaces(), anaplan.list_models()
+) # Globals, this will work on an instance with auth info only
 
-# Or in short:
+imports, exports, actions, processes = await gather(
+    anaplan.list_imports(),
+    anaplan.list_exports(),
+    anaplan.list_actions(),
+    anaplan.list_processes(),
+) # These require an instance with workspace and model info
+```
+
+///
+
+
+### Importing data
+
+/// tab | Synchronous
+
+```python
+anaplan.upload_and_import(113000000000, b"Hello Anaplan", 112000000000)
+
+# Or if you need more control, 
+# i.e. to upload multiple files or run things in between:
+anaplan.upload_file(113000000000, b"Hello Anaplan")
+...
+anaplan.run_action(112000000000)
+```
+
+///
+/// tab | Asynchronous
+
+```python
 await anaplan.upload_and_import(113000000000, b"Hello Anaplan", 112000000000)
 
+# Or if you need more control, 
+# i.e. to upload multiple files or run things in between:
+await anaplan.upload_file(113000000000, b"Hello Anaplan")
+...
+await anaplan.run_action(112000000000)
 ```
 
 ///
@@ -118,22 +165,24 @@ await anaplan.upload_and_import(113000000000, b"Hello Anaplan", 112000000000)
 /// tab | Synchronous
 
 ```python
-anaplan.run_action(116000000000)
-content = anaplan.get_file(116000000000)
-
-# Or in short:
 content = anaplan.export_and_download(116000000000)
+
+# Again, you can do this in multiple steps:
+anaplan.run_action(116000000000)
+...
+content = anaplan.get_file(116000000000)
 ```
 
 ///
 /// tab | Asynchronous
 
 ```python
-await anaplan.run_action(116000000000)
-content = await anaplan.get_file(116000000000)
-
-# Or in short:
 content = await anaplan.export_and_download(116000000000)
+
+# Again, you can do this in multiple steps:
+await anaplan.run_action(116000000000)
+...
+content = await anaplan.get_file(116000000000)
 ```
 
 ///
