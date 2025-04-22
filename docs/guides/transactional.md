@@ -137,7 +137,7 @@ await anaplan.transactional.insert_list_items(
 
 ### Update Module Data
 
-You can manipulate individual cells in a module using the `write_to_module` method. This method takes a list of
+You can manipulate individual cells in a module using the `update_module_data` method. This method takes a list of
 dictionaries, each specifying the "coordinates" as a combination of the module to write to, the line item to update and
 the list of dimensions. The combination of these three will uniquely identify the cell to be updated. The value to be
 written is specified in the `value` key of the dictionary. The Line Items and Dimensions can be specified by either
