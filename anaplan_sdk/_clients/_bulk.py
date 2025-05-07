@@ -199,8 +199,10 @@ class Client(_BaseClient):
         """
         return [
             Workspace.model_validate(e)
-            for e in self._get("https://api.anaplan.com/2/0/workspaces?tenantDetails=true").get(
-                "workspaces", []
+            for e in self._get_paginated(
+                "https://api.anaplan.com/2/0/workspaces",
+                "workspaces",
+                params={"tenantDetails": "true"},
             )
         ]
 
@@ -211,8 +213,8 @@ class Client(_BaseClient):
         """
         return [
             Model.model_validate(e)
-            for e in self._get("https://api.anaplan.com/2/0/models?modelDetails=true").get(
-                "models", []
+            for e in self._get_paginated(
+                "https://api.anaplan.com/2/0/models", "models", params={"modelDetails": "true"}
             )
         ]
 
@@ -221,7 +223,7 @@ class Client(_BaseClient):
         Lists all the Files in the Model.
         :return: The List of Files.
         """
-        return [File.model_validate(e) for e in self._get(f"{self._url}/files").get("files", [])]
+        return [File.model_validate(e) for e in self._get_paginated(f"{self._url}/files", "files")]
 
     def list_actions(self) -> list[Action]:
         """
@@ -231,7 +233,7 @@ class Client(_BaseClient):
         :return: The List of Actions.
         """
         return [
-            Action.model_validate(e) for e in (self._get(f"{self._url}/actions")).get("actions", [])
+            Action.model_validate(e) for e in self._get_paginated(f"{self._url}/actions", "actions")
         ]
 
     def list_processes(self) -> list[Process]:
@@ -241,7 +243,7 @@ class Client(_BaseClient):
         """
         return [
             Process.model_validate(e)
-            for e in (self._get(f"{self._url}/processes")).get("processes", [])
+            for e in self._get_paginated(f"{self._url}/processes", "processes")
         ]
 
     def list_imports(self) -> list[Import]:
@@ -250,7 +252,7 @@ class Client(_BaseClient):
         :return: The List of Imports.
         """
         return [
-            Import.model_validate(e) for e in (self._get(f"{self._url}/imports")).get("imports", [])
+            Import.model_validate(e) for e in self._get_paginated(f"{self._url}/imports", "imports")
         ]
 
     def list_exports(self) -> list[Export]:
@@ -400,8 +402,8 @@ class Client(_BaseClient):
         """
         return [
             TaskSummary.model_validate(e)
-            for e in self._get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks").get(
-                "tasks", []
+            for e in self._get_paginated(
+                f"{self._url}/{action_url(action_id)}/{action_id}/tasks", "tasks"
             )
         ]
 
