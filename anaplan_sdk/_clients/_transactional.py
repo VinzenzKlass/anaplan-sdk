@@ -28,7 +28,9 @@ class _TransactionalClient(_BaseClient):
         Lists all the Modules in the Model.
         :return: The List of Modules.
         """
-        return [Module.model_validate(e) for e in self._get(f"{self._url}/modules").get("modules")]
+        return [
+            Module.model_validate(e) for e in self._get_paginated(f"{self._url}/modules", "modules")
+        ]
 
     def get_model_status(self) -> ModelStatus:
         """
@@ -53,9 +55,9 @@ class _TransactionalClient(_BaseClient):
     def list_lists(self) -> list[List]:
         """
         Lists all the Lists in the Model.
-        :return: All Lists on this Model.
+        :return: All Lists on this model.
         """
-        return [List.model_validate(e) for e in self._get(f"{self._url}/lists").get("lists", [])]
+        return [List.model_validate(e) for e in self._get_paginated(f"{self._url}/lists", "lists")]
 
     def get_list_metadata(self, list_id: int) -> ListMetadata:
         """

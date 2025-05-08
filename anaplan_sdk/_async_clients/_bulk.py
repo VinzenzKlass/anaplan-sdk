@@ -191,9 +191,11 @@ class AsyncClient(_AsyncBaseClient):
         """
         return [
             Workspace.model_validate(e)
-            for e in (
-                await self._get("https://api.anaplan.com/2/0/workspaces?tenantDetails=true")
-            ).get("workspaces", [])
+            for e in await self._get_paginated(
+                "https://api.anaplan.com/2/0/workspaces",
+                "workspaces",
+                params={"tenantDetails": "true"},
+            )
         ]
 
     async def list_models(self) -> list[Model]:
@@ -203,8 +205,8 @@ class AsyncClient(_AsyncBaseClient):
         """
         return [
             Model.model_validate(e)
-            for e in (await self._get("https://api.anaplan.com/2/0/models?modelDetails=true")).get(
-                "models", []
+            for e in await self._get_paginated(
+                "https://api.anaplan.com/2/0/models", "models", params={"modelDetails": "true"}
             )
         ]
 
@@ -214,7 +216,7 @@ class AsyncClient(_AsyncBaseClient):
         :return: The List of Files.
         """
         return [
-            File.model_validate(e) for e in (await self._get(f"{self._url}/files")).get("files", [])
+            File.model_validate(e) for e in await self._get_paginated(f"{self._url}/files", "files")
         ]
 
     async def list_actions(self) -> list[Action]:
@@ -226,7 +228,7 @@ class AsyncClient(_AsyncBaseClient):
         """
         return [
             Action.model_validate(e)
-            for e in (await self._get(f"{self._url}/actions")).get("actions", [])
+            for e in await self._get_paginated(f"{self._url}/actions", "actions")
         ]
 
     async def list_processes(self) -> list[Process]:
@@ -236,7 +238,7 @@ class AsyncClient(_AsyncBaseClient):
         """
         return [
             Process.model_validate(e)
-            for e in (await self._get(f"{self._url}/processes")).get("processes", [])
+            for e in await self._get_paginated(f"{self._url}/processes", "processes")
         ]
 
     async def list_imports(self) -> list[Import]:
@@ -246,7 +248,7 @@ class AsyncClient(_AsyncBaseClient):
         """
         return [
             Import.model_validate(e)
-            for e in (await self._get(f"{self._url}/imports")).get("imports", [])
+            for e in await self._get_paginated(f"{self._url}/imports", "imports")
         ]
 
     async def list_exports(self) -> list[Export]:
@@ -256,7 +258,7 @@ class AsyncClient(_AsyncBaseClient):
         """
         return [
             Export.model_validate(e)
-            for e in (await self._get(f"{self._url}/exports")).get("exports", [])
+            for e in await self._get_paginated(f"{self._url}/exports", "exports")
         ]
 
     async def run_action(self, action_id: int) -> TaskStatus:
@@ -406,9 +408,9 @@ class AsyncClient(_AsyncBaseClient):
         """
         return [
             TaskSummary.model_validate(e)
-            for e in (
-                await self._get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks")
-            ).get("tasks", [])
+            for e in await self._get_paginated(
+                f"{self._url}/{action_url(action_id)}/{action_id}/tasks", "tasks"
+            )
         ]
 
     async def get_task_status(self, action_id: int, task_id: str) -> TaskStatus:
