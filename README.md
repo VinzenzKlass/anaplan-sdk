@@ -29,6 +29,7 @@ Visit [Anaplan SDK](https://vinzenzklass.github.io/anaplan-sdk/) for documentati
 
 If you find any issues or feel that this SDK is not adequately covering your use case,
 please [open an issue](https://github.com/VinzenzKlass/anaplan-sdk/issues/new).
+
 ---
 
 ### Install Anaplan SDK using pip
