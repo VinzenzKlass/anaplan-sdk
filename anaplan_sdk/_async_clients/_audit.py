@@ -25,6 +25,15 @@ class _AsyncAuditClient(_AsyncBaseClient):
             for e in await self._get_paginated("https://api.anaplan.com/2/0/users", "users")
         ]
 
+    async def get_user(self, user_id: str = "me") -> User:
+        """
+        Retrieves information about the specified user, or the authenticated user if none specified.
+        :return: The requested or currently authenticated User.
+        """
+        return User.model_validate(
+            (await self._get(f"https://api.anaplan.com/2/0/users/{user_id}")).get("user")
+        )
+
     async def get_events(self, days_into_past: int = 30, event_type: Event = "all") -> list:
         """
         Get audit events from Anaplan Audit API.
