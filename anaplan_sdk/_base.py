@@ -1,7 +1,3 @@
-"""
-Provides Base Classes for this project.
-"""
-
 import asyncio
 import logging
 import random
@@ -24,6 +20,9 @@ from anaplan_sdk.exceptions import (
 
 logger = logging.getLogger("anaplan_sdk")
 
+_json_header = {"Content-Type": "application/json"}
+_gzip_header = {"Content-Type": "application/x-gzip"}
+
 
 class _BaseClient:
     def __init__(self, retry_count: int, client: httpx.Client):
@@ -37,19 +36,20 @@ class _BaseClient:
         return self._run_with_retry(self._client.get, url).content
 
     def _post(self, url: str, json: dict | list) -> dict[str, Any]:
-        return self._run_with_retry(
-            self._client.post, url, headers={"Content-Type": "application/json"}, json=json
-        ).json()
+        return self._run_with_retry(self._client.post, url, headers=_json_header, json=json).json()
+
+    def _put(self, url: str, json: dict | list) -> dict[str, Any]:
+        return (self._run_with_retry(self._client.put, url, headers=_json_header, json=json)).json()
+
+    def _patch(self, url: str, json: dict | list) -> dict[str, Any]:
+        return (self._run_with_retry(self._client.put, url, headers=_json_header, json=json)).json()
 
     def _post_empty(self, url: str) -> None:
         self._run_with_retry(self._client.post, url)
 
     def _put_binary_gzip(self, url: str, content: bytes) -> Response:
         return self._run_with_retry(
-            self._client.put,
-            url,
-            headers={"Content-Type": "application/x-gzip"},
-            content=compress(content),
+            self._client.put, url, headers=_gzip_header, content=compress(content)
         )
 
     def __get_page(self, url: str, limit: int, offset: int, result_key: str, **kwargs) -> list:
@@ -111,9 +111,17 @@ class _AsyncBaseClient:
 
     async def _post(self, url: str, json: dict | list) -> dict[str, Any]:
         return (
-            await self._run_with_retry(
-                self._client.post, url, headers={"Content-Type": "application/json"}, json=json
-            )
+            await self._run_with_retry(self._client.post, url, headers=_json_header, json=json)
+        ).json()
+
+    async def _put(self, url: str, json: dict | list) -> dict[str, Any]:
+        return (
+            await self._run_with_retry(self._client.put, url, headers=_json_header, json=json)
+        ).json()
+
+    async def _patch(self, url: str, json: dict | list) -> dict[str, Any]:
+        return (
+            await self._run_with_retry(self._client.patch, url, headers=_json_header, json=json)
         ).json()
 
     async def _post_empty(self, url: str) -> None:
@@ -121,10 +129,7 @@ class _AsyncBaseClient:
 
     async def _put_binary_gzip(self, url: str, content: bytes) -> Response:
         return await self._run_with_retry(
-            self._client.put,
-            url,
-            headers={"Content-Type": "application/x-gzip"},
-            content=compress(content),
+            self._client.put, url, headers=_gzip_header, content=compress(content)
         )
 
     async def __get_page(
