@@ -31,7 +31,9 @@ class _AuditClient(_BaseClient):
         Retrieves information about the specified user, or the authenticated user if none specified.
         :return: The requested or currently authenticated User.
         """
-        return User.model_validate(self._get(f"https://api.anaplan.com/2/0/users/{user_id}").get("user"))
+        return User.model_validate(
+            self._get(f"https://api.anaplan.com/2/0/users/{user_id}").get("user")
+        )
 
     def get_events(self, days_into_past: int = 30, event_type: Event = "all") -> list:
         """

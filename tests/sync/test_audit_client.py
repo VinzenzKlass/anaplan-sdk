@@ -9,9 +9,9 @@ def test_list_users(client: Client):
     assert len(users) > 0
 
 
-def test_get_user (client: Client):
+def test_get_user(client: Client):
     user = client.audit.get_user()
-    assert isinstance (user, User)
+    assert isinstance(user, User)
 
 
 def test_events(client: Client):
