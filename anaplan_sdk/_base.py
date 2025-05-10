@@ -53,11 +53,11 @@ class _BaseClient:
         )
 
     def __get_page(self, url: str, limit: int, offset: int, result_key: str, **kwargs) -> list:
-        kwargs["params"] = kwargs.get("params", {}) | {"limit": limit, "offset": offset}
+        kwargs["params"] = kwargs.get("params") or {} | {"limit": limit, "offset": offset}
         return self._get(url, **kwargs).get(result_key, [])
 
     def __get_first_page(self, url: str, limit: int, result_key: str, **kwargs) -> tuple[list, int]:
-        kwargs["params"] = kwargs.get("params", {}) | {"limit": limit}
+        kwargs["params"] = kwargs.get("params") or {} | {"limit": limit}
         res = self._get(url, **kwargs)
         return res.get(result_key, []), res["meta"]["paging"]["totalSize"]
 
@@ -130,13 +130,13 @@ class _AsyncBaseClient:
     async def __get_page(
         self, url: str, limit: int, offset: int, result_key: str, **kwargs
     ) -> list:
-        kwargs["params"] = kwargs.get("params", {}) | {"limit": limit, "offset": offset}
+        kwargs["params"] = kwargs.get("params") or {} | {"limit": limit, "offset": offset}
         return (await self._get(url, **kwargs)).get(result_key, [])
 
     async def __get_first_page(
         self, url: str, limit: int, result_key: str, **kwargs
     ) -> tuple[list, int]:
-        kwargs["params"] = kwargs.get("params", {}) | {"limit": limit}
+        kwargs["params"] = kwargs.get("params") or {} | {"limit": limit}
         res = await self._get(url, **kwargs)
         return res.get(result_key, []), res["meta"]["paging"]["totalSize"]
 
