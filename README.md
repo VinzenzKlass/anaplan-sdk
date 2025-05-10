@@ -27,6 +27,8 @@ providing both synchronous and asynchronous Clients.
 
 Visit [Anaplan SDK](https://vinzenzklass.github.io/anaplan-sdk/) for documentation.
 
+If you find any issues or feel that this SDK is not adequately covering your use case,
+please [open an issue](https://github.com/VinzenzKlass/anaplan-sdk/issues/new).
 ---
 
 ### Install Anaplan SDK using pip
@@ -90,3 +92,28 @@ for model in models:
 
 For more information, API reference and detailed guides,
 visit [Anaplan SDK](https://vinzenzklass.github.io/anaplan-sdk/).
+
+### Contributing
+
+Pull Requests are welcome. For major changes, please open an issue first to discuss what you would like to change. To
+submit a pull request, please follow the
+standard [Fork & Pull Request workflow](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/creating-a-pull-request-from-a-fork).
+
+Before submitting your pull request, please ensure that all the files pass linting and formatting checks. You can do
+this by running the following command:
+
+```shell
+uv sync --dev
+
+ruff check
+ruff format
+```
+
+You can also enable [pre-commit](https://pre-commit.com/) hooks to automatically format and lint your code before
+committing:
+
+```shell
+pre-commit install
+```
+
+If your PR goes beyond a simple bug fix or small changes, please add tests to cover your changes.
