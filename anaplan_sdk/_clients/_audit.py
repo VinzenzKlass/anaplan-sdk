@@ -26,10 +26,10 @@ class _AuditClient(_BaseClient):
             for e in self._get_paginated("https://api.anaplan.com/2/0/users", "users")
         ]
 
-    def get_user(self, user_id: int|str = "me") -> User:
+    def get_user(self, user_id: str = "me") -> User:
         """
-        Retrieves information about the specified user.
-        :return: The User.
+        Retrieves information about the specified user, or the authenticated user if none specified.
+        :return: The requested or currently authenticated User.
         """
         return User.model_validate(self._get(f"https://api.anaplan.com/2/0/users/{user_id}").get("user"))
 
