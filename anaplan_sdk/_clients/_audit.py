@@ -16,14 +16,19 @@ class _AuditClient(_BaseClient):
         self._url = "https://audit.anaplan.com/audit/api/1/events"
         super().__init__(retry_count, client)
 
-    def list_users(self) -> list[User]:
+    def list_users(self, search_pattern: str | None = None) -> list[User]:
         """
         Lists all the Users in the authenticated users default tenant.
+        :param search_pattern: Optional filter for users. When provided, case-insensitive matches
+               users with emails containing this string. When None (default), returns all users.
         :return: The List of Users.
         """
+        params = {"s": search_pattern} if search_pattern else None
         return [
             User.model_validate(e)
-            for e in self._get_paginated("https://api.anaplan.com/2/0/users", "users")
+            for e in self._get_paginated(
+                "https://api.anaplan.com/2/0/users", "users", params=params
+            )
         ]
 
     def get_events(self, days_into_past: int = 30, event_type: Event = "all") -> list:

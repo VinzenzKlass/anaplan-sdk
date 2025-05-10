@@ -184,29 +184,38 @@ class AsyncClient(_AsyncBaseClient):
             )
         return self._alm_client
 
-    async def list_workspaces(self) -> list[Workspace]:
+    async def list_workspaces(self, search_pattern: str | None = None) -> list[Workspace]:
         """
         Lists all the Workspaces the authenticated user has access to.
+        :param search_pattern: Optional filter for workspaces. When provided, case-insensitive
+               matches workspaces with names containing this string. When None (default),
+               returns all workspaces.
         :return: The List of Workspaces.
         """
+        params = {"tenantDetails": "true"}
+        if search_pattern:
+            params["s"] = search_pattern
         return [
             Workspace.model_validate(e)
             for e in await self._get_paginated(
-                "https://api.anaplan.com/2/0/workspaces",
-                "workspaces",
-                params={"tenantDetails": "true"},
+                "https://api.anaplan.com/2/0/workspaces", "workspaces", params=params
             )
         ]
 
-    async def list_models(self) -> list[Model]:
+    async def list_models(self, search_pattern: str | None = None) -> list[Model]:
         """
         Lists all the Models the authenticated user has access to.
+        :param search_pattern: Optional filter for models. When provided, case-insensitive matches
+               models with names containing this string. When None (default), returns all models.
         :return: The List of Models.
         """
+        params = {"modelDetails": "true"}
+        if search_pattern:
+            params["s"] = search_pattern
         return [
             Model.model_validate(e)
             for e in await self._get_paginated(
-                "https://api.anaplan.com/2/0/models", "models", params={"modelDetails": "true"}
+                "https://api.anaplan.com/2/0/models", "models", params=params
             )
         ]
 
