@@ -13,7 +13,6 @@ from anaplan_sdk.models.cloud_works import (
 
 class _AsyncCloudWorksClient(_AsyncBaseClient):
     def __init__(self, client: httpx.AsyncClient, retry_count: int) -> None:
-        self._client = client
         self._url = "https://api.cloudworks.anaplan.com/2/0/integrations"
         super().__init__(retry_count, client)
 

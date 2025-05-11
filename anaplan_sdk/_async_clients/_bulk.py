@@ -102,7 +102,7 @@ class AsyncClient(_AsyncBaseClient):
                 "Must provide `certificate` and `private_key` or `user_email` and `password`."
                 "If you Private Key is Password protected, must also pass `private_key_password`."
             )
-        self._client = httpx.AsyncClient(
+        _client = httpx.AsyncClient(
             auth=(
                 AnaplanCertAuth(
                     get_certificate(certificate), get_private_key(private_key, private_key_password)
@@ -115,19 +115,19 @@ class AsyncClient(_AsyncBaseClient):
         self._retry_count = retry_count
         self._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
         self._transactional_client = (
-            _AsyncTransactionalClient(self._client, model_id, retry_count) if model_id else None
+            _AsyncTransactionalClient(_client, model_id, retry_count) if model_id else None
         )
         self._alm_client = (
-            _AsyncAlmClient(self._client, model_id, self._retry_count) if model_id else None
+            _AsyncAlmClient(_client, model_id, self._retry_count) if model_id else None
         )
-        self.audit = _AsyncAuditClient(self._client, self._retry_count)
+        self.audit = _AsyncAuditClient(_client, self._retry_count)
         """Access the Audit API namespace."""
-        self.cw = _AsyncCloudWorksClient(self._client, self._retry_count)
+        self.cw = _AsyncCloudWorksClient(_client, self._retry_count)
         """Access the CloudWorks API namespace."""
         self.status_poll_delay = status_poll_delay
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
-        super().__init__(retry_count, self._client)
+        super().__init__(retry_count, _client)
 
     @classmethod
     def from_existing(cls, existing: Self, workspace_id: str, model_id: str) -> Self:

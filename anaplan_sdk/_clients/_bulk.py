@@ -107,7 +107,7 @@ class Client(_BaseClient):
                 "Either `certificate` and `private_key` or `user_email` and `password` must be "
                 "provided."
             )
-        self._client = httpx.Client(
+        _client = httpx.Client(
             auth=(
                 AnaplanCertAuth(
                     get_certificate(certificate), get_private_key(private_key, private_key_password)
@@ -120,18 +120,16 @@ class Client(_BaseClient):
         self._retry_count = retry_count
         self._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
         self._transactional_client = (
-            _TransactionalClient(self._client, model_id, self._retry_count) if model_id else None
+            _TransactionalClient(_client, model_id, self._retry_count) if model_id else None
         )
-        self._alm_client = (
-            _AlmClient(self._client, model_id, self._retry_count) if model_id else None
-        )
+        self._alm_client = _AlmClient(_client, model_id, self._retry_count) if model_id else None
         self._thread_count = multiprocessing.cpu_count()
-        self.audit = _AuditClient(self._client, self._retry_count, self._thread_count)
+        self.audit = _AuditClient(_client, self._retry_count, self._thread_count)
         self.status_poll_delay = status_poll_delay
         self.upload_parallel = upload_parallel
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
-        super().__init__(self._retry_count, self._client)
+        super().__init__(self._retry_count, _client)
 
     @classmethod
     def from_existing(cls, existing: Self, workspace_id: str, model_id: str) -> Self:
