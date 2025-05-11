@@ -121,7 +121,9 @@ class AsyncClient(_AsyncBaseClient):
             _AsyncAlmClient(self._client, model_id, self._retry_count) if model_id else None
         )
         self.audit = _AsyncAuditClient(self._client, self._retry_count)
+        """Access the Audit API namespace."""
         self.cw = _AsyncCloudWorksClient(self._client, self._retry_count)
+        """Access the CloudWorks API namespace."""
         self.status_poll_delay = status_poll_delay
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation

@@ -37,6 +37,7 @@ nav:
       - Bulk vs Transactional: 'guides/bulk_vs_transactional.md'
       - Use the Bulk API: 'guides/bulk.md'
       - Use the Transactional API: 'guides/transactional.md'
+      - Use the CloudWorks API: 'guides/cloud_works.md'
       - Use the ALM API: 'guides/alm.md'
       - Use the Audit API: 'guides/audit.md'
       - Multiple Models: 'guides/multiple_models.md'

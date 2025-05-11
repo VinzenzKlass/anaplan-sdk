@@ -10,71 +10,59 @@ All the methods for the Transactional APIs reside in a different namespace for b
 comprehensiveness, but are accessible through the same client for convenience. For e.g., you can call
 the `.list_lists()` method like so:
 
-/// tab | Synchronous
-
-```python
-import anaplan_sdk
-
-anaplan = anaplan_sdk.Client(
-    workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-    model_id="11111111111111111111111111111111",
-    certificate="~/certs/anaplan.pem",
-    private_key="~/keys/anaplan.pem",
-)
-lists = anaplan.transactional.list_lists()
-```
-
-///
-/// tab | Asynchronous
-
-```python
-import anaplan_sdk
-
-anaplan = anaplan_sdk.AsyncClient(
-    workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-    model_id="11111111111111111111111111111111",
-    certificate="~/certs/anaplan.pem",
-    private_key="~/keys/anaplan.pem",
-)
-lists = await anaplan.transactional.list_lists()
-```
-
-///
+=== "Synchronous"
+    ```python
+    import anaplan_sdk
+    
+    anaplan = anaplan_sdk.Client(
+        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        model_id="11111111111111111111111111111111",
+        certificate="~/certs/anaplan.pem",
+        private_key="~/keys/anaplan.pem",
+    )
+    lists = anaplan.transactional.list_lists()
+    ```
+=== "Asynchronous"
+    ```python
+    import anaplan_sdk
+    
+    anaplan = anaplan_sdk.AsyncClient(
+        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        model_id="11111111111111111111111111111111",
+        certificate="~/certs/anaplan.pem",
+        private_key="~/keys/anaplan.pem",
+    )
+    lists = await anaplan.transactional.list_lists()
+    ```
 
 For brevity, if you need to access only the Transactional API or need to do so repeatedly, you can assign the
 Transactional Client to its own variable.
 
-/// tab | Synchronous
-
-```python
-anaplan = anaplan_sdk.Client(
-    workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-    model_id="11111111111111111111111111111111",
-    certificate="~/certs/anaplan.pem",
-    private_key="~/keys/anaplan.pem",
-)
-trans_anaplan = anaplan.transactional
-lists = trans_anaplan.list_lists()
-modules = trans_anaplan.list_modules()
-```
-
-///
-/// tab | Asynchronous
-
-```python
-anaplan = anaplan_sdk.AsyncClient(
-    workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-    model_id="11111111111111111111111111111111",
-    certificate="~/certs/anaplan.pem",
-    private_key="~/keys/anaplan.pem",
-)
-trans_anaplan = anaplan.transactional
-lists, modules = await gather(
-   trans_anaplan.list_lists(), trans_anaplan.list_modules()
-)
-```
-
-///
+=== "Synchronous"
+    ```python
+    anaplan = anaplan_sdk.Client(
+        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        model_id="11111111111111111111111111111111",
+        certificate="~/certs/anaplan.pem",
+        private_key="~/keys/anaplan.pem",
+    )
+    trans_anaplan = anaplan.transactional
+    lists = trans_anaplan.list_lists()
+    modules = trans_anaplan.list_modules()
+    ```
+=== "Asynchronous"
+    ```python
+    anaplan = anaplan_sdk.AsyncClient(
+        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        model_id="11111111111111111111111111111111",
+        certificate="~/certs/anaplan.pem",
+        private_key="~/keys/anaplan.pem",
+    )
+    trans_anaplan = anaplan.transactional
+    lists, modules = await gather(
+       trans_anaplan.list_lists(), trans_anaplan.list_modules()
+    )
+    ```
 
 !!! note
     While you can instantiate a [Client](../api/sync/client.md) without the workspace or model parameters, trying to access
@@ -84,56 +72,43 @@ lists, modules = await gather(
 
 ### Read List Items
 
-/// tab | Synchronous
-
-```python
-products = anaplan.transactional.get_list_items(101000000299)
-```
-
-///
-/// tab | Asynchronous
-
-```python
-products = await anaplan.transactional.get_list_items(101000000299)
-```
-
-///
+=== "Synchronous"
+    ```python
+    products = anaplan.transactional.get_list_items(101000000299)
+    ```
+=== "Asynchronous"
+    ```python
+    products = await anaplan.transactional.get_list_items(101000000299)
+    ```
 
 ### Insert new List Items
 
-/// tab | Synchronous
 These dicts must at least hold `code` or `id`and the name.
 
-```python
-anaplan.transactional.insert_list_items(
-    101000000299,
-    [
-        {"code": "A", "name": "A"},
-        {"code": "B", "name": "B"},
-        {"code": "C", "name": "C"},
-        {"code": "D", "name": "D"},
-    ],
-)
-```
-
-///
-/// tab | Asynchronous
-
-These dicts must at least hold `code` or `id`and the name.
-
-```python
-await anaplan.transactional.insert_list_items(
-    101000000299,
-    [
-        {"code": "A", "name": "A"},
-        {"code": "B", "name": "B"},
-        {"code": "C", "name": "C"},
-        {"code": "D", "name": "D"},
-    ],
-)
-```
-
-///
+=== "Synchronous"
+    ```python
+    anaplan.transactional.insert_list_items(
+        101000000299,
+        [
+            {"code": "A", "name": "A"},
+            {"code": "B", "name": "B"},
+            {"code": "C", "name": "C"},
+            {"code": "D", "name": "D"},
+        ],
+    )
+    ```
+=== "Asynchronous"
+    ```python
+    await anaplan.transactional.insert_list_items(
+        101000000299,
+        [
+            {"code": "A", "name": "A"},
+            {"code": "B", "name": "B"},
+            {"code": "C", "name": "C"},
+            {"code": "D", "name": "D"},
+        ],
+    )
+    ```
 
 ### Update Module Data
 
@@ -143,61 +118,54 @@ the list of dimensions. The combination of these three will uniquely identify th
 written is specified in the `value` key of the dictionary. The Line Items and Dimensions can be specified by either
 their `id` or `name`. The `value` can be a string, number or boolean.
 
-/// tab | Synchronous
-
-```python
-anaplan.transactional.update_module_data(
-    101000000299,
-    [
-        {
-            "lineItemName": "Products",
-            "dimensions": [
-                {"dimensionName": "Product", "itemCode": "18"},
-                {"dimensionName": "Time", "itemName": "Jan 21"},
-            ],
-            "value": 1000,
-        },
-        {
-            "lineItemName": "Sales",
-            "dimensions": [
-                {"dimensionName": "Region", "itemName": "Uganda"},
-                {"dimensionName": "Time", "itemName": "Jan 21"},
-            ],
-            "value": 1000,
-        },
-    ],
-)
-
-```
-
-///
-/// tab | Asynchronous
-
-```python
-await anaplan.transactional.update_module_data(
-    101000000299,
-    [
-        {
-            "lineItemName": "Products",
-            "dimensions": [
-                {"dimensionName": "Product", "itemCode": "18"},
-                {"dimensionName": "Time", "itemName": "Jan 21"},
-            ],
-            "value": 1000,
-        },
-        {
-            "lineItemName": "Sales",
-            "dimensions": [
-                {"dimensionName": "Region", "itemName": "Uganda"},
-                {"dimensionName": "Time", "itemName": "Jan 21"},
-            ],
-            "value": 1000,
-        },
-    ],
-)
-```
-
-///
+=== "Synchronous"
+    ```python
+    anaplan.transactional.update_module_data(
+        101000000299,
+        [
+            {
+                "lineItemName": "Products",
+                "dimensions": [
+                    {"dimensionName": "Product", "itemCode": "18"},
+                    {"dimensionName": "Time", "itemName": "Jan 21"},
+                ],
+                "value": 1000,
+            },
+            {
+                "lineItemName": "Sales",
+                "dimensions": [
+                    {"dimensionName": "Region", "itemName": "Uganda"},
+                    {"dimensionName": "Time", "itemName": "Jan 21"},
+                ],
+                "value": 1000,
+            },
+        ],
+    )
+    ```
+=== "Asynchronous"
+    ```python
+    await anaplan.transactional.update_module_data(
+        101000000299,
+        [
+            {
+                "lineItemName": "Products",
+                "dimensions": [
+                    {"dimensionName": "Product", "itemCode": "18"},
+                    {"dimensionName": "Time", "itemName": "Jan 21"},
+                ],
+                "value": 1000,
+            },
+            {
+                "lineItemName": "Sales",
+                "dimensions": [
+                    {"dimensionName": "Region", "itemName": "Uganda"},
+                    {"dimensionName": "Time", "itemName": "Jan 21"},
+                ],
+                "value": 1000,
+            },
+        ],
+    )
+    ```
 
 ## Applications
 
@@ -212,31 +180,25 @@ Warning. To automate this tedious task without losing any data, we can perform f
 3. Reset the List Index.
 4. Reimport the Data from Step one.
 
-/// tab | Synchronous
-
-```python
-items = anaplan.transactional.get_list_items(101000000000)
-anaplan.transactional.delete_list_items(
-    101000000000, [{"id": e.id} for e in items]
-)
-anaplan.transactional.reset_list_index(101000000000)
-result = anaplan.transactional.insert_list_items(
-    101000000008, [e.model_dump() for e in items] # Reimport all fields.
-)
-```
-
-///
-/// tab | Asynchronous
-
-```python
-items = await anaplan.transactional.get_list_items(101000000000)
-await anaplan.transactional.delete_list_items(
-    101000000000, [{"id": e.id} for e in items]
-)
-await anaplan.transactional.reset_list_index(101000000000)
-result = await anaplan.transactional.insert_list_items(
-    101000000008, [e.model_dump() for e in items] # Reimport all fields. 
-)
-```
-
-///
+=== "Synchronous"
+    ```python
+    items = anaplan.transactional.get_list_items(101000000000)
+    anaplan.transactional.delete_list_items(
+        101000000000, [{"id": e.id} for e in items]
+    )
+    anaplan.transactional.reset_list_index(101000000000)
+    result = anaplan.transactional.insert_list_items(
+        101000000008, [e.model_dump() for e in items] # Reimport all fields.
+    )
+    ```
+=== "Asynchronous"
+    ```python
+    items = await anaplan.transactional.get_list_items(101000000000)
+    await anaplan.transactional.delete_list_items(
+        101000000000, [{"id": e.id} for e in items]
+    )
+    await anaplan.transactional.reset_list_index(101000000000)
+    result = await anaplan.transactional.insert_list_items(
+        101000000008, [e.model_dump() for e in items] # Reimport all fields. 
+    )
+    ```

@@ -3,7 +3,12 @@ from typing import Any, Literal
 import httpx
 
 from anaplan_sdk._base import _AsyncBaseClient
-from anaplan_sdk.models import Connection, ConnectionInput, Integration
+from anaplan_sdk.models.cloud_works import (
+    Connection,
+    ConnectionInput,
+    Integration,
+    IntegrationInput,
+)
 
 
 class _AsyncCloudWorksClient(_AsyncBaseClient):
@@ -29,7 +34,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         if isinstance(con_info, dict):
             con_info = ConnectionInput.model_validate(con_info)
         res = await self._post(
-            f"{self._url}/connections", json=con_info.model_dump(exclude_none=True)
+            f"{self._url}/connections", json=con_info.model_dump(exclude_none=True, by_alias=True)
         )
         return res["connections"]["connectionId"]
 
@@ -46,7 +51,8 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         if isinstance(con_info, dict):
             con_info = ConnectionInput.model_validate(con_info)
         await self._put(
-            f"{self._url}/connections/{con_id}", json=con_info.model_dump(exclude_none=True)
+            f"{self._url}/connections/{con_id}",
+            json=con_info.model_dump(exclude_none=True, by_alias=True),
         )
 
     async def patch_connection(self, con_id: str, body: dict[str, Any]) -> None:
@@ -79,4 +85,15 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
             for e in await self._get_paginated(f"{self._url}", "integrations", params=params)
         ]
 
-    async def create_integration(self, body: Integration | dict[str, Any]): ...
+    async def create_integration(self, body: IntegrationInput | dict[str, Any]) -> str:
+        """
+        Create a new integration in CloudWorks.
+        :param body: The integration information. This can be an IntegrationInput instance or a
+                dictionary as per the documentation. If a dictionary is passed, it will be validated
+                against the IntegrationInput model before sending the request.
+        :return: The ID of the new integration.
+        """
+        if isinstance(body, dict):
+            body = IntegrationInput.model_validate(body)
+        json = body.model_dump(exclude_none=True, by_alias=True)
+        return (await self._post(f"{self._url}", json=json))["integration"]["integrationId"]

@@ -166,3 +166,75 @@ class Integration(AnaplanModel):
     @classmethod
     def _empty_source_is_none(cls, inp: dict):
         return inp if inp else None
+
+
+class AnaplanSource(AnaplanModel):
+    type: Literal["Anaplan"] = Field(
+        default="Anaplan", description="Literal signifying this is an Anaplan source."
+    )
+    action_id: int = Field(
+        description=(
+            "The ID of the action to be used as a source. This can be a process, or export."
+        )
+    )
+
+
+class FileSource(AnaplanModel):
+    connection_id: str = Field(description="The unique identifier of the connection.")
+    type: Literal["AmazonS3", "AzureBlob"] = Field(description="The type of this connection.")
+    file: str = Field(description="The file path relative to the root of the connection.")
+
+
+class FileTarget(FileSource):
+    connection_id: str = Field(description="The unique identifier of the connection.")
+    type: Literal["AmazonS3", "AzureBlob"] = Field(description="The type of this connection.")
+    overwrite: bool = Field(default=True, description="Whether to overwrite the file if it exists.")
+
+
+class TableSource(AnaplanModel):
+    type: Literal["GoogleBigQuery"] = Field(
+        default="GoogleBigQuery", description="The type of this connection."
+    )
+    connection_id: str = Field(description="The unique identifier of the connection.")
+    table: str = Field(description="The table name in the BigQuery dataset in the connection.")
+
+
+class TableTarget(TableSource):
+    overwrite: bool = Field(
+        default=False, description="Whether to overwrite the table if it exists."
+    )
+
+
+class AnaplanTarget(AnaplanModel):
+    type: Literal["Anaplan"] = Field(
+        default="Anaplan", description="Literal signifying this is an Anaplan target."
+    )
+    action_id: int = Field(
+        description=(
+            "The ID of the action to be used as a target. This can be a process, or import."
+        ),
+    )
+    file_id: int = Field(description="The ID of the file to be used as a target.")
+
+
+class IntegrationJobInput(AnaplanModel):
+    type: IntegrationType = Field(description="The type of this integration.")
+    sources: list[AnaplanSource | FileSource | TableSource] = Field(
+        description="The sources of this integration."
+    )
+    targets: list[AnaplanTarget | FileTarget | TableTarget] = Field(
+        description="The targets of this integration."
+    )
+
+
+class IntegrationInput(AnaplanModel):
+    name: str = Field(description="The name of this integration.")
+    version: Literal["2.0"] = Field(default="2.0", description="The version of this integration.")
+    workspace_id: str = Field(description="The ID of the workspace this integration belongs to.")
+    model_id: str = Field(description="The ID of the model this integration belongs to.")
+    nux_visible: bool = Field(
+        default=False, description="Whether this integration is visible in the UI."
+    )
+    jobs: list[IntegrationJobInput] = Field(
+        description="The jobs in this integration.", min_length=1
+    )
