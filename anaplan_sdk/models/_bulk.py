@@ -1,7 +1,9 @@
 from typing import Literal, TypeAlias
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import ConfigDict, Field, field_validator
 from pydantic.alias_generators import to_camel
+
+from ._base import AnaplanModel
 
 ExportTypes: TypeAlias = Literal[
     "TABULAR_MULTI_COLUMN",
@@ -17,8 +19,7 @@ ImportTypes: TypeAlias = Literal[
 ]
 
 
-class Workspace(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+class Workspace(AnaplanModel):
     id: str = Field(description="The unique identifier of this workspace.")
     name: str = Field(description="The name of this workspace that is also displayed to the users.")
     active: bool = Field(description="Whether this workspace is active or not.")
@@ -26,8 +27,7 @@ class Workspace(BaseModel):
     current_size: int = Field(description="The current size of this workspace in bytes.")
 
 
-class Model(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+class Model(AnaplanModel):
     id: str = Field(description="The unique identifier of this model.")
     name: str
     active_state: Literal["ARCHIVED", "UNLOCKED", "ACTIVE", "PRODUCTION"] = Field(
@@ -52,8 +52,7 @@ class Model(BaseModel):
     last_modified: str = Field(description="The last modified date of this model.")
 
 
-class File(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+class File(AnaplanModel):
     id: int = Field(description="The unique identifier of this file.")
     name: str = Field(description="The name of this file.")
     chunk_count: int = Field(description="The number of chunks this file is split into.")
@@ -65,13 +64,12 @@ class File(BaseModel):
     separator: str | None = Field(None, description="The separator used in this file.")
 
 
-class List(BaseModel):
+class List(AnaplanModel):
     id: int = Field(description="The unique identifier of this list.")
     name: str = Field(description="The name of this list.")
 
 
-class ListMetadata(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+class ListMetadata(AnaplanModel):
     id: int = Field(description="The unique identifier of this list.")
     name: str = Field(description="The name of this list.")
     has_selective_access: bool = Field(description="Whether this list has selective access or not.")
@@ -93,8 +91,7 @@ class ListMetadata(BaseModel):
     used_in_applies_to: str | None = Field(None, description="The applies to value of this list.")
 
 
-class Action(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+class Action(AnaplanModel):
     id: int = Field(description="The unique identifier of this action.")
     name: str = Field(
         description="The name of this Action. This is the same as the one displayed in the Web UI."
@@ -104,12 +101,12 @@ class Action(BaseModel):
     )
 
 
-class Process(BaseModel):
+class Process(AnaplanModel):
     id: int = Field(description="The unique identifier of this process.")
     name: str = Field(description="The name of this process.")
 
 
-class Import(BaseModel):
+class Import(AnaplanModel):
     id: int = Field(description="The unique identifier of this import.")
     name: str = Field(description="The name of this import.")
     type: ImportTypes = Field(validation_alias="importType", description="The type of this import.")
@@ -128,8 +125,7 @@ class Import(BaseModel):
         return inp if inp else None
 
 
-class Export(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+class Export(AnaplanModel):
     id: int = Field(description="The unique identifier of this export.")
     name: str = Field(description="The name of this export.")
     type: ExportTypes = Field(validation_alias="exportType", description="The type of this export.")
@@ -140,8 +136,7 @@ class Export(BaseModel):
     )
 
 
-class TaskSummary(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+class TaskSummary(AnaplanModel):
     id: str = Field(validation_alias="taskId", description="The unique identifier of this task.")
     task_state: Literal["NOT_STARTED", "IN_PROGRESS", "COMPLETE"] = Field(
         description="The state of this task."
@@ -149,16 +144,14 @@ class TaskSummary(BaseModel):
     creation_time: int = Field(description="Unix timestamp of when this task was created.")
 
 
-class TaskResultDetail(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+class TaskResultDetail(AnaplanModel):
     local_message_text: str = Field(description="Error message text.")
     occurrences: int = Field(0, description="The number of occurrences of this error.")
     type: str = Field(description="The type of this error.")
     values: list[str] = Field([], description="Further error information if available.")
 
 
-class TaskResult(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+class TaskResult(AnaplanModel):
     details: list[TaskResultDetail] = Field(
         [], description="The details of this task result if available."
     )
@@ -171,7 +164,7 @@ class TaskResult(BaseModel):
     )
 
 
-class TaskStatus(BaseModel):
+class TaskStatus(AnaplanModel):
     model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
     id: str = Field(validation_alias="taskId", description="The unique identifier of this task.")
     task_state: Literal["NOT_STARTED", "IN_PROGRESS", "COMPLETE"] = Field(

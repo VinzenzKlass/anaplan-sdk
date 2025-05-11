@@ -1,9 +1,9 @@
-from pydantic import BaseModel, ConfigDict, Field
-from pydantic.alias_generators import to_camel
+from pydantic import Field
+
+from ._base import AnaplanModel
 
 
-class Revision(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+class Revision(AnaplanModel):
     id: str = Field(description="The unique identifier of this revision.")
     name: str = Field(description="The name of this revision.")
     description: str | None = Field(
@@ -20,8 +20,7 @@ class Revision(BaseModel):
     )
 
 
-class ModelRevision(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+class ModelRevision(AnaplanModel):
     id: str = Field(
         validation_alias="modelId",
         description="The unique identifier of the model this revision belongs to.",
@@ -44,8 +43,7 @@ class ModelRevision(BaseModel):
     )
 
 
-class SyncTask(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+class SyncTask(AnaplanModel):
     id: str = Field(validation_alias="taskId", description="The unique identifier of this task.")
     task_state: str = Field(description="The state of this task.")
     creation_time: int = Field(description="The creation time of this task.")

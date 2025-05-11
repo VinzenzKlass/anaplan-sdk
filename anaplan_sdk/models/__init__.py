@@ -18,14 +18,26 @@ from ._bulk import (
 )
 from ._cloud_works import (
     AmazonS3ConnectionInfo,
+    AmazonS3ConnectionInput,
     AzureBlobConnectionInfo,
+    AzureBlobConnectionInput,
+    BaseConnectionInput,
     Connection,
+    ConnectionInput,
     ConnectionType,
     GoogleBigQueryConnectionInfo,
+    GoogleBigQueryConnectionInput,
+    GoogleServiceAccountJson,
+    Integration,
+    IntegrationType,
+    LatestRun,
+    Schedule,
 )
 from ._transactional import Failure, InsertionResult, LineItem, ListItem, ModelStatus, Module, User
 
 __all__ = [
+    "Integration",
+    "IntegrationType",
     "ExportTypes",
     "ImportTypes",
     "ConnectionType",
@@ -56,4 +68,12 @@ __all__ = [
     "Failure",
     "InsertionResult",
     "Revision",
+    "ConnectionInput",
+    "AmazonS3ConnectionInput",
+    "AzureBlobConnectionInput",
+    "GoogleBigQueryConnectionInput",
+    "BaseConnectionInput",
+    "GoogleServiceAccountJson",
+    "LatestRun",
+    "Schedule",
 ]

@@ -1,9 +1,9 @@
-from pydantic import BaseModel, ConfigDict, Field
-from pydantic.alias_generators import to_camel
+from pydantic import Field
+
+from ._base import AnaplanModel
 
 
-class User(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+class User(AnaplanModel):
     id: str = Field(description="The unique identifier of this user.")
     active: bool = Field(description="Whether this user is active or not.")
     email: str = Field(description="The email address of this user.")
@@ -17,8 +17,7 @@ class User(BaseModel):
     )
 
 
-class ListItem(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+class ListItem(AnaplanModel):
     id: int = Field(description="The unique identifier of this list item.")
     name: str = Field(description="The name of this list item.")
     code: str | None = Field(None, description="The code of this list item.")
@@ -30,13 +29,12 @@ class ListItem(BaseModel):
     )
 
 
-class Module(BaseModel):
+class Module(AnaplanModel):
     id: int = Field(description="The unique identifier of this module.")
     name: str = Field(description="The name of this module.")
 
 
-class LineItem(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+class LineItem(AnaplanModel):
     id: int = Field(description="The unique identifier of this line item.")
     name: str = Field(description="The name of this line item.")
     module_id: int = Field(
@@ -64,8 +62,7 @@ class LineItem(BaseModel):
     )
 
 
-class Failure(BaseModel):
-    model_config = ConfigDict(populate_by_name=True)
+class Failure(AnaplanModel):
     index: int = Field(
         validation_alias="requestIndex", description="The index of the item that failed."
     )
@@ -75,8 +72,7 @@ class Failure(BaseModel):
     )
 
 
-class ModelStatus(BaseModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
+class ModelStatus(AnaplanModel):
     peak_memory_usage_estimate: int | None = Field(
         description="The peak memory usage estimate of this model."
     )
@@ -91,7 +87,7 @@ class ModelStatus(BaseModel):
     export_task_type: str | None = Field(description="The export task type of this model.")
 
 
-class InsertionResult(BaseModel):
+class InsertionResult(AnaplanModel):
     added: int = Field(description="The number of items successfully added.")
     ignored: int = Field(description="The number of items ignored, or items that failed.")
     total: int = Field(description="The total number of items.")

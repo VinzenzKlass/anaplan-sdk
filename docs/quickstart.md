@@ -1,42 +1,38 @@
-This Quickstart Guide assumes you already have both the `Workspace Id` and `Model Id` of the Model you want to work
-with. If you don't: You can find both of these either in the URL displayed on the browser or by instantiating a client
-with Authentication information only and then call the `list_workspaces` and `list_models` endpoint. Alternatively, you
-can use an HTTP Client like Postman, Insomnia, or Paw.
-
-It further assumes you have a valid user with credentials and required permissions.
+??? info "Prerequisites"
+    This Quickstart Guide assumes you already have both the `workspace_id` and `model_id` of the Model you want to work
+    with. If you don't: You can find both of these either in the URL displayed on the browser or by instantiating a client
+    with Authentication information only and then call the `list_workspaces` and `list_models` endpoint. Alternatively, you
+    can use an HTTP Client like Postman, Insomnia, or Paw.
+    
+    It further assumes you have a valid user with credentials and required permissions.
 
 To get started, you can use basic authentication with your email and password. Refer to
 the [Bulk API Guide](guides/bulk.md#instantiate-a-client) to understand why this is not a good idea for production use.
 
-/// tab | Synchronous
+=== "Synchronous"
+    ```python
+    import anaplan_sdk
+    
+    anaplan = anaplan_sdk.Client(
+        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        model_id="11111111111111111111111111111111",
+        user_email="admin@company.com",
+        password="my_super_secret_password",
+    )
+    ```
 
-```python
-import anaplan_sdk
+=== "Asynchronous"
+    ```python
+    import anaplan_sdk
+    
+    anaplan = anaplan_sdk.AsyncClient(
+        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        model_id="11111111111111111111111111111111",
+        user_email="admin@company.com",
+        password="my_super_secret_password",
+    )
+    ```
 
-anaplan = anaplan_sdk.Client(
-    workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-    model_id="11111111111111111111111111111111",
-    user_email="admin@company.com",
-    password="my_super_secret_password",
-)
-```
-
-///
-
-/// tab | Asynchronous
-
-```python
-import anaplan_sdk
-
-anaplan = anaplan_sdk.AsyncClient(
-    workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-    model_id="11111111111111111111111111111111",
-    user_email="admin@company.com",
-    password="my_super_secret_password",
-)
-```
-
-///
 
 ## Importing Data
 
@@ -44,23 +40,17 @@ Start by listing available assets in our model. Typically, these will have alrea
 searching for a specific name provided by your Model Builder. Here, we will use one file and one process, which is
 common practice.
 
-/// tab | Synchronous
+=== "Synchronous"
+    ```python
+    file, processes = anaplan.list_files(), anaplan.list_processes()
+    print(files, processes, sep="\n")
+    ```
 
-```python
-file, processes = anaplan.list_files(), anaplan.list_processes()
-print(files, processes, sep="\n")
-```
-
-///
-
-/// tab | Asynchronous
-
-```python
-files, processes = await gather(anaplan.list_files(), anaplan.list_processes())
-print(files, processes, sep="\n")
-```
-
-///
+=== "Asynchronous"
+    ```python
+    files, processes = await gather(anaplan.list_files(), anaplan.list_processes())
+    print(files, processes, sep="\n")
+    ```
 
 ```python
 [
@@ -81,47 +71,35 @@ print(files, processes, sep="\n")
 
 With these two, you're ready to run your first import.
 
-/// tab | Synchronous
+=== "Synchronous"
+    ```python
+    anaplan.upload_and_import(
+        file_id=113000000000, action_id=118000000000, content=b"Hello, Anaplan!"
+    )
+    ```
 
-```python
-anaplan.upload_and_import(
-    file_id=113000000000, action_id=118000000000, content=b"Hello, Anaplan!"
-)
-```
-
-///
-
-/// tab | Asynchronous
-
-```python
-await anaplan.upload_and_import(
-    file_id=113000000000, action_id=118000000000, content=b"Hello, Anaplan!"
-)
-```
-
-///
+=== "Asynchronous"
+    ```python
+    await anaplan.upload_and_import(
+        file_id=113000000000, action_id=118000000000, content=b"Hello, Anaplan!"
+    )
+    ```
 
 ## Exporting Data
 
 Conversely, for exporting data, we start by listing the available exports.
 
-/// tab | Synchronous
+=== "Synchronous"
+    ```python
+    exports = anaplan.list_exports()
+    print(exports)
+    ```
 
-```python
-exports = anaplan.list_exports()
-print(exports)
-```
-
-///
-
-/// tab | Asynchronous
-
-```python
-exports = await anaplan.list_exports()
-print(exports)
-```
-
-///
+=== "Asynchronous"
+    ```python
+    exports = await anaplan.list_exports()
+    print(exports)
+    ```
 
 ```python
 [
@@ -136,21 +114,14 @@ print(exports)
 ]
 ```
 
-/// tab | Synchronous
-
-```python
-content = anaplan.export_and_download(116000000000)
-```
-
-///
-
-/// tab | Asynchronous
-
-```python
-content = await anaplan.export_and_download(116000000000)
-```
-
-///
+=== "Synchronous"
+    ```python
+    content = anaplan.export_and_download(116000000000)
+    ```
+=== "Asynchronous"
+    ```python
+    content = await anaplan.export_and_download(116000000000)
+    ```
 
 ## Next Steps
 

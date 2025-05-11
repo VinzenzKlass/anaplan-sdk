@@ -77,8 +77,8 @@ lists, modules = await gather(
 ///
 
 !!! note
-    While you can instantiate a [Client](../api/client.md) without the workspace or model parameters, trying to access
-    the [Transactional Client](../api/transactional_client.md) on an instance without the `model_id` will raise a `ValueError`.
+    While you can instantiate a [Client](../api/sync/client.md) without the workspace or model parameters, trying to access
+    the [Transactional Client](../api/sync/transactional_client.md) on an instance without the `model_id` will raise a `ValueError`.
 
 ## Basic Usage
 

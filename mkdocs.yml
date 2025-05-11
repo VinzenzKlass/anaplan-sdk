@@ -44,15 +44,17 @@ nav:
   - API Reference:
       - Developer Interface:
           - Asynchronous:
-              - Async Client: 'api/async_client.md'
-              - Async Transactional Client: 'api/async_transactional_client.md'
-              - Async ALM Client: 'api/async_alm_client.md'
-              - Async Audit Client: 'api/async_audit_client.md'
+              - Async Client: 'api/async/async_client.md'
+              - Async CloudWorks Client: 'api/async/async_cw_client.md'
+              - Async Transactional Client: 'api/async/async_transactional_client.md'
+              - Async ALM Client: 'api/async/async_alm_client.md'
+              - Async Audit Client: 'api/async/async_audit_client.md'
           - Synchronous:
-              - Client: 'api/client.md'
-              - Transactional Client: 'api/transactional_client.md'
-              - ALM Client: 'api/alm_client.md'
-              - Audit Client: 'api/audit_client.md'
+              - Client: 'api/sync/client.md'
+              - CloudWorks Client: 'api/sync/cw_client.md'
+              - Transactional Client: 'api/sync/transactional_client.md'
+              - ALM Client: 'api/sync/alm_client.md'
+              - Audit Client: 'api/sync/audit_client.md'
       - Models: 'api/models.md'
       - Exceptions: 'api/exceptions.md'
 
@@ -81,6 +83,7 @@ extra_css:
 
 markdown_extensions:
   - pymdownx.superfences
-  - pymdownx.blocks.tab:
+  - pymdownx.details
+  - pymdownx.tabbed:
       alternate_style: true
   - admonition

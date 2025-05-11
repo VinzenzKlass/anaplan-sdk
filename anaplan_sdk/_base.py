@@ -44,6 +44,9 @@ class _BaseClient:
     def _patch(self, url: str, json: dict | list) -> dict[str, Any]:
         return (self._run_with_retry(self._client.put, url, headers=_json_header, json=json)).json()
 
+    def _delete(self, url: str) -> dict[str, Any]:
+        return (self._run_with_retry(self._client.delete, url, headers=_json_header)).json()
+
     def _post_empty(self, url: str) -> None:
         self._run_with_retry(self._client.post, url)
 
@@ -123,6 +126,9 @@ class _AsyncBaseClient:
         return (
             await self._run_with_retry(self._client.patch, url, headers=_json_header, json=json)
         ).json()
+
+    async def _delete(self, url: str) -> dict[str, Any]:
+        return (await self._run_with_retry(self._client.delete, url, headers=_json_header)).json()
 
     async def _post_empty(self, url: str) -> None:
         await self._run_with_retry(self._client.post, url)
