@@ -8,6 +8,9 @@ from anaplan_sdk.models.cloud_works import (
     ConnectionInput,
     Integration,
     IntegrationInput,
+    RunStatus,
+    RunSummary,
+    SingleIntegration,
 )
 
 
@@ -84,6 +87,19 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
             for e in await self._get_paginated(f"{self._url}", "integrations", params=params)
         ]
 
+    async def get_integration(self, integration_id: str) -> SingleIntegration:
+        """
+        Get the details of a specific integration in CloudWorks.
+
+        **Note: This will not include the integration type! While present when listing integrations,
+        the integration type is not included in the details of a single integration.**
+        :param integration_id: The ID of the integration to retrieve.
+        :return: The details of the integration, without the integration type.
+        """
+        return SingleIntegration.model_validate(
+            (await self._get(f"{self._url}/{integration_id}"))["integration"]
+        )
+
     async def create_integration(self, body: IntegrationInput | dict[str, Any]) -> str:
         """
         Create a new integration in CloudWorks.
@@ -96,3 +112,54 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
             body = IntegrationInput.model_validate(body)
         json = body.model_dump(exclude_none=True, by_alias=True)
         return (await self._post(f"{self._url}", json=json))["integration"]["integrationId"]
+
+    async def update_integration(
+        self, integration_id: str, body: IntegrationInput | dict[str, Any]
+    ) -> None:
+        """
+        Update an existing integration in CloudWorks.
+        :param integration_id: The ID of the integration to update.
+        :param body: The name and details of the integration. You must pass all the same details
+                as when initially creating the integration again. If you want to update only some
+                of the details, use the `patch_integration` method instead.
+        """
+        if isinstance(body, dict):
+            body = IntegrationInput.model_validate(body)
+        json = body.model_dump(exclude_none=True, by_alias=True)
+        await self._put(f"{self._url}/{integration_id}", json=json)
+
+    async def run_integration(self, integration_id: str) -> str:
+        """
+        Run an integration in CloudWorks.
+        :param integration_id: The ID of the integration to run.
+        :return: The ID of the run instance.
+        """
+        return (await self._post_empty(f"{self._url}/{integration_id}/run"))["run"]["id"]
+
+    async def delete_integration(self, integration_id: str) -> None:
+        """
+        Delete an existing integration in CloudWorks.
+        :param integration_id: The ID of the integration to delete.
+        """
+        await self._delete(f"{self._url}/{integration_id}")
+
+    async def get_run_history(self, integration_id: str) -> list[RunSummary]:
+        """
+        Get the run history of a specific integration in CloudWorks.
+        :param integration_id: The ID of the integration to retrieve the run history for.
+        :return: A list of run statuses.
+        """
+        return [
+            RunSummary.model_validate(e)
+            for e in (await self._get(f"{self._url}/runs/{integration_id}"))["history_of_runs"].get(
+                "runs", []
+            )
+        ]
+
+    async def get_run_status(self, run_id: str) -> RunStatus:
+        """
+        Get the status of a specific run in CloudWorks.
+        :param run_id: The ID of the run to retrieve.
+        :return: The details of the run.
+        """
+        return RunStatus.model_validate((await self._get(f"{self._url}/run/{run_id}"))["run"])

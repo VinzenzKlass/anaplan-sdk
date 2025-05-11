@@ -130,8 +130,8 @@ class _AsyncBaseClient:
     async def _delete(self, url: str) -> dict[str, Any]:
         return (await self._run_with_retry(self._client.delete, url, headers=_json_header)).json()
 
-    async def _post_empty(self, url: str) -> None:
-        await self._run_with_retry(self._client.post, url)
+    async def _post_empty(self, url: str) -> dict[str, Any]:
+        return (await self._run_with_retry(self._client.post, url)).json()
 
     async def _put_binary_gzip(self, url: str, content: bytes) -> Response:
         return await self._run_with_retry(
