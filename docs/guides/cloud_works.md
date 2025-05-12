@@ -166,3 +166,13 @@ integration_input = IntegrationInput(
 
 Be careful to ensure, that all ids specified in the job inputs match what is defined in your model and matches the process. If this is not the case, this will error, occasionally with a misleading error message, i.e. `XYZ is not defined in your model` even though it is, Anaplan just does not know what to do with it in the location you specified.
 
+You can also use CloudWorks to simply schedule a process in one of your models, or create an integration with only a process for any other reason. To do so, you can pass an `IntegrationProcessInput` instance to `create_integration` instead, or an accordingly shaped dictionary:
+
+```python
+IntegrationProcessInput(
+    name="My Process",
+    process_id=118000000012,
+    workspace_id="8a81b09d599f3c6e0159f605560c2630",
+    model_id="8896D8C366BC48E5A3182B9F5CE10526",
+)
+```

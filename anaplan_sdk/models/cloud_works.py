@@ -15,6 +15,47 @@ IntegrationType = Literal[
     "AnaplanToGoogleBigQuery",
 ]
 
+Timezone = Literal[
+    "Etc/GMT+12",
+    "US/Samoa",
+    "Pacific/Honolulu",
+    "Pacific/Marquesas",
+    "US/Aleutian",
+    "America/Anchorage",
+    "America/Los_Angeles",
+    "America/Denver",
+    "America/Chicago",
+    "America/New_York",
+    "America/Sao_Paulo",
+    "Canada/Newfoundland",
+    "America/Nuuk",
+    "Atlantic/Cape_Verde",
+    "Greenwich",
+    "Europe/London",
+    "Europe/Paris",
+    "Asia/Tel_Aviv",
+    "Europe/Moscow",
+    "Asia/Dubai",
+    "Asia/Kabul",
+    "Asia/Karachi",
+    "Asia/Kolkata",
+    "Asia/Kathmandu",
+    "Asia/Dhaka",
+    "Asia/Rangoon",
+    "Asia/Jakarta",
+    "Asia/Hong_Kong",
+    "Australia/Eucla",
+    "Asia/Tokyo",
+    "Australia/Adelaide",
+    "Australia/Brisbane",
+    "Australia/Melbourne",
+    "Australia/Perth",
+    "Australia/Lord_Howe",
+    "Pacific/Norfolk",
+    "Pacific/Auckland",
+    "Pacific/Chatham",
+]
+
 
 class BaseConnectionInput(AnaplanModel):
     workspace_id: str | None = Field(
@@ -126,15 +167,43 @@ class LatestRun(AnaplanModel):
     trigger_source: str | None = Field(default=None, description="Source that triggered the run.")
 
 
-class Schedule(AnaplanModel):
+class ScheduleBase(AnaplanModel):
     name: str = Field(description="Name of the schedule.")
-    type: str = Field(description="Type of schedule (daily, hourly, etc).")
+    type: Literal[
+        "hourly", "daily", "weekly", "monthly_specific_day", "monthly_relative_weekday"
+    ] = Field(description="Trigger Frequency")
+    timezone: Timezone = Field(description="Timezone for the schedule.")
+
+
+class ScheduleInput(ScheduleBase):
+    time: str | None = Field(default=None, description="Time for scheduled runs in HH:mm format.")
+    from_time: str | None = Field(
+        default=None, description="Time for scheduled runs in HH:mm format, if type is hourly."
+    )
+    to_time: str | None = Field(
+        default=None, description="Time for scheduled runs in HH:mm format, if type is hourly."
+    )
+    days_of_week: list[int] = Field(description="Days of week when schedule is active.")
+    start_date: str = Field(
+        description=(
+            "Start date for the schedule in YYYY-MM-DD format. Must be in the Future, i.e. current "
+            "day, if the `time` is greater than the current time or any future date. "
+        )
+    )
+    end_date: str = Field(
+        description=(
+            "End date for the schedule in YYYY-MM-DD format. Must be in the Future, i.e. current "
+            "day, if the `time` is greater than the current time or any future date. "
+        )
+    )
+
+
+class Schedule(ScheduleBase):
     to_time: str = Field(description="End time for scheduled runs.")
     from_time: str = Field(description="Start time for scheduled runs.")
     end_date: datetime = Field(description="End date of the schedule.")
     start_date: datetime = Field(description="Start date of the schedule.")
-    timezone: str = Field(description="Timezone for the schedule.")
-    days_of_week: list[int] = Field(description="Days of week when schedule is active (1=Monday).")
+    days_of_week: list[int] = Field(description="Days of week when schedule is active.")
     repeat_every: int = Field(description="Frequency of repetition.")
     status: str = Field(description="Current status of the schedule.")
 
@@ -243,6 +312,14 @@ class IntegrationJobInput(AnaplanModel):
     )
 
 
+class IntegrationProcessInput(AnaplanModel):
+    name: str = Field(description="The name of this integration process.")
+    version: Literal["2.0"] = Field(default="2.0", description="The version of this integration.")
+    workspace_id: str = Field(description="The ID of the workspace this integration belongs to.")
+    model_id: str = Field(description="The ID of the model this integration belongs to.")
+    process_id: int = Field(description="The ID of the process this integration belongs to.")
+
+
 class IntegrationInput(AnaplanModel):
     name: str = Field(description="The name of this integration.")
     version: Literal["2.0"] = Field(default="2.0", description="The version of this integration.")
@@ -273,7 +350,9 @@ class RunSummary(AnaplanModel):
     message: str = Field(description="Result message of this run.")
     execution_error_code: int | None = Field(default=None, description="Error code if run failed.")
     trace_id: str = Field(description="The trace ID for this run.")
-    trigger_source: str = Field(description="Source that triggered the run.")
+    trigger_source: Literal["manual", "scheduled"] = Field(
+        description="Source that triggered the run."
+    )
 
 
 class RunStatus(AnaplanModel):
@@ -290,6 +369,6 @@ class RunStatus(AnaplanModel):
     modified_by: str = Field(description="The user who last modified this run.")
     execution_error_code: int | None = Field(default=None, description="Error code if run failed.")
     flow_group_id: str | None = Field(default=None, description="The ID of the flow group, if any.")
-    trigger_source: str = Field(
-        description="Source that triggered the run (e.g., 'manual', 'scheduled')."
+    trigger_source: Literal["manual", "scheduled"] = Field(
+        description="Source that triggered the run."
     )

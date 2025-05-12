@@ -118,3 +118,41 @@ pre-commit install
 ```
 
 If your PR goes beyond a simple bug fix or small changes, please add tests to cover your changes.
+
+### API Endpoints
+- [ ] [Create a connection](https://cloudworks.docs.apiary.io/#create_connection)
+- [ ] [Get connections](https://cloudworks.docs.apiary.io/#get_connections)
+- [ ] [Edit a connection](https://cloudworks.docs.apiary.io/#edit_connection)
+- [ ] [Patch a connection](https://cloudworks.docs.apiary.io/#patch_connection)
+- [ ] [Delete a connection](https://cloudworks.docs.apiary.io/#delete_connection)
+- [ ] [Create a new integration](https://cloudworks.docs.apiary.io/#create_integration)
+- [ ] [Run an integration](https://cloudworks.docs.apiary.io/#run_integration)
+- [ ] [Get all integrations](https://cloudworks.docs.apiary.io/#get_integrations)
+- [ ] [Get integrations by integration ID](https://cloudworks.docs.apiary.io/#get_integrations_by_integration)
+- [ ] [Get integrations by Model ID](https://cloudworks.docs.apiary.io/#get_integration_by_model)
+- [ ] [Edit an integration](https://cloudworks.docs.apiary.io/#edit_integration)
+- [ ] [Delete an integration](https://cloudworks.docs.apiary.io/#delete_integration)
+- [ ] [Create process integration](https://cloudworks.docs.apiary.io/#create_process_integration)
+- [ ] [Edit a process integration](https://cloudworks.docs.apiary.io/#edit_process_integration)
+- [ ] [Set the status of an integration schedule](https://cloudworks.docs.apiary.io/#set_status_schedule)
+- [ ] [Create an integration schedule](https://cloudworks.docs.apiary.io/#create_integration_schedule)
+- [ ] [Update the schedule of an integration](https://cloudworks.docs.apiary.io/#update_schedule)
+- [ ] [Delete an integration schedule](https://cloudworks.docs.apiary.io/#delete_integration_schedule)
+- [ ] [Get history of integration runs](https://cloudworks.docs.apiary.io/#get_history)
+- [ ] [Get integration run errors](https://cloudworks.docs.apiary.io/#get_run_errors)
+- [ ] [Get run status](https://cloudworks.docs.apiary.io/#get_run_status)
+- [ ] [Get a notification configuration](https://cloudworks.docs.apiary.io/#get_notification)
+- [ ] [Create notification configuration](https://cloudworks.docs.apiary.io/#create_notification)
+- [ ] [Edit a notification configuration](https://cloudworks.docs.apiary.io/#edit_notification)
+- [ ] [Delete a notification configuration](https://cloudworks.docs.apiary.io/#delete_notification)
+- [ ] [Get an import error log](https://cloudworks.docs.apiary.io/#get_import_error_log)
+- [ ] [Get a process error log](https://cloudworks.docs.apiary.io/#get_process_error_log)
+
+### Flow Endpoints
+
+- [ ] Create a new integration flow
+- [ ] Run an integration flow
+- [ ] Get all integration flows
+- [ ] Get integration flows by integration ID
+- [ ] Delete an integration flow
+- [ ] Edit an integration flow

@@ -7,21 +7,25 @@ from concurrent.futures import ThreadPoolExecutor
 from gzip import compress
 from itertools import chain
 from math import ceil
-from typing import Any, Callable, Coroutine, Iterator, Literal
+from typing import Any, Callable, Coroutine, Iterator, Literal, Type, TypeVar
 
 import httpx
 from httpx import HTTPError, Response
 
-from anaplan_sdk.exceptions import (
+from .exceptions import (
     AnaplanException,
     AnaplanTimeoutException,
     InvalidIdentifierException,
 )
+from .models import AnaplanModel
+from .models.cloud_works import IntegrationInput, IntegrationProcessInput, ScheduleInput
 
 logger = logging.getLogger("anaplan_sdk")
 
 _json_header = {"Content-Type": "application/json"}
 _gzip_header = {"Content-Type": "application/x-gzip"}
+
+T = TypeVar("T", bound=AnaplanModel)
 
 
 class _BaseClient:
@@ -189,6 +193,35 @@ class _AsyncBaseClient:
                 logger.info(f"Retrying for: {url}")
 
         raise AnaplanException("Exhausted all retries without a successful response or Error.")
+
+
+def construct_payload(model: Type[T], body: T | dict[str, Any]) -> dict[str, Any]:
+    if isinstance(body, dict):
+        body = model.model_validate(body)
+    return body.model_dump(exclude_none=True, by_alias=True)
+
+
+def integration_payload(
+    body: IntegrationInput | IntegrationProcessInput | dict[str, Any],
+) -> dict[str, Any]:
+    if isinstance(body, dict):
+        body = (
+            IntegrationInput.model_validate(body)
+            if "jobs" in body
+            else IntegrationProcessInput.model_validate(body)
+        )
+    return body.model_dump(exclude_none=True, by_alias=True)
+
+
+def schedule_payload(
+    integration_id: str, schedule: ScheduleInput | dict[str, Any]
+) -> dict[str, Any]:
+    if isinstance(schedule, dict):
+        schedule = ScheduleInput.model_validate(schedule)
+    return {
+        "integrationId": integration_id,
+        "schedule": schedule.model_dump(exclude_none=True, by_alias=True),
+    }
 
 
 def action_url(action_id: int) -> Literal["imports", "exports", "actions", "processes"]:

@@ -1,4 +1,5 @@
 from ._alm import ModelRevision, Revision, SyncTask
+from ._base import AnaplanModel
 from ._bulk import (
     Action,
     Export,
@@ -19,6 +20,7 @@ from ._bulk import (
 from ._transactional import Failure, InsertionResult, LineItem, ListItem, ModelStatus, Module, User
 
 __all__ = [
+    "AnaplanModel",
     "ExportTypes",
     "ImportTypes",
     "Workspace",
