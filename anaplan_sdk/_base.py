@@ -47,8 +47,9 @@ class _BaseClient:
     def _delete(self, url: str) -> dict[str, Any]:
         return (self._run_with_retry(self._client.delete, url, headers=_json_header)).json()
 
-    def _post_empty(self, url: str) -> None:
-        self._run_with_retry(self._client.post, url)
+    def _post_empty(self, url: str) -> dict[str, Any]:
+        res = self._run_with_retry(self._client.post, url)
+        return res.json() if res.num_bytes_downloaded > 0 else {}
 
     def _put_binary_gzip(self, url: str, content: bytes) -> Response:
         return self._run_with_retry(
@@ -131,7 +132,8 @@ class _AsyncBaseClient:
         return (await self._run_with_retry(self._client.delete, url, headers=_json_header)).json()
 
     async def _post_empty(self, url: str) -> dict[str, Any]:
-        return (await self._run_with_retry(self._client.post, url)).json()
+        res = await self._run_with_retry(self._client.post, url)
+        return res.json() if res.num_bytes_downloaded > 0 else {}
 
     async def _put_binary_gzip(self, url: str, content: bytes) -> Response:
         return await self._run_with_retry(
