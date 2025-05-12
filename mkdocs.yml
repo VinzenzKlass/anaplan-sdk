@@ -23,6 +23,8 @@ theme:
   features:
     - content.code.copy
     - content.tabs.link
+    - search.suggest
+
   icon:
     repo: fontawesome/brands/github
   favicon: img/anaplan-sdk.webp
@@ -67,9 +69,10 @@ plugins:
           options:
             separate_signature: true
             show_signature_annotations: true
-            line_length: 88
+            line_length: 80
             docstring_style: sphinx
             members_order: source
+            group_by_category: false
             show_source: false
             show_bases: false
             extensions:
@@ -77,7 +80,7 @@ plugins:
 
 
 extra_javascript:
-  - js/highlight.js
+  - js/highlight.min.js
 
 extra_css:
   - css/styles.css
@@ -85,6 +88,8 @@ extra_css:
 markdown_extensions:
   - pymdownx.superfences
   - pymdownx.details
+  - pymdownx.highlight:
+      use_pygments: false
   - pymdownx.tabbed:
       alternate_style: true
   - admonition

@@ -108,7 +108,7 @@ Similarly, you can use the pydantic models provided by the `anaplan_sdk.models.c
 source = FileSource(
     type="AzureBlob", connection_id="5e...05", file="dummy.csv"
 )
-target = AnaplanTarget(action_id=112000000001, file_id=112000000001)
+target = AnaplanTarget(action_id=112000000001, file_id=113000000001)
 job = IntegrationJobInput(
     type="AzureBlobToAnaplan", sources=[source], targets=[target]
 )
@@ -119,33 +119,50 @@ integration_input = IntegrationInput(
     jobs=[job],
 )
 ```
-The equivalent dictionary payload would be:
 
+??? example "Dictionary Payload"
+    The equivalent dictionary payload would be:
+
+    ```
+    {
+        "name": "Blob to Anaplan",
+        "version": "2.0",
+        "workspaceId": "8a81b09d599f3c6e0159f605560c2630",
+        "modelId": "8896D8C366BC48E5A3182B9F5CE10526",
+        "nuxVisible": false,
+        "jobs": [
+            {
+                "type": "AzureBlobToAnaplan",
+                "sources": [
+                    {
+                        "connectionId": "5e634ba338444d2ea26ce384a70b5705",
+                        "type": "AzureBlob",
+                        "file": "dummy.csv"
+                    }
+                ],
+                "targets": [
+                    {
+                        "type": "Anaplan",
+                        "actionId": "112000000001",
+                        "fileId": "112000000001"
+                    }
+                ]
+            }
+        ]
+    }
+    ```
+
+To create a Process Integration, you can simply extend the above example to include the `process_id` in the `IntegrationInput` instance. You can then pass as number of `IntegrationJobInput` to `jobs`. 
+
+```python
+integration_input = IntegrationInput(
+    name="Double Blob to Anaplan",
+    workspace_id="8a81b09d599f3c6e0159f605560c2630",
+    model_id="8896D8C366BC48E5A3182B9F5CE10526",
+    process_id=118000000012, # Add this line
+    jobs=[job, another_job, ...],
+)
 ```
-{
-    "name": "Blob to Anaplan",
-    "version": "2.0",
-    "workspaceId": "8a81b09d599f3c6e0159f605560c2630",
-    "modelId": "8896D8C366BC48E5A3182B9F5CE10526",
-    "nuxVisible": false,
-    "jobs": [
-        {
-            "type": "AzureBlobToAnaplan",
-            "sources": [
-                {
-                    "connectionId": "5e...05",
-                    "type": "AzureBlob",
-                    "file": "dummy.csv"
-                }
-            ],
-            "targets": [
-                {
-                    "type": "Anaplan",
-                    "actionId": "112000000001",
-                    "fileId": "112000000001"
-                }
-            ]
-        }
-    ]
-}
-```
+
+Be careful to ensure, that all ids specified in the job inputs match what is defined in your model and matches the process. If this is not the case, this will error, occasionally with a misleading error message, i.e. `XYZ is not defined in your model` even though it is, Anaplan just does not know what to do with it in the location you specified.
+

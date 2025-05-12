@@ -122,7 +122,7 @@ class LatestRun(AnaplanModel):
     end_date: datetime = Field(description="The end timestamp of this run.")
     success: bool = Field(description="Whether this run was successful.")
     message: str = Field(description="Result message of this run.")
-    execution_error_code: str | None = Field(default=None, description="Error code if run failed.")
+    execution_error_code: int | None = Field(default=None, description="Error code if run failed.")
     trigger_source: str | None = Field(default=None, description="Source that triggered the run.")
 
 
@@ -183,7 +183,8 @@ class SingleIntegration(Integration):
 
 class AnaplanSource(AnaplanModel):
     type: Literal["Anaplan"] = Field(
-        default="Anaplan", description="Literal signifying this is an Anaplan source."
+        default="Anaplan",
+        description="Literal signifying this is an Anaplan source.",
     )
     action_id: int = Field(
         description=(
@@ -214,13 +215,15 @@ class TableSource(AnaplanModel):
 
 class TableTarget(TableSource):
     overwrite: bool = Field(
-        default=False, description="Whether to overwrite the table if it exists."
+        default=False,
+        description="Whether to overwrite the table if it exists.",
     )
 
 
 class AnaplanTarget(AnaplanModel):
     type: Literal["Anaplan"] = Field(
-        default="Anaplan", description="Literal signifying this is an Anaplan target."
+        default="Anaplan",
+        description="Literal signifying this is an Anaplan target.",
     )
     action_id: int = Field(
         description=(
@@ -245,8 +248,15 @@ class IntegrationInput(AnaplanModel):
     version: Literal["2.0"] = Field(default="2.0", description="The version of this integration.")
     workspace_id: str = Field(description="The ID of the workspace this integration belongs to.")
     model_id: str = Field(description="The ID of the model this integration belongs to.")
+    process_id: int | None = Field(
+        default=None,
+        description=(
+            "If given, an integration process will be created, instead of an Import or Export"
+        ),
+    )
     nux_visible: bool = Field(
-        default=False, description="Whether this integration is visible in the UI."
+        default=False,
+        description="Whether this integration is visible in the UI.",
     )
     jobs: list[IntegrationJobInput] = Field(
         description="The jobs in this integration.", min_length=1

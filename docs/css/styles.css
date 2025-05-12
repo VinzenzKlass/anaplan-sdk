@@ -2,6 +2,10 @@
     --md-primary-fg-color: #3C67EA;
 }
 
+:root, [data-md-color-scheme=default] {
+    --md-code-bg-color: #fAfAfA;
+}
+
 .md-typeset .tabbed-labels:before {
     background: none !important;
     border-bottom: .1rem solid;
@@ -18,12 +22,8 @@
     font-weight: 500;
 }
 
-.hljs-doctag, .hljs-formula, .hljs-keyword, .hljs-literal {
+.hljs-formula, .hljs-keyword, .hljs-literal {
     color: #D55FDE
-}
-
-.hljs-deletion, .hljs-name, .hljs-section, .hljs-selector-tag, .hljs-subst {
-    color: #e06c75
 }
 
 .hljs-addition, .hljs-attribute, .hljs-meta .hljs-string, .hljs-regexp, .hljs-string {
@@ -47,7 +47,7 @@
     color: #5488e8
 }
 
-.hljs-built_in {
+.hljs-built_in, .hljs-deletion, .hljs-name, .hljs-section, .hljs-selector-tag, .hljs-subst {
     color: #2AAFB0
 }
 
@@ -61,4 +61,8 @@
 
 .hljs-link {
     text-decoration: underline
+}
+
+.hljs-sql-text {
+    color: var(--md-code-fg-color);
 }
