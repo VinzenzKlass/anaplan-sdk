@@ -12,6 +12,7 @@ from anaplan_sdk.models.cloud_works import (
 async def test_list_connections(client):
     connections = await client.cw.list_connections()
     assert isinstance(connections, list)
+
     assert all(isinstance(c, Connection) for c in connections)
 
 
@@ -111,8 +112,8 @@ async def test_update_process_integration_dict(
     await client.cw.update_integration(multi_integration_id, process_integration_dict)
 
 
-async def test_run_integration(client):
-    assert await client.cw.run_integration("44cbd206c8204203b8a0ab5667e0396a") is not None
+async def test_run_integration(client, notification_integration_id):
+    assert await client.cw.run_integration(notification_integration_id) is not None
 
 
 async def test_get_run_history(client, integration_id):
@@ -155,13 +156,24 @@ async def test_update_schedule_dict(client, integration_id, schedule_dict):
     await client.cw.delete_schedule(integration_id)
 
 
-async def test_notification_pydantic(client, notification_pydantic):
-    notification_id = await client.cw.create_notification_config(notification_pydantic)
-    await client.cw.update_notification_config(notification_id, notification_pydantic)
-    await client.cw.delete_notification_config(notification_id)
-
-
-async def test_create_notification_dict(client, notification_dict):
-    notification_id = await client.cw.create_notification_config(notification_dict)
-    await client.cw.update_notification_config(notification_id, notification_dict)
-    await client.cw.delete_notification_config(notification_id)
+async def test_delete_integrations(
+    client,
+    integration_id,
+    multi_integration_id,
+    process_integration_id,
+    notification_integration_id,
+):
+    integrations = await client.cw.list_integrations()
+    await gather(
+        *(
+            client.cw.delete_integration(i.integration_id)
+            for i in integrations
+            if i.integration_id
+            not in (
+                integration_id,
+                multi_integration_id,
+                process_integration_id,
+                notification_integration_id,
+            )
+        )
+    )

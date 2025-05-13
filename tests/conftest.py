@@ -61,6 +61,11 @@ def process_integration_id():
 
 
 @pytest.fixture
+def notification_integration_id():
+    return "44cbd206c8204203b8a0ab5667e0396a"
+
+
+@pytest.fixture
 def run_id():
     return "ee158e5f74854e5299d6aa1bc771058b"
 
@@ -235,9 +240,9 @@ def schedule_dict(name):
 
 
 @pytest.fixture
-def notification_pydantic(name):
+def notification_pydantic(name, notification_integration_id):
     return NotificationInput(
-        integration_ids=["44cbd206c8204203b8a0ab5667e0396a"],
+        integration_ids=[notification_integration_id],
         channels=["in_app"],
         notifications=NotificationConfigInput(
             config=[
@@ -250,9 +255,9 @@ def notification_pydantic(name):
 
 
 @pytest.fixture
-def notification_dict(name, integration_id):
+def notification_dict(name, notification_integration_id):
     return {
-        "integrationIds": ["44cbd206c8204203b8a0ab5667e0396a"],
+        "integrationIds": [notification_integration_id],
         "channels": ["in_app"],
         "notifications": {
             "config": [
