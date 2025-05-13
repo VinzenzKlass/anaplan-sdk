@@ -30,9 +30,9 @@ class Workspace(AnaplanModel):
 class Model(AnaplanModel):
     id: str = Field(description="The unique identifier of this model.")
     name: str
-    active_state: Literal["ARCHIVED", "UNLOCKED", "ACTIVE", "PRODUCTION"] = Field(
-        description="The current state of this model."
-    )
+    active_state: Literal[
+        "ARCHIVED", "UNLOCKED", "ACTIVE", "PRODUCTION", "MAINTENANCE", "PRODUCTION_MAINTENANCE"
+    ] = Field(description="The current state of this model.")
     last_saved_serial_number: int = Field(
         description="The serial number of the last save of this model."
     )
