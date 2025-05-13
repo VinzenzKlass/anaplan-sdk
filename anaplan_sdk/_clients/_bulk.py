@@ -56,7 +56,7 @@ class Client(_BaseClient):
         certificate: str | bytes | None = None,
         private_key: str | bytes | None = None,
         private_key_password: str | bytes | None = None,
-        timeout: float = 30,
+        timeout: float | httpx.Timeout = 30,
         retry_count: int = 2,
         status_poll_delay: int = 1,
         upload_parallel: bool = True,
@@ -124,7 +124,7 @@ class Client(_BaseClient):
         )
         self._alm_client = _AlmClient(_client, model_id, self._retry_count) if model_id else None
         self._thread_count = multiprocessing.cpu_count()
-        self.audit = _AuditClient(_client, self._retry_count, self._thread_count)
+        self._audit = _AuditClient(_client, self._retry_count, self._thread_count)
         self.status_poll_delay = status_poll_delay
         self.upload_parallel = upload_parallel
         self.upload_chunk_size = upload_chunk_size
@@ -150,6 +150,14 @@ class Client(_BaseClient):
         )
         client._alm_client = _AlmClient(existing._client, model_id, existing._retry_count)
         return client
+
+    @property
+    def audit(self) -> _AuditClient:
+        """
+        The Audit Client provides access to the Anaplan Audit API.
+        For details, see https://vinzenzklass.github.io/anaplan-sdk/guides/audit/.
+        """
+        return self._audit
 
     @property
     def transactional(self) -> _TransactionalClient:

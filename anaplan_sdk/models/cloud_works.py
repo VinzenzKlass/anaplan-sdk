@@ -4,6 +4,7 @@ from typing import Literal
 from pydantic import Field, field_validator
 
 from ._base import AnaplanModel
+from ._bulk import TaskResultDetail
 
 ConnectionType = Literal["AmazonS3", "AzureBlob", "GoogleBigQuery"]
 IntegrationType = Literal[
@@ -121,11 +122,12 @@ class GoogleBigQueryConnectionInput(GoogleBigQueryConnectionInfo, BaseConnection
     )
 
 
+ConnectionBody = AzureBlobConnectionInput | AmazonS3ConnectionInput | GoogleBigQueryConnectionInput
+
+
 class ConnectionInput(AnaplanModel):
     type: ConnectionType = Field(description="The type of this connection.")
-    body: AzureBlobConnectionInput | AmazonS3ConnectionInput | GoogleBigQueryConnectionInput = (
-        Field(description="Connection information.")
-    )
+    body: ConnectionBody = Field(description="Connection information.")
 
 
 class Connection(AnaplanModel):
@@ -160,7 +162,13 @@ class Connection(AnaplanModel):
 class LatestRun(AnaplanModel):
     triggered_by: str = Field(description="The user who triggered this run.")
     start_date: datetime = Field(description="The start timestamp of this run.")
-    end_date: datetime = Field(description="The end timestamp of this run.")
+    end_date: datetime | None = Field(
+        default=None,
+        description=(
+            "The end timestamp of this run. This can be None, if the integration is currently "
+            "running."
+        ),
+    )
     success: bool = Field(description="Whether this run was successful.")
     message: str = Field(description="Result message of this run.")
     execution_error_code: int | None = Field(default=None, description="Error code if run failed.")
@@ -232,7 +240,9 @@ class Integration(AnaplanModel):
     schedule: Schedule | None = Field(
         default=None, description="Schedule configuration if defined."
     )
-    notification_id: str = Field(description="The ID of the associated notification.")
+    notification_id: str | None = Field(
+        default=None, description="The ID of the associated notification configuration, if any."
+    )
 
     @field_validator("latest_run", mode="before")
     @classmethod
@@ -345,7 +355,13 @@ class RunSummary(AnaplanModel):
     triggered_by: str
     last_run: datetime = Field(description="Last Run timestamp.")
     start_date: datetime = Field(description="Start timestamp.")
-    end_date: datetime = Field(description="End timestamp.")
+    end_date: datetime | None = Field(
+        default=None,
+        description=(
+            "The end timestamp of this run. This can be None, if the integration is currently "
+            "running."
+        ),
+    )
     success: bool = Field(description="Whether this run was successful.")
     message: str = Field(description="Result message of this run.")
     execution_error_code: int | None = Field(default=None, description="Error code if run failed.")
@@ -371,4 +387,97 @@ class RunStatus(AnaplanModel):
     flow_group_id: str | None = Field(default=None, description="The ID of the flow group, if any.")
     trigger_source: Literal["manual", "scheduled"] = Field(
         description="Source that triggered the run."
+    )
+
+
+class ErrorMessage(AnaplanModel):
+    error_message: list[TaskResultDetail]
+    action_id: str = Field(description="The ID of the action that failed.")
+    action_name: str = Field(description="The name of the action that failed.")
+    failure_dump_generated: bool = Field(description="Whether a failure dump was generated.")
+
+
+class RunError(AnaplanModel):
+    task_id: str = Field(description="The Task ID of the invoked Anaplan Action.")
+    error_messages: list[ErrorMessage] = Field(description="The error messages of the run.")
+    creation_date: datetime = Field(description="The initial creation date of this run.")
+    modification_date: datetime = Field(
+        description=(
+            "The last modification date of this connection. If never modified, this is equal to "
+            "creation_date."
+        )
+    )
+    created_by: str = Field(description="The user who created this run.")
+    modified_by: str | None = Field(
+        default=None, description="The user who last modified this run."
+    )
+
+
+class NotificationUser(AnaplanModel):
+    user_guid: str = Field(description="The unique identifier of the user.")
+    first_name: str = Field(description="The user's first name.")
+    last_name: str = Field(description="The user's last name.")
+
+
+class NotificationItem(AnaplanModel):
+    type: Literal["success", "partial_failure", "full_failure"] = Field(
+        description="The type of notification event that triggers notifications."
+    )
+    users: list[NotificationUser] = Field(
+        description="The list of users who will receive this notification."
+    )
+
+
+class Notification(AnaplanModel):
+    config: list[NotificationItem] = Field(
+        description="The configuration for different notification types."
+    )
+
+
+class NotificationConfig(AnaplanModel):
+    notification_id: str = Field(
+        description="The unique identifier of this notification configuration."
+    )
+    integration_ids: list[str] = Field(
+        description="The IDs of the integrations associated with this notification."
+    )
+    channels: list[Literal["email", "in_app"]] = Field(
+        description="The channels through which notifications will be sent."
+    )
+    notifications: Notification = Field(
+        description="The detailed notification configuration settings."
+    )
+
+
+class NotificationItemInput(AnaplanModel):
+    type: Literal["success", "partial_failure", "full_failure"] = Field(
+        description="The type of notification event that triggers notifications."
+    )
+    users: list[str] = Field(
+        description=(
+            "The list of user IDs who will receive this notification. Must not be empty. If you "
+            "want nobody to receive notifications for this type, omit the entire config item. If "
+            "you want to override an existing list of users with an empty one, you must delete the "
+            "notification configuration and create a new one."
+        ),
+        min_length=1,
+        max_length=5,
+    )
+
+
+class NotificationConfigInput(AnaplanModel):
+    config: list[NotificationItemInput] = Field(
+        description="The configuration for different notification types."
+    )
+
+
+class NotificationInput(AnaplanModel):
+    integration_ids: list[str] = Field(
+        description="The IDs of the integrations associated with this notification."
+    )
+    channels: list[Literal["email", "in_app"]] = Field(
+        description="The channels through which notifications will be sent."
+    )
+    notifications: NotificationConfigInput = Field(
+        description="The detailed notification configuration settings."
     )

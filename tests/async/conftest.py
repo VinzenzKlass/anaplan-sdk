@@ -3,12 +3,12 @@ from os import getenv
 
 import pytest
 
-import anaplan_sdk
+from anaplan_sdk import AsyncClient
 
 
 @pytest.fixture(scope="session")
-def client():
-    return anaplan_sdk.AsyncClient(
+def client() -> AsyncClient:
+    return AsyncClient(
         workspace_id=getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),
         model_id=getenv("ANAPLAN_SDK_TEST_MODEL_ID"),
         certificate=getenv("ANAPLAN_SDK_TEST_CERT"),
@@ -19,7 +19,7 @@ def client():
 
 @pytest.fixture(scope="session")
 def broken_client():
-    return anaplan_sdk.AsyncClient(
+    return AsyncClient(
         workspace_id="",
         model_id="",
         certificate=getenv("ANAPLAN_SDK_TEST_CERT"),

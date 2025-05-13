@@ -18,7 +18,15 @@ from .exceptions import (
     InvalidIdentifierException,
 )
 from .models import AnaplanModel
-from .models.cloud_works import IntegrationInput, IntegrationProcessInput, ScheduleInput
+from .models.cloud_works import (
+    AmazonS3ConnectionInput,
+    AzureBlobConnectionInput,
+    ConnectionBody,
+    GoogleBigQueryConnectionInput,
+    IntegrationInput,
+    IntegrationProcessInput,
+    ScheduleInput,
+)
 
 logger = logging.getLogger("anaplan_sdk")
 
@@ -196,14 +204,41 @@ class _AsyncBaseClient:
 
 
 def construct_payload(model: Type[T], body: T | dict[str, Any]) -> dict[str, Any]:
+    """
+    Construct a payload for the given model and body.
+    :param model: The model class to use for validation.
+    :param body: The body to validate and optionally convert to a dictionary.
+    :return: A dictionary representation of the validated body.
+    """
     if isinstance(body, dict):
         body = model.model_validate(body)
+    return body.model_dump(exclude_none=True, by_alias=True)
+
+
+def connection_body_payload(body: ConnectionBody | dict[str, Any]) -> dict[str, Any]:
+    """
+    Construct a payload for the given integration body.
+    :param body: The body to validate and optionally convert to a dictionary.
+    :return: A dictionary representation of the validated body.
+    """
+    if isinstance(body, dict):
+        if "sasToken" in body:
+            body = AzureBlobConnectionInput.model_validate(body)
+        elif "secretAccessKey" in body:
+            body = AmazonS3ConnectionInput.model_validate(body)
+        else:
+            body = GoogleBigQueryConnectionInput.model_validate(body)
     return body.model_dump(exclude_none=True, by_alias=True)
 
 
 def integration_payload(
     body: IntegrationInput | IntegrationProcessInput | dict[str, Any],
 ) -> dict[str, Any]:
+    """
+    Construct a payload for the given integration body.
+    :param body: The body to validate and optionally convert to a dictionary.
+    :return: A dictionary representation of the validated body.
+    """
     if isinstance(body, dict):
         body = (
             IntegrationInput.model_validate(body)
@@ -216,6 +251,12 @@ def integration_payload(
 def schedule_payload(
     integration_id: str, schedule: ScheduleInput | dict[str, Any]
 ) -> dict[str, Any]:
+    """
+    Construct a payload for the given integration ID and schedule.
+    :param integration_id: The ID of the integration.
+    :param schedule: The schedule to validate and optionally convert to a dictionary.
+    :return: A dictionary representation of the validated schedule.
+    """
     if isinstance(schedule, dict):
         schedule = ScheduleInput.model_validate(schedule)
     return {

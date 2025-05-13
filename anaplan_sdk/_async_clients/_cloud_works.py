@@ -4,16 +4,21 @@ import httpx
 
 from anaplan_sdk._base import (
     _AsyncBaseClient,
+    connection_body_payload,
     construct_payload,
     integration_payload,
     schedule_payload,
 )
 from anaplan_sdk.models.cloud_works import (
     Connection,
+    ConnectionBody,
     ConnectionInput,
     Integration,
     IntegrationInput,
     IntegrationProcessInput,
+    NotificationConfig,
+    NotificationInput,
+    RunError,
     RunStatus,
     RunSummary,
     ScheduleInput,
@@ -27,6 +32,10 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         super().__init__(retry_count, client)
 
     async def list_connections(self) -> list[Connection]:
+        """
+        List all Connections available in CloudWorks.
+        :return: A list of connections.
+        """
         return [
             Connection.model_validate(e)
             for e in await self._get_paginated(f"{self._url}/connections", "connections")
@@ -46,7 +55,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         return res["connections"]["connectionId"]
 
     async def update_connection(
-        self, con_id: str, con_info: ConnectionInput | dict[str, Any]
+        self, con_id: str, con_info: ConnectionBody | dict[str, Any]
     ) -> None:
         """
         Update an existing connection in CloudWorks.
@@ -55,9 +64,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
                as when initially creating the connection again. If you want to update only some of
                the details, use the `patch_connection` method instead.
         """
-        await self._put(
-            f"{self._url}/connections/{con_id}", json=construct_payload(ConnectionInput, con_info)
-        )
+        await self._put(f"{self._url}/connections/{con_id}", json=connection_body_payload(con_info))
 
     async def patch_connection(self, con_id: str, body: dict[str, Any]) -> None:
         """
@@ -120,9 +127,9 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         can simply pass an IntegrationProcessInput instance with the process_id and no jobs. This
         will create a process integration that will run the process you specified.
         :param body: The integration information. This can be an
-                IntegrationInput | IntegrationProcessInput instance or a dictionary as per the
-                documentation. If a dictionary is passed, it will be validated against the
-                IntegrationInput model before sending the request.
+               IntegrationInput | IntegrationProcessInput instance or a dictionary as per the
+               documentation. If a dictionary is passed, it will be validated against the
+               IntegrationInput model before sending the request.
         :return: The ID of the new integration.
         """
         json = integration_payload(body)
@@ -135,8 +142,8 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         Update an existing integration in CloudWorks.
         :param integration_id: The ID of the integration to update.
         :param body: The name and details of the integration. You must pass all the same details
-                as when initially creating the integration again. If you want to update only some
-                of the details, use the `patch_integration` method instead.
+               as when initially creating the integration again. If you want to update only some
+               of the details, use the `patch_integration` method instead.
         """
         json = integration_payload(body)
         await self._put(f"{self._url}/{integration_id}", json=json)
@@ -176,6 +183,15 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         :return: The details of the run.
         """
         return RunStatus.model_validate((await self._get(f"{self._url}/run/{run_id}"))["run"])
+
+    async def get_run_error(self, run_id: str) -> RunError:
+        """
+        Get the error details of a specific run in CloudWorks. This exposes potential underlying
+        errors like the error of the invoked action, failure dumps and other details.
+        :param run_id: The ID of the run to retrieve.
+        :return: The details of the run error.
+        """
+        return RunError.model_validate((await self._get(f"{self._url}/runerror/{run_id}"))["runs"])
 
     async def create_schedule(
         self, integration_id: str, schedule: ScheduleInput | dict[str, Any]
@@ -223,3 +239,64 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         :param integration_id: The ID of the integration to schedule.
         """
         await self._delete(f"{self._url}/{integration_id}/schedule")
+
+    async def get_notification_config(
+        self, notification_id: str | None = None, integration_id: str | None = None
+    ) -> NotificationConfig:
+        """
+        Get the notification configuration, either by its Id, or the notification configuration
+        for a specific integration. If the integration_id is specified, the notification_id
+        will be ignored.
+        :param notification_id: The ID of the notification configuration to retrieve.
+        :param integration_id: The ID of the integration to retrieve the notification
+               configuration for.
+        :return: The details of the notification configuration.
+        """
+        if not (notification_id or integration_id):
+            raise ValueError("Either notification_id or integration_id must be specified.")
+        if integration_id:
+            notification_id = (await self.get_integration(integration_id)).notification_id
+        return NotificationConfig.model_validate(
+            (await self._get(f"{self._url}/notification/{notification_id}"))["notifications"]
+        )
+
+    async def create_notification_config(self, config: NotificationInput | dict[str, Any]) -> str:
+        """
+        Create a notification configuration for an integration in CloudWorks. This will error if
+        there is already a notification configuration for the integration, which is also the case
+        by default. In this case, you will want to use the `update_notification_config` method
+        instead, to partially update the existing configuration or overwrite it.
+        :param config: The notification configuration. This can be a NotificationInput instance or
+               a dictionary as per the documentation. If a dictionary is passed, it will be
+               validated against the NotificationConfig model before sending the request.
+        :return: The ID of the new notification configuration.
+        """
+        res = await self._post(
+            f"{self._url}/notification", json=construct_payload(NotificationInput, config)
+        )
+        return res["notification"]["notificationId"]
+
+    async def update_notification_config(
+        self, notification_id: str, config: NotificationInput | dict[str, Any]
+    ) -> None:
+        """
+        Update a notification configuration for an integration in CloudWorks. You cannot pass empty
+        values or nulls to any of the fields If you want to for e.g. override  an existing list of
+        users with an empty one, you must delete the notification configuration and create a new
+        one with only the values you want to keep.
+        :param notification_id: The ID of the notification configuration to update.
+        :param config: The notification configuration. This can be a NotificationInput instance or
+               a dictionary as per the documentation. If a dictionary is passed, it will be
+               validated against the NotificationConfig model before sending the request.
+        """
+        await self._put(
+            f"{self._url}/notification/{notification_id}",
+            json=construct_payload(NotificationConfig, config),
+        )
+
+    async def delete_notification_config(self, notification_id: str) -> None:
+        """
+        Delete a notification configuration for an integration in CloudWorks.
+        :param notification_id: The ID of the notification configuration to delete.
+        """
+        await self._delete(f"{self._url}/notification/{notification_id}")
