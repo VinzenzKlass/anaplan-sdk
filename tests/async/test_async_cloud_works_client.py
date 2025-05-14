@@ -160,31 +160,23 @@ async def test_update_schedule_dict(client, registry, schedule_dict):
     await client.cw.update_schedule(registry["integrations"][0], schedule_dict)
 
 
-async def test_get_integration(client, registry):
-    integration_id = await client.cw.get_integration(registry["integrations"][-2])
+async def test_get_integration(client, registry, test_integration):
+    integration_id = await client.cw.get_integration(test_integration)
     assert isinstance(integration_id, SingleIntegration)
     registry["notification"] = integration_id.notification_id
 
 
-async def test_update_notification_pydantic(client, registry, notification_pydantic):
-    notification_pydantic.integration_ids = [registry["integrations"][-2]]
-    await client.cw.update_notification_config(registry["notification"], notification_pydantic)
-
-
-async def test_update_notification_dict(client, registry, notification_dict):
-    notification_dict["integration_ids"] = [registry["integrations"][-2]]
+async def test_update_notification_dict(client, registry, notification_dict, test_integration):
+    notification_dict["integrationIds"] = [test_integration]
     await client.cw.update_notification_config(registry["notification"], notification_dict)
 
 
 async def test_delete_notification(client, registry):
-    await gather(
-        client.cw.delete_notification_config(registry["notification"]),
-        client.cw.delete_notification_config(integration_id=registry["integrations"][-1]),
-    )
+    await client.cw.delete_notification_config(registry["notification"])
 
 
-async def test_create_notification_dict(client, registry, notification_dict):
-    notification_dict["integrationIds"] = [registry["integrations"][-2]]
+async def test_create_notification_dict(client, registry, notification_dict, test_integration):
+    notification_dict["integrationIds"] = [test_integration]
     await client.cw.create_notification_config(notification_dict)
 
 
