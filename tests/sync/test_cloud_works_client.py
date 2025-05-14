@@ -43,7 +43,7 @@ def test_get_integration(client, registry, test_integration):
 
 
 def test_list_integrations(client):
-    integrations_asc = (client.cw.list_integrations(),)
+    integrations_asc = client.cw.list_integrations()
     assert isinstance(integrations_asc, list)
     assert all(isinstance(i, Integration) for i in integrations_asc)
 

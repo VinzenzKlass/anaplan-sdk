@@ -54,7 +54,9 @@ class _BaseClient:
         return (self._run_with_retry(self._client.put, url, headers=_json_header, json=json)).json()
 
     def _patch(self, url: str, json: dict | list) -> dict[str, Any]:
-        return (self._run_with_retry(self._client.put, url, headers=_json_header, json=json)).json()
+        return (
+            self._run_with_retry(self._client.patch, url, headers=_json_header, json=json)
+        ).json()
 
     def _delete(self, url: str) -> dict[str, Any]:
         return (self._run_with_retry(self._client.delete, url, headers=_json_header)).json()
