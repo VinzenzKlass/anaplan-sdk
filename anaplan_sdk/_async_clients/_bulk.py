@@ -1,7 +1,3 @@
-"""
-Asynchronous Client.
-"""
-
 import logging
 from asyncio import gather, sleep
 from copy import copy

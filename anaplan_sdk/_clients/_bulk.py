@@ -1,7 +1,3 @@
-"""
-Synchronous Client.
-"""
-
 import logging
 import multiprocessing
 import time
@@ -29,6 +25,7 @@ from anaplan_sdk.models import (
 
 from ._alm import _AlmClient
 from ._audit import _AuditClient
+from ._cloud_works import _CloudWorksClient
 from ._transactional import _TransactionalClient
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
@@ -123,6 +120,7 @@ class Client(_BaseClient):
             _TransactionalClient(_client, model_id, self._retry_count) if model_id else None
         )
         self._alm_client = _AlmClient(_client, model_id, self._retry_count) if model_id else None
+        self._cloud_works = _CloudWorksClient(_client, self._retry_count)
         self._thread_count = multiprocessing.cpu_count()
         self._audit = _AuditClient(_client, self._retry_count, self._thread_count)
         self.status_poll_delay = status_poll_delay
@@ -158,6 +156,14 @@ class Client(_BaseClient):
         For details, see https://vinzenzklass.github.io/anaplan-sdk/guides/audit/.
         """
         return self._audit
+
+    @property
+    def cw(self) -> _CloudWorksClient:
+        """
+        The Cloud Works Client provides access to the Anaplan Cloud Works API.
+        For details, see https://vinzenzklass.github.io/anaplan-sdk/guides/cloud_works/.
+        """
+        return self._cloud_works
 
     @property
     def transactional(self) -> _TransactionalClient:
