@@ -38,12 +38,12 @@ def list_items_short():
 
 @pytest.fixture(scope="session")
 def connection_id():
-    return "35006b13dc574649a35d7910ab09c32a"
+    return "8b2d5f3a2ff64f13ab52e5b993896386"
 
 
 @pytest.fixture(scope="session")
 def error_run_id():
-    return "672e8fa8a4ab49fe812efa09f270f564"
+    return "910a68fb814e4225ad683bdafb70ae65"
 
 
 @pytest.fixture
@@ -78,11 +78,9 @@ def az_blob_connection_dict(name):
 
 
 @pytest.fixture
-def integration_pydantic(name):
+def integration_pydantic(name, connection_id):
     source = FileSource(
-        type="AzureBlob",
-        connection_id="35006b13dc574649a35d7910ab09c32a",
-        file="dummy/liquor_sales.csv",
+        type="AzureBlob", connection_id=connection_id, file="dummy/liquor_sales.csv"
     )
     target = AnaplanTarget(action_id=112000000064, file_id=113000000055)
     return IntegrationInput(
@@ -258,10 +256,10 @@ def flow_pydantic(name):
     return FlowInput(
         name=name,
         steps=[
-            FlowStepInput(referrer="157a5b07afe645c2a0d80df3a05e3ad9"),
+            FlowStepInput(referrer="840ccd8a279a454d99577d9538f24f09"),
             FlowStepInput(
-                referrer="0405cf9a04874beda3ebe22ed871098c",
-                depends_on=["157a5b07afe645c2a0d80df3a05e3ad9"],
+                referrer="c0fa795faac047468a59c8dbe3752d75",
+                depends_on=["840ccd8a279a454d99577d9538f24f09"],
             ),
         ],
     )
@@ -272,10 +270,10 @@ def flow_dict(name):
     return {
         "name": name,
         "steps": [
-            {"referrer": "157a5b07afe645c2a0d80df3a05e3ad9"},
+            {"referrer": "840ccd8a279a454d99577d9538f24f09"},
             {
-                "referrer": "0405cf9a04874beda3ebe22ed871098c",
-                "dependsOn": ["157a5b07afe645c2a0d80df3a05e3ad9"],
+                "referrer": "c0fa795faac047468a59c8dbe3752d75",
+                "dependsOn": ["840ccd8a279a454d99577d9538f24f09"],
             },
         ],
     }

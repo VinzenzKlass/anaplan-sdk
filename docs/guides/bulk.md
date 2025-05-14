@@ -7,7 +7,7 @@ the greatest efficiency.
     Anaplan SDK comes with a set of default options that are efficient for most use cases and general purpose. Mainly, it
     will compress all data before uploading and leverage Concurrency to speed up- and downloads, with a chunk size of 25MB.
     However, you can configure the client to better fit your needs. For more information,
-    see [Client Parameters](../api/sync/client.md#anaplan_sdk.Client.__init__).
+    see [Client Parameters](../api/sync/sync_client.md#anaplan_sdk.Client.__init__).
 
 ## Basic Usage
 

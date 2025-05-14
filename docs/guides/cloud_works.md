@@ -3,14 +3,24 @@ functionality for creating, updating, and deleting CloudWorks Connection and Int
 schedules and monitoring their status. For more details,
 see [CloudWorks](https://help.anaplan.com/cloudworks-96f951fe-52fc-45a3-b6cb-16b7fe38e1aa).
 
+???+ tip "Asynchronous"
+    All the examples in this section are shown using the synchronous API. The syntax for the asynchronous API is
+    identical.
+
 ## Create a Connection
 
-You can create a CloudWorks Connection using the `create_connection` method. The connection can be created passing
-either a dictionary or a Pydantic model. The below two statements are equivalent:
+You can use the pydantic models from `anaplan_sdk.models.cloud_works` to construct a connection Payload with 
+auto-completion, type checking and default values. This is most useful when manually constructing a connection payload,
+but you can also pass a plain dictionary instead, when you are for e.g. dynamically creating the payload at runtime 
+anyway.
 
-=== "Synchronous"
+=== "Pydantic"
     ```python
-    from_pydantic = anaplan.cw.create_connection(
+    from anaplan_sdk.models.cloud_works import (
+        AzureBlobConnectionInput, ConnectionInput
+    )
+
+    con_id = anaplan.cw.create_connection(
         ConnectionInput(
             type="AzureBlob",
             body=AzureBlobConnectionInput(
@@ -20,34 +30,11 @@ either a dictionary or a Pydantic model. The below two statements are equivalent
                 container_name="raw",
             ),
         )
-    )
-    from_dict = anaplan.cw.create_connection(
-        {
-            "type": "AzureBlob",
-            "body": {
-                "name": "My Blob",
-                "storageAccountName": "mystorageaccount",
-                "containerName": "raw",
-                "sasToken": "sp=rl&st=2025-05-10T19:29:44Z...",
-            },
-        }
     )
     ```
-
-=== "Asynchronous"
+=== "Dictionary"
     ```python
-    from_pydantic = await anaplan.cw.create_connection(
-        ConnectionInput(
-            type="AzureBlob",
-            body=AzureBlobConnectionInput(
-                name="My Blob",
-                storage_account_name="mystorageaccount",
-                sas_token="sp=rl&st=2025-05-10T19:29:44Z...",
-                container_name="raw",
-            ),
-        )
-    )
-    from_dict = await anaplan.cw.create_connection(
+    con_id = anaplan.cw.create_connection(
         {
             "type": "AzureBlob",
             "body": {
@@ -61,118 +48,238 @@ either a dictionary or a Pydantic model. The below two statements are equivalent
     ```
 
 In the latter case, you still benefit from pydantic validation before the request is sent out. This way, you benefit
-from more concise error messages and can save on network calls. For example, if you accidentally pass
-
-=== "Synchronous"
-    ```python
-    from_dict = anaplan.cw.create_connection(
-        {
-            "type": "AzureBlob",
-            "body": {
-                "name": "My Blob 2",
-                "storageAccount": "mystorageaccount",
-                "containerName": "raw",
-                "sasToken": "sp=rl&st=2025-05-10T19:29:44Z...",
-            },
-        }
-    )
-    ```
-
-=== "Asynchronous"
-    ```python
-    from_dict = await anaplan.cw.create_connection(
-        {
-            "type": "AzureBlob",
-            "body": {
-                "name": "My Blob 2",
-                "storageAccount": "mystorageaccount",
-                "containerName": "raw",
-                "sasToken": "sp=rl&st=2025-05-10T19:29:44Z...",
-            },
-        }
-    )
-    ```
-
-You will get
+from more concise error messages and can save on network calls. For example, if you accidentally pass 
+`storageAccount` instead of `storageAccountName` in the dictionary payload, you will get
 > body.AzureBlobConnectionInput.storageAccountName Field required
 
 Instead of
 > { "code": 400, "message": "Invalid request body" }
 
-before any network calls are made.
+before any network calls are made, allowing you to catch the error earlier and with more information on what went wrong.
 
 ## Create an Integration
 
-Similarly, you can use the pydantic models provided by the `anaplan_sdk.models.cloud_works` module to construct an Integration Payload with auto-completion, type checking and default values. The following example shows how to create an Integration that copies data from an Azure Blob Storage to Anaplan.
-```python
-source = FileSource(
-    type="AzureBlob", connection_id="5e...05", file="dummy.csv"
-)
-target = AnaplanTarget(action_id=112000000001, file_id=113000000001)
-job = IntegrationJobInput(
-    type="AzureBlobToAnaplan", sources=[source], targets=[target]
-)
-integration_input = IntegrationInput(
-    name="Blob to Anaplan",
-    workspace_id="8a81b09d599f3c6e0159f605560c2630",
-    model_id="8896D8C366BC48E5A3182B9F5CE10526",
-    jobs=[job],
-)
-```
+Similarly, you can use the `create_integration` method to create an integration.
 
-??? example "Dictionary Payload"
-    The equivalent dictionary payload would be:
+=== "Pydantic"
+    ```python
+    from anaplan_sdk.models.cloud_works import (
+        AnaplanTarget,
+        FileSource,
+        IntegrationInput,
+        IntegrationJobInput,
+    )
 
+    source = FileSource(type="AzureBlob", connection_id="5e...05", file="dummy.csv")
+    target = AnaplanTarget(action_id=112000000001, file_id=113000000001)
+    job = IntegrationJobInput(
+        type="AzureBlobToAnaplan", sources=[source], targets=[target]
+    )
+    integration_input = IntegrationInput(
+        name="Blob to Anaplan",
+        workspace_id="8a81b09d599f3c6e0159f605560c2630",
+        model_id="8896D8C366BC48E5A3182B9F5CE10526",
+        jobs=[job],
+    )
+    integration_id = anaplan.cw.create_integration(integration_input)
     ```
-    {
-        "name": "Blob to Anaplan",
-        "version": "2.0",
-        "workspaceId": "8a81b09d599f3c6e0159f605560c2630",
-        "modelId": "8896D8C366BC48E5A3182B9F5CE10526",
-        "nuxVisible": false,
-        "jobs": [
-            {
-                "type": "AzureBlobToAnaplan",
-                "sources": [
-                    {
-                        "connectionId": "5e634ba338444d2ea26ce384a70b5705",
-                        "type": "AzureBlob",
-                        "file": "dummy.csv"
-                    }
-                ],
-                "targets": [
-                    {
-                        "type": "Anaplan",
-                        "actionId": "112000000001",
-                        "fileId": "112000000001"
-                    }
-                ]
-            }
-        ]
-    }
+=== "Dictionary"
+    ```
+    anaplan.cw.create_integration(
+        {
+            "name": "Blob to Anaplan",
+            "version": "2.0",
+            "workspaceId": "8a81b09d599f3c6e0159f605560c2630",
+            "modelId": "8896D8C366BC48E5A3182B9F5CE10526",
+            "nuxVisible": False,
+            "jobs": [
+                {
+                    "type": "AzureBlobToAnaplan",
+                    "sources": [
+                        {
+                            "connectionId": "5e634ba338444d2ea26ce384a70b5705",
+                            "type": "AzureBlob",
+                            "file": "dummy.csv"
+                        }
+                    ],
+                    "targets": [
+                        {
+                            "type": "Anaplan",
+                            "actionId": "112000000001",
+                            "fileId": "112000000001"
+                        }
+                    ]
+                }
+            ]
+        }
+    )
     ```
 
-To create a Process Integration, you can simply extend the above example to include the `process_id` in the `IntegrationInput` instance. You can then pass as number of `IntegrationJobInput` to `jobs`. 
+To create a Process Integration, you can simply extend the above example to include the `process_id` in the
+`IntegrationInput` instance. You can then pass as number of `IntegrationJobInput` to `jobs`.
+=== "Pydantic"
+    ```python
+    anaplan.cw.create_integration(
+        IntegrationInput(
+            name="Double Blob to Anaplan",
+            workspace_id="8a81b09d599f3c6e0159f605560c2630",
+            model_id="8896D8C366BC48E5A3182B9F5CE10526",
+            process_id=118000000012,  # Add this line
+            jobs=[job, another_job, ...],
+        )
+    ```
 
-```python
-integration_input = IntegrationInput(
-    name="Double Blob to Anaplan",
-    workspace_id="8a81b09d599f3c6e0159f605560c2630",
-    model_id="8896D8C366BC48E5A3182B9F5CE10526",
-    process_id=118000000012, # Add this line
-    jobs=[job, another_job, ...],
-)
-```
+=== "Dictionary"
+    ```python
+    anaplan.cw.create_integration(
+        {
+            "name": "Double Blob to Anaplan",
+            "version": "2.0",
+            "workspaceId": "8a81b09d599f3c6e0159f605560c2630",
+            "modelId": "8896D8C366BC48E5A3182B9F5CE10526",
+            "processId": "118000000012", # Add this line
+            "nuxVisible": false,
+            "jobs": [
+                {
+                    "type": "AzureBlobToAnaplan",
+                    "sources": [
+                        {
+                            "connectionId": "5e...05",
+                            "type": "AzureBlob",
+                            "file": "dummy.csv"
+                        }
+                    ],
+                    "targets": [
+                        {
+                            "type": "Anaplan",
+                            "actionId": "112000000001",
+                            "fileId": "113000000001"
+                        }
+                    ]
+                },
+                {
+                    "type": "AzureBlobToAnaplan",
+                    "sources": [
+                        {
+                            "connectionId": "5e...05",
+                            "type": "AzureBlob",
+                            "file": "dummy.csv"
+                        }
+                    ],
+                    "targets": [
+                        {
+                            "type": "Anaplan",
+                            "actionId": "112000000001",
+                            "fileId": "113000000001"
+                        }
+                    ]
+                }
+            ]
+        }
+    )
+    ```
 
-Be careful to ensure, that all ids specified in the job inputs match what is defined in your model and matches the process. If this is not the case, this will error, occasionally with a misleading error message, i.e. `XYZ is not defined in your model` even though it is, Anaplan just does not know what to do with it in the location you specified.
+Be careful to ensure, that all ids specified in the job inputs match what is defined in your model and matches the
+process. If this is not the case, this will error, occasionally with a misleading error message, i.e.
+`XYZ is not defined in your model` even though it is, Anaplan just does not know what to do with it in the location you
+specified.
 
-You can also use CloudWorks to simply schedule a process in one of your models, or create an integration with only a process for any other reason. To do so, you can pass an `IntegrationProcessInput` instance to `create_integration` instead, or an accordingly shaped dictionary:
+You can also use CloudWorks to simply schedule a process in one of your models, or create an integration with only a
+process for any other reason. To do so, you can pass an `IntegrationProcessInput` instance to `create_integration`
+instead, or an accordingly shaped dictionary:
 
-```python
-IntegrationProcessInput(
-    name="My Process",
-    process_id=118000000012,
-    workspace_id="8a81b09d599f3c6e0159f605560c2630",
-    model_id="8896D8C366BC48E5A3182B9F5CE10526",
-)
-```
+=== "Pydantic"
+    ```python
+    from anaplan_sdk.models.cloud_works import IntegrationProcessInput
+
+    anaplan.cw.create_integration(
+        IntegrationProcessInput(
+            name="My Process",
+            process_id=118000000012,
+            workspace_id="8a81b09d599f3c6e0159f605560c2630",
+            model_id="8896D8C366BC48E5A3182B9F5CE10526",
+        )
+    )
+    ```
+=== "Dictionary"
+    ```python
+    anaplan.cw.create_integration(
+        {
+            "name": "My Process",
+            "version": "2.0",
+            "workspaceId": "8a81b09d599f3c6e0159f605560c2630",
+            "modelId": "8896D8C366BC48E5A3182B9F5CE10526",
+            "processId": "118000000012"
+        }
+    )
+    ```
+
+
+## Create a Flow
+
+A Flow or Integration Flow is a sequence of integrations that are executed in a specific order. You can create a Flow
+using the `create_flow` method. The flow can again be created passing either a dictionary or a Pydantic model. This SDK
+also comes with a set of defaults, allowing you to omit a lot of inputs compared to calling the API directly.
+
+=== "Pydantic"
+    ```python
+    from anaplan_sdk.models.flows import FlowInput, FlowStepInput
+    
+    anaplan.cw.flows.create_flow(
+        FlowInput(
+            name="My Flow",
+            steps=[
+                FlowStepInput(referrer="840ccd8a279a454d99577d9538f24f09"),
+                FlowStepInput(
+                    referrer="c0fa795faac047468a59c8dbe3752d75",
+                    depends_on=["840ccd8a279a454d99577d9538f24f09"],
+                ),
+            ],
+        )
+    )
+    ```
+=== "Dictionary"
+    ```python
+    anaplan.cw.flows.create_flow(
+        {
+            "name": "My Flow",
+            "version": "2.0",
+            "type": "IntegrationFlow",
+            "steps": [
+                {
+                    "type": "Integration",
+                    "referrer": "840ccd8a279a454d99577d9538f24f09",
+                    "isSkipped": False,
+                    "exceptionBehavior": [
+                        {
+                            "type": "failure",
+                            "strategy": "stop"
+                        },
+                        {
+                            "type": "partial_success",
+                            "strategy": "continue"
+                        }
+                    ]
+                },
+                {
+                    "type": "Integration",
+                    "referrer": "c0fa795faac047468a59c8dbe3752d75",
+                    "dependsOn": [
+                        "840ccd8a279a454d99577d9538f24f09"
+                    ],
+                    "isSkipped": False,
+                    "exceptionBehavior": [
+                        {
+                            "type": "failure",
+                            "strategy": "stop"
+                        },
+                        {
+                            "type": "partial_success",
+                            "strategy": "continue"
+                        }
+                    ]
+                }
+            ]
+        }
+    )
+    ```

@@ -68,36 +68,36 @@ def test_action():
 def test_integration():
     py_version = sys.version.split(" ")[0]
     if "3.10" in py_version:
-        return "21a23d6831d245d9bc853b3524859079"
+        return "44bd0bd4606b4f77b62e70d5ff617f3f"
     if "3.11" in py_version:
-        return "5fa07479c0bf4fb984caa15e44fb6154"
+        return "dfcf1caace4f41748fc589e83c68c65a"
     if "3.12" in py_version:
-        return "aa6a18a8f2f1437eb0ea23defb23b1ff"
-    return "6a36d7ea069a400a8e634d19d83a8dfe"
+        return "18e2c03b0bdf4593bdd964786891ead8"
+    return "c5bd6fd4b9414ea0959795ccebc8126a"
 
 
 @pytest.fixture(scope="session")
 def test_notification():
     py_version = sys.version.split(" ")[0]
     if "3.10" in py_version:
-        return "3c685465471e4b19ac10b65b01b96aa9"
+        return "efc8e3340c054f00bc20dbab1719531f"
     if "3.11" in py_version:
-        return "63c259ce444d4989b0b648bd3526713f"
+        return "81f0e8c718ed47ada55ce9b88dad548f"
     if "3.12" in py_version:
-        return "ebc03ce9e50148d6831b339250e89bc2"
-    return "5a87a2fcb59f4d15962f81ec53c8b1dc"
+        return "d90749ebb0e94692b4eaba1963cf0959"
+    return "393d6e91e1874e28baccd7441d28ba36"
 
 
 @pytest.fixture(scope="session")
 def test_flow():
     py_version = sys.version.split(" ")[0]
     if "3.10" in py_version:
-        return "02e82fdb73534a2f8f9ff4fa5c3c2926"
+        return "8f9a377127844984b12775e9ca072108"
     if "3.11" in py_version:
-        return "340695f394b44c7dafcb9e8b353e564f"
+        return "240a3d55754843be824cb4f97e48e061"
     if "3.12" in py_version:
-        return "428bfd4a09924349ab8143418fc89c6b"
-    return "53518836b2c04f3ab4f44a17a9521c72"
+        return "afc6cec5d4b343c6abb4f0b3d41f1f7f"
+    return "61f2a2b05ac64598bfeb6d9eb7eff97a"
 
 
 @pytest.fixture(scope="session")

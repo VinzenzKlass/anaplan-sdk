@@ -45,19 +45,22 @@ nav:
       - Multiple Models: 'guides/multiple_models.md'
       - Logging: 'guides/logging.md'
   - API Reference:
-      - Developer Interface:
-          - Asynchronous:
-              - Async Client: 'api/async/async_client.md'
-              - Async CloudWorks Client: 'api/async/async_cw_client.md'
-              - Async Transactional Client: 'api/async/async_transactional_client.md'
-              - Async ALM Client: 'api/async/async_alm_client.md'
-              - Async Audit Client: 'api/async/async_audit_client.md'
-          - Synchronous:
-              - Client: 'api/sync/client.md'
-              - CloudWorks Client: 'api/sync/cw_client.md'
-              - Transactional Client: 'api/sync/transactional_client.md'
-              - ALM Client: 'api/sync/alm_client.md'
-              - Audit Client: 'api/sync/audit_client.md'
+      - Asynchronous:
+          - Bulk: 'api/async/async_client.md'
+          - Transactional: 'api/async/async_transactional_client.md'
+          - Audit: 'api/async/async_audit_client.md'
+          - ALM: 'api/async/async_alm_client.md'
+          - CloudWorks:
+              - Client: 'api/async/async_cw_client.md'
+              - Flows: 'api/async/async_flows_client.md'
+      - Synchronous:
+          - Bulk: 'api/sync/sync_client.md'
+          - Transactional: 'api/sync/sync_transactional_client.md'
+          - Audit: 'api/sync/sync_audit_client.md'
+          - ALM: 'api/sync/sync_alm_client.md'
+          - CloudWorks:
+              - Client: 'api/sync/sync_cw_client.md'
+              - Flows: 'api/sync/sync_flows_client.md'
       - Models: 'api/models.md'
       - Exceptions: 'api/exceptions.md'
 
