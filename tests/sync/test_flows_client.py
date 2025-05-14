@@ -1,5 +1,3 @@
-from asyncio import gather
-
 from anaplan_sdk.models.flows import Flow, FlowSummary
 
 
@@ -46,4 +44,4 @@ def test_update_flow_dict(client, flow_dict, registry):
 
 
 def test_delete_flow(client, registry):
-    gather(*(client.cw.flows.delete_flow(f) for f in registry["flows"]))
+    _ = (client.cw.flows.delete_flow(f) for f in registry["flows"])

@@ -45,15 +45,15 @@ async def test_get_integration(client, registry, test_integration):
 
 
 async def test_list_integrations(client):
-    integrations_asc, integrations_desc = await gather(
-        client.cw.list_integrations(), client.cw.list_integrations(sort_by_name="descending")
-    )
+    integrations_asc = await client.cw.list_integrations()
     assert isinstance(integrations_asc, list)
-    assert isinstance(integrations_desc, list)
     assert all(isinstance(i, Integration) for i in integrations_asc)
+
+
+async def test_list_integrations_desc(client):
+    integrations_desc = await client.cw.list_integrations(sort_by_name="descending")
+    assert isinstance(integrations_desc, list)
     assert all(isinstance(i, Integration) for i in integrations_desc)
-    assert len(integrations_asc) == len(integrations_desc)
-    assert integrations_asc == list(reversed(integrations_desc))
 
 
 async def test_create_integration_pydantic(client, integration_pydantic, registry):

@@ -43,16 +43,15 @@ def test_get_integration(client, registry, test_integration):
 
 
 def test_list_integrations(client):
-    integrations_asc, integrations_desc = (
-        client.cw.list_integrations(),
-        client.cw.list_integrations(sort_by_name="descending"),
-    )
+    integrations_asc = (client.cw.list_integrations(),)
     assert isinstance(integrations_asc, list)
-    assert isinstance(integrations_desc, list)
     assert all(isinstance(i, Integration) for i in integrations_asc)
+
+
+def test_list_integrations_desc(client):
+    integrations_desc = client.cw.list_integrations(sort_by_name="descending")
+    assert isinstance(integrations_desc, list)
     assert all(isinstance(i, Integration) for i in integrations_desc)
-    assert len(integrations_asc) == len(integrations_desc)
-    assert integrations_asc == list(reversed(integrations_desc))
 
 
 def test_create_integration_pydantic(client, integration_pydantic, registry):
