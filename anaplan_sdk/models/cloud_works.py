@@ -207,12 +207,13 @@ class ScheduleInput(ScheduleBase):
 
 
 class Schedule(ScheduleBase):
-    to_time: str = Field(description="End time for scheduled runs.")
-    from_time: str = Field(description="Start time for scheduled runs.")
-    end_date: datetime = Field(description="End date of the schedule.")
+    time: str | None = Field(default=None, description="Time for scheduled runs in HH:mm format.")
+    to_time: str | None = Field(default=None, description="End time for scheduled runs.")
+    from_time: str | None = Field(default=None, description="Start time for scheduled runs.")
     start_date: datetime = Field(description="Start date of the schedule.")
+    end_date: datetime = Field(description="End date of the schedule.")
     days_of_week: list[int] = Field(description="Days of week when schedule is active.")
-    repeat_every: int = Field(description="Frequency of repetition.")
+    repeat_every: int | None = Field(default=None, description="Frequency of repetition.")
     status: str = Field(description="Current status of the schedule.")
 
 
@@ -376,13 +377,21 @@ class RunStatus(AnaplanModel):
     integration_id: str = Field(description="The ID of the integration this run belongs to.")
     trace_id: str = Field(description="The trace ID for this run.")
     start_date: datetime = Field(description="The start timestamp of this run.")
-    end_date: datetime = Field(description="The end timestamp of this run.")
+    end_date: datetime | None = Field(
+        default=None,
+        description=(
+            "The end timestamp of this run. This can be None, if the integration is currently "
+            "running."
+        ),
+    )
     success: bool = Field(description="Whether this run was successful.")
     message: str = Field(description="Result message of this run.")
     creation_date: datetime = Field(description="The initial creation date of this run.")
     modification_date: datetime = Field(description="The last modification date of this run.")
     created_by: str = Field(description="The user who created this run.")
-    modified_by: str = Field(description="The user who last modified this run.")
+    modified_by: str | None = Field(
+        default=None, description="The user who last modified this run, if it was ever modified."
+    )
     execution_error_code: int | None = Field(default=None, description="Error code if run failed.")
     flow_group_id: str | None = Field(default=None, description="The ID of the flow group, if any.")
     trigger_source: Literal["manual", "scheduled"] = Field(

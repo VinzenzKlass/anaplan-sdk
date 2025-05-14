@@ -62,3 +62,25 @@ def test_action():
     if "3.12" in py_version:
         return 118000000026
     return 118000000025
+
+
+@pytest.fixture(scope="session")
+def test_integration():
+    py_version = sys.version.split(" ")[0]
+    if "3.10" in py_version:
+        return "157a5b07afe645c2a0d80df3a05e3ad9"
+    if "3.11" in py_version:
+        return "0405cf9a04874beda3ebe22ed871098c"
+    if "3.12" in py_version:
+        return "56798825a4484a06b82fe371f0c5699c"
+    return "d49a2d72cdde43b88478b502dbef6dd2"
+
+
+@pytest.fixture(scope="session")
+def registry():
+    return {
+        "connections": [],
+        "integrations": [],
+        "run_id": None,
+        "notification": None,
+    }

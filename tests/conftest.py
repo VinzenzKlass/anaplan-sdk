@@ -35,39 +35,14 @@ def list_items_short():
     return [{"name": i, "code": i} for i in range(1_000)]  # Single batch
 
 
-@pytest.fixture
-def name():
-    return "".join(choices(string.ascii_uppercase + string.digits, k=12))
-
-
-@pytest.fixture
+@pytest.fixture(scope="session")
 def connection_id():
     return "35006b13dc574649a35d7910ab09c32a"
 
 
 @pytest.fixture
-def integration_id():
-    return "d43ffe65a00447e0a1a6e6007bb2cd49"
-
-
-@pytest.fixture
-def multi_integration_id():
-    return "ba75eb4fd06345a18c8c27234cf7d193"
-
-
-@pytest.fixture
-def process_integration_id():
-    return "919210a5160448669cdb7fd8404bcc39"
-
-
-@pytest.fixture
-def notification_integration_id():
-    return "44cbd206c8204203b8a0ab5667e0396a"
-
-
-@pytest.fixture
-def run_id():
-    return "ee158e5f74854e5299d6aa1bc771058b"
+def name():
+    return "Test_" + "".join(choices(string.ascii_uppercase + string.digits, k=6))
 
 
 @pytest.fixture
@@ -97,9 +72,11 @@ def az_blob_connection_dict(name):
 
 
 @pytest.fixture
-def integration_pydantic(name, connection_id):
+def integration_pydantic(name):
     source = FileSource(
-        type="AzureBlob", connection_id=connection_id, file="dummy/liquor_sales.csv"
+        type="AzureBlob",
+        connection_id="35006b13dc574649a35d7910ab09c32a",
+        file="dummy/liquor_sales.csv",
     )
     target = AnaplanTarget(action_id=112000000064, file_id=113000000055)
     return IntegrationInput(
@@ -240,9 +217,9 @@ def schedule_dict(name):
 
 
 @pytest.fixture
-def notification_pydantic(name, notification_integration_id):
+def notification_pydantic(name):
     return NotificationInput(
-        integration_ids=[notification_integration_id],
+        integration_ids=[],
         channels=["in_app"],
         notifications=NotificationConfigInput(
             config=[
@@ -255,9 +232,9 @@ def notification_pydantic(name, notification_integration_id):
 
 
 @pytest.fixture
-def notification_dict(name, notification_integration_id):
+def notification_dict(name):
     return {
-        "integrationIds": [notification_integration_id],
+        "integrationIds": [],
         "channels": ["in_app"],
         "notifications": {
             "config": [

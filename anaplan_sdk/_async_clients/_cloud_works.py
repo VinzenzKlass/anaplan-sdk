@@ -291,12 +291,21 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         """
         await self._put(
             f"{self._url}/notification/{notification_id}",
-            json=construct_payload(NotificationConfig, config),
+            json=construct_payload(NotificationInput, config),
         )
 
-    async def delete_notification_config(self, notification_id: str) -> None:
+    async def delete_notification_config(
+        self, notification_id: str | None = None, integration_id: str | None = None
+    ) -> None:
         """
-        Delete a notification configuration for an integration in CloudWorks.
+        Delete a notification configuration for an integration in CloudWorks, either by its Id, or
+        the notification configuration for a specific integration. If the integration_id is
+        specified, the notification_id will be ignored.
         :param notification_id: The ID of the notification configuration to delete.
+        :param integration_id: The ID of the integration to delete the notification config of.
         """
+        if not (notification_id or integration_id):
+            raise ValueError("Either notification_id or integration_id must be specified.")
+        if integration_id:
+            notification_id = (await self.get_integration(integration_id)).notification_id
         await self._delete(f"{self._url}/notification/{notification_id}")
