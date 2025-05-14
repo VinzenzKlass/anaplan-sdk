@@ -80,12 +80,12 @@ def test_integration():
 def test_notification():
     py_version = sys.version.split(" ")[0]
     if "3.10" in py_version:
-        return "a01030cc2b64427a8b2deb06ce7fb75c"
+        return "e4bbc99d49f44730b046ce5f8d019e9e"
     if "3.11" in py_version:
-        return "7d21530daed54603a6dfcd27dfdd55d9"
+        return "b22ff96733db4b6b9929586520d312a6"
     if "3.12" in py_version:
-        return "20abed8b1a11478393cad6fe58ed6436"
-    return "00d305418bfa4e05bd677f630e165269"
+        return "0d9d914a92ae472abb18a783dfc58c64"
+    return "e9e110a66ef747b7a2881a64cf22c10c"
 
 
 @pytest.fixture(scope="session")

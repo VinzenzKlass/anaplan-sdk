@@ -92,12 +92,12 @@ def test_notification():
 def test_flow():
     py_version = sys.version.split(" ")[0]
     if "3.10" in py_version:
-        return "d6def9d0693046f0b9ed126fb5f776f3"
+        return "02e82fdb73534a2f8f9ff4fa5c3c2926"
     if "3.11" in py_version:
-        return "6cf8316146194af59963808ec468a49e"
+        return "340695f394b44c7dafcb9e8b353e564f"
     if "3.12" in py_version:
-        return "93675c8925aa466eb475200232317d85"
-    return "29e2a2174679439eb7cd35b1f02a3cb5"
+        return "428bfd4a09924349ab8143418fc89c6b"
+    return "53518836b2c04f3ab4f44a17a9521c72"
 
 
 @pytest.fixture(scope="session")
