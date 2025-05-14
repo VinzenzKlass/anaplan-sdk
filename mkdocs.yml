@@ -24,6 +24,8 @@ theme:
     - content.code.copy
     - content.tabs.link
     - search.suggest
+    - navigation.tabs
+    - navigation.top
 
   icon:
     repo: fontawesome/brands/github
@@ -31,17 +33,16 @@ theme:
   logo: img/anaplan-sdk.webp
 
 nav:
-  - Introduction: 'index.md'
-  - Installation: 'installation.md'
-  - Quick Start: 'quickstart.md'
-  - Anaplan Explained: 'anaplan_explained.md'
+  - Home: 'index.md'
+  - Getting Started:
+      - Installation: 'installation.md'
+      - Quick Start: 'quickstart.md'
   - Guides:
-      - Bulk vs Transactional: 'guides/bulk_vs_transactional.md'
-      - Use the Bulk API: 'guides/bulk.md'
-      - Use the Transactional API: 'guides/transactional.md'
-      - Use the CloudWorks API: 'guides/cloud_works.md'
-      - Use the ALM API: 'guides/alm.md'
-      - Use the Audit API: 'guides/audit.md'
+      - Bulk API: 'guides/bulk.md'
+      - Transactional API: 'guides/transactional.md'
+      - CloudWorks API: 'guides/cloud_works.md'
+      - ALM API: 'guides/alm.md'
+      - Audit API: 'guides/audit.md'
       - Multiple Models: 'guides/multiple_models.md'
       - Logging: 'guides/logging.md'
   - API Reference:
@@ -63,9 +64,13 @@ nav:
               - Flows: 'api/sync/sync_flows_client.md'
       - Models: 'api/models.md'
       - Exceptions: 'api/exceptions.md'
+  - Concepts:
+      - Anaplan Explained: 'anaplan_explained.md'
+      - Bulk vs Transactional: 'guides/bulk_vs_transactional.md'
 
 plugins:
-  - search
+  - search:
+      lang: en
   - mkdocstrings:
       handlers:
         python:
@@ -81,6 +86,8 @@ plugins:
             extensions:
               - griffe_fieldz
 
+watch:
+  - "anaplan_sdk"
 
 extra_javascript:
   - js/highlight.min.js
