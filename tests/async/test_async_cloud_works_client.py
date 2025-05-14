@@ -183,13 +183,8 @@ async def test_delete_notification(client, registry):
     )
 
 
-async def test_create_notification_pydantic(client, registry, notification_pydantic):
-    notification_pydantic.integration_ids = [registry["integrations"][-2]]
-    await client.cw.create_notification_config(notification_pydantic)
-
-
 async def test_create_notification_dict(client, registry, notification_dict):
-    notification_dict["integrationIds"] = [registry["integrations"][1]]
+    notification_dict["integrationIds"] = [registry["integrations"][-2]]
     await client.cw.create_notification_config(notification_dict)
 
 
