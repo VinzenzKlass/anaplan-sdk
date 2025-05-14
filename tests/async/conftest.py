@@ -77,10 +77,17 @@ def test_integration():
 
 
 @pytest.fixture(scope="session")
+def test_notification():
+    py_version = sys.version.split(" ")[0]
+    if "3.10" in py_version:
+        return "a01030cc2b64427a8b2deb06ce7fb75c"
+    if "3.11" in py_version:
+        return "7d21530daed54603a6dfcd27dfdd55d9"
+    if "3.12" in py_version:
+        return "20abed8b1a11478393cad6fe58ed6436"
+    return "00d305418bfa4e05bd677f630e165269"
+
+
+@pytest.fixture(scope="session")
 def registry():
-    return {
-        "connections": [],
-        "integrations": [],
-        "run_id": None,
-        "notification": None,
-    }
+    return {"connections": [], "integrations": [], "run_id": None}

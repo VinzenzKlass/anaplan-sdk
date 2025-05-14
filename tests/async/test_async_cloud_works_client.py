@@ -39,6 +39,10 @@ async def test_patch_connection(client, name, registry):
     await client.cw.patch_connection(registry["connections"][-1], {"name": name})
 
 
+async def test_get_integration(client, registry, test_integration):
+    assert isinstance(await client.cw.get_integration(test_integration), SingleIntegration)
+
+
 async def test_list_integrations(client):
     integrations_asc, integrations_desc = await gather(
         client.cw.list_integrations(), client.cw.list_integrations(sort_by_name="descending")
@@ -160,23 +164,19 @@ async def test_update_schedule_dict(client, registry, schedule_dict):
     await client.cw.update_schedule(registry["integrations"][0], schedule_dict)
 
 
-async def test_get_integration(client, registry, test_integration):
-    integration_id = await client.cw.get_integration(test_integration)
-    assert isinstance(integration_id, SingleIntegration)
-    registry["notification"] = integration_id.notification_id
-
-
-async def test_update_notification_dict(client, registry, notification_dict, test_integration):
+async def test_update_notification_dict(
+    client, test_notification, notification_dict, test_integration
+):
     notification_dict["integrationIds"] = [test_integration]
-    await client.cw.update_notification_config(registry["notification"], notification_dict)
+    await client.cw.update_notification_config(test_notification, notification_dict)
 
 
 async def test_delete_notification(client, registry):
-    await client.cw.delete_notification_config(registry["notification"])
+    await client.cw.delete_notification_config(integration_id=registry["integrations"][0])
 
 
-async def test_create_notification_dict(client, registry, notification_dict, test_integration):
-    notification_dict["integrationIds"] = [test_integration]
+async def test_create_notification_dict(client, notification_dict, registry):
+    notification_dict["integrationIds"] = [registry["integrations"][0]]
     await client.cw.create_notification_config(notification_dict)
 
 
