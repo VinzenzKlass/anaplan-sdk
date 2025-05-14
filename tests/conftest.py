@@ -19,6 +19,7 @@ from anaplan_sdk.models.cloud_works import (
     NotificationItemInput,
     ScheduleInput,
 )
+from anaplan_sdk.models.flows import FlowInput, FlowStepInput
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logging.getLogger("httpx").setLevel(logging.ERROR)
@@ -38,6 +39,11 @@ def list_items_short():
 @pytest.fixture(scope="session")
 def connection_id():
     return "35006b13dc574649a35d7910ab09c32a"
+
+
+@pytest.fixture(scope="session")
+def error_run_id():
+    return "672e8fa8a4ab49fe812efa09f270f564"
 
 
 @pytest.fixture
@@ -244,4 +250,32 @@ def notification_dict(name):
                 }
             ],
         },
+    }
+
+
+@pytest.fixture
+def flow_pydantic(name):
+    return FlowInput(
+        name=name,
+        steps=[
+            FlowStepInput(referrer="157a5b07afe645c2a0d80df3a05e3ad9"),
+            FlowStepInput(
+                referrer="0405cf9a04874beda3ebe22ed871098c",
+                depends_on=["157a5b07afe645c2a0d80df3a05e3ad9"],
+            ),
+        ],
+    )
+
+
+@pytest.fixture
+def flow_dict(name):
+    return {
+        "name": name,
+        "steps": [
+            {"referrer": "157a5b07afe645c2a0d80df3a05e3ad9"},
+            {
+                "referrer": "0405cf9a04874beda3ebe22ed871098c",
+                "dependsOn": ["157a5b07afe645c2a0d80df3a05e3ad9"],
+            },
+        ],
     }

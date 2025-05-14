@@ -34,4 +34,4 @@ jobs:
           pip install uv
           uv sync
       - name: "Run tests"
-        run: "uv run python -m pytest -n 10 --dist loadfile tests/"
+        run: "uv run python -m pytest -n 12 --dist loadfile tests/"

@@ -89,5 +89,17 @@ def test_notification():
 
 
 @pytest.fixture(scope="session")
+def test_flow():
+    py_version = sys.version.split(" ")[0]
+    if "3.10" in py_version:
+        return "af21d6cf4ba547b4a28923e152e3b963"
+    if "3.11" in py_version:
+        return "4110523f770941deb63033ca5557735d"
+    if "3.12" in py_version:
+        return "be0c54753f9b4427a676fb9b7b4896cd"
+    return "66d8614664cb490e869684e56796a6a8"
+
+
+@pytest.fixture(scope="session")
 def registry():
-    return {"connections": [], "integrations": [], "run_id": None}
+    return {"connections": [], "integrations": [], "flows": [], "run_id": None}

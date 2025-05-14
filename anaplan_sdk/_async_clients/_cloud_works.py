@@ -25,11 +25,21 @@ from anaplan_sdk.models.cloud_works import (
     SingleIntegration,
 )
 
+from ._cw_flow import _AsyncFlowClient
+
 
 class _AsyncCloudWorksClient(_AsyncBaseClient):
     def __init__(self, client: httpx.AsyncClient, retry_count: int) -> None:
         self._url = "https://api.cloudworks.anaplan.com/2/0/integrations"
+        self._flow = _AsyncFlowClient(client, retry_count)
         super().__init__(retry_count, client)
+
+    @property
+    def flows(self) -> _AsyncFlowClient:
+        """
+        Access the Integration Flow APIs.
+        """
+        return self._flow
 
     async def list_connections(self) -> list[Connection]:
         """
@@ -184,14 +194,15 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         """
         return RunStatus.model_validate((await self._get(f"{self._url}/run/{run_id}"))["run"])
 
-    async def get_run_error(self, run_id: str) -> RunError:
+    async def get_run_error(self, run_id: str) -> RunError | None:
         """
         Get the error details of a specific run in CloudWorks. This exposes potential underlying
         errors like the error of the invoked action, failure dumps and other details.
         :param run_id: The ID of the run to retrieve.
         :return: The details of the run error.
         """
-        return RunError.model_validate((await self._get(f"{self._url}/runerror/{run_id}"))["runs"])
+        run = await self._get(f"{self._url}/runerror/{run_id}")
+        return RunError.model_validate(run["runs"]) if run.get("runs") else None
 
     async def create_schedule(
         self, integration_id: str, schedule: ScheduleInput | dict[str, Any]
@@ -309,3 +320,25 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         if integration_id:
             notification_id = (await self.get_integration(integration_id)).notification_id
         await self._delete(f"{self._url}/notification/{notification_id}")
+
+    async def get_import_error_dump(self, run_id: str) -> bytes:
+        """
+        Get the error dump of a specific import run in CloudWorks. Calling this for a run_id that
+        did not generate any failure dumps will produce an error.
+
+        **Note that if you need the error dump of an action in a process, you must use the
+        `get_process_error_dump` method instead.**
+        :param run_id: The ID of the run to retrieve.
+        :return: The error dump.
+        """
+        return await self._get_binary(f"{self._url}/run/{run_id}/dump")
+
+    async def get_process_error_dump(self, run_id: str, action_id: int | str) -> bytes:
+        """
+        Get the error dump of a specific import run in CloudWorks, that is part of a process.
+        Calling this for a run_id that did not generate any failure dumps will produce an error.
+        :param run_id: The ID of the run to retrieve.
+        :param action_id: The ID of the action to retrieve. This can be found in the RunError.
+        :return: The error dump.
+        """
+        return await self._get_binary(f"{self._url}/run/{run_id}/process/import/{action_id}/dumps")

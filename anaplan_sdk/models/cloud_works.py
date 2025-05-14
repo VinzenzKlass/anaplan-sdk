@@ -212,17 +212,13 @@ class Schedule(ScheduleBase):
     from_time: str | None = Field(default=None, description="Start time for scheduled runs.")
     start_date: datetime = Field(description="Start date of the schedule.")
     end_date: datetime = Field(description="End date of the schedule.")
-    days_of_week: list[int] = Field(description="Days of week when schedule is active.")
+    days_of_week: list[int] = Field(default=[], description="Days of week when schedule is active.")
     repeat_every: int | None = Field(default=None, description="Frequency of repetition.")
     status: str = Field(description="Current status of the schedule.")
 
 
-class Integration(AnaplanModel):
-    integration_id: str = Field(description="The unique identifier of this integration.")
+class _BaseIntegration(AnaplanModel):
     name: str = Field(description="The name of this integration.")
-    integration_type: Literal["Import", "Export", "Process"] = Field(
-        description="The type of this integration."
-    )
     created_by: str = Field(description="The user who created this integration.")
     creation_date: datetime = Field(description="The initial creation date of this integration.")
     modification_date: datetime = Field(
@@ -231,24 +227,31 @@ class Integration(AnaplanModel):
     modified_by: str | None = Field(
         None, description="The user who last modified this integration."
     )
-    model_id: str = Field(description="The ID of the model this integration belongs to.")
-    workspace_id: str = Field(description="The ID of the workspace this integration belongs to.")
-    nux_visible: bool = Field(description="Whether this integration is visible in the UI.")
-    process_id: str | None = Field(None, description="The ID of the process (for Process type).")
-    latest_run: LatestRun | None = Field(
-        default=None, description="Details about the latest execution, if any."
-    )
-    schedule: Schedule | None = Field(
-        default=None, description="Schedule configuration if defined."
-    )
     notification_id: str | None = Field(
         default=None, description="The ID of the associated notification configuration, if any."
+    )
+    latest_run: LatestRun | None = Field(
+        default=None, description="Details about the latest execution, if any."
     )
 
     @field_validator("latest_run", mode="before")
     @classmethod
     def _empty_source_is_none(cls, inp: dict):
         return inp if inp else None
+
+
+class Integration(_BaseIntegration):
+    integration_id: str = Field(description="The unique identifier of this integration.")
+    integration_type: Literal["Import", "Export", "Process"] = Field(
+        description="The type of this integration."
+    )
+    model_id: str = Field(description="The ID of the model this integration belongs to.")
+    workspace_id: str = Field(description="The ID of the workspace this integration belongs to.")
+    nux_visible: bool = Field(description="Whether this integration is visible in the UI.")
+    process_id: str | None = Field(None, description="The ID of the process (for Process type).")
+    schedule: Schedule | None = Field(
+        default=None, description="Schedule configuration if defined."
+    )
 
 
 class SingleIntegration(Integration):
@@ -399,8 +402,12 @@ class RunStatus(AnaplanModel):
     )
 
 
+class ErrorSummary(AnaplanModel):
+    local_message_text: str = Field(description="Error message text.")
+
+
 class ErrorMessage(AnaplanModel):
-    error_message: list[TaskResultDetail]
+    error_message: list[TaskResultDetail | ErrorSummary]
     action_id: str = Field(description="The ID of the action that failed.")
     action_name: str = Field(description="The name of the action that failed.")
     failure_dump_generated: bool = Field(description="Whether a failure dump was generated.")

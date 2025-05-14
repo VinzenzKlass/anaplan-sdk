@@ -3,6 +3,7 @@ from asyncio import gather
 from anaplan_sdk.models.cloud_works import (
     Connection,
     Integration,
+    RunError,
     RunStatus,
     RunSummary,
     SingleIntegration,
@@ -178,6 +179,11 @@ async def test_delete_notification(client, registry):
 async def test_create_notification_dict(client, notification_dict, registry):
     notification_dict["integrationIds"] = [registry["integrations"][0]]
     await client.cw.create_notification_config(notification_dict)
+
+
+async def test_get_run_error(client, error_run_id):
+    run_error = await client.cw.get_run_error(error_run_id)
+    assert isinstance(run_error, RunError)
 
 
 async def test_delete_integration(client, registry):
