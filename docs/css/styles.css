@@ -1,5 +1,5 @@
 :root {
-    --md-primary-fg-color: #3C67EA;
+    --md-primary-fg-color: #0075ff;
 }
 
 :root, [data-md-color-scheme=default] {
@@ -38,7 +38,6 @@
     color: #E4B962;
 }
 
-
 .hljs-number, .hljs-selector-attr, .hljs-selector-class, .hljs-selector-pseudo, .hljs-template-variable, .hljs-variable {
     color: #d0864a
 }
@@ -65,4 +64,13 @@
 
 .hljs-sql-text {
     color: var(--md-code-fg-color);
+}
+
+.md-typeset .grid.cards > ul > li {
+    border-radius: 5px;
+}
+
+.md-nav__title .md-nav__button.md-logo img {
+    border-radius: 5px;
+    box-shadow: rgba(46, 46, 46, 0.3) 0 0 5px 2px;
 }

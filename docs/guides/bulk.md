@@ -3,9 +3,9 @@ Anaplan is actually quite involved. To give you the full context and allow you t
 look at the individual steps, how to perform them individually and how one can put these together to use the Bulk API to
 the greatest efficiency.
 
-!!! tip "Client Settings"
+??? tip "Client Tuning"
     Anaplan SDK comes with a set of default options that are efficient for most use cases and general purpose. Mainly, it
-    will compress all data before uploading and leverage Concurrency to speed up- and downloads, with a chunk size of 25MB.
+    will compress all data before uploading and leverage Concurrency to accelerate up- and downloads, with a chunk size of 25MB.
     However, you can configure the client to better fit your needs. For more information,
     see [Client Parameters](../api/sync/sync_client.md#anaplan_sdk.Client.__init__).
 

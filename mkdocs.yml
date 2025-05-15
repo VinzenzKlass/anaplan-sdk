@@ -10,13 +10,13 @@ theme:
   palette:
     - scheme: 'default'
       media: '(prefers-color-scheme: light)'
-      primary: indigo
+      primary: custom
       toggle:
         icon: 'material/lightbulb'
         name: "Switch to dark mode"
     - scheme: 'slate'
       media: '(prefers-color-scheme: dark)'
-      primary: indigo
+      primary: custom
       toggle:
         icon: 'material/lightbulb-outline'
         name: 'Switch to light mode'
@@ -38,6 +38,7 @@ nav:
       - Installation: 'installation.md'
       - Quick Start: 'quickstart.md'
   - Guides:
+      - Index: 'guides/index.md'
       - Bulk API: 'guides/bulk.md'
       - Transactional API: 'guides/transactional.md'
       - CloudWorks API: 'guides/cloud_works.md'
@@ -96,6 +97,8 @@ extra_css:
   - css/styles.css
 
 markdown_extensions:
+  - attr_list
+  - md_in_html
   - pymdownx.superfences
   - pymdownx.details
   - pymdownx.highlight:

@@ -1,11 +1,33 @@
-The CloudWorks API is a set of APIs that allow you to manage and interact with Anaplan CloudWorks. It provides
+The CloudWorks API is a set of APIs that allow you to manage and interact with CloudWorks. It provides
 functionality for creating, updating, and deleting CloudWorks Connection and Integrations as well as managing their
 schedules and monitoring their status. For more details,
-see [CloudWorks](https://help.anaplan.com/cloudworks-96f951fe-52fc-45a3-b6cb-16b7fe38e1aa).
+see [CloudWorks](https://help.anaplan.com/cloudworks-96f951fe-52fc-45a3-b6cb-16b7fe38e1aa). It also supports Flows, 
+which are a sequence of integrations that are executed in a specific order.
 
-???+ tip "Asynchronous"
-    All the examples in this section are shown using the synchronous API. The syntax for the asynchronous API is
-    identical.
+## Accessing the Namespace
+
+All the methods for the CloudWorks APIs reside in a different namespace for better API navigability and
+comprehensiveness, but are accessible through the same client for convenience. The Flows APIs in turn are accessible 
+through the `flows` property of the cloud works namespace.
+
+=== "Synchronous"
+    ```python
+    connections = anaplan.cw.list_connections()
+    integrations = anaplan.cw.list_integrations()
+    flows = anaplan.cw.flows.list_flows()
+    ```
+=== "Asynchronous"
+    ```python
+    from asyncio import gather
+
+    connections, integrations, flows = await gather(
+        anaplan.cw.list_connections(),
+        anaplan.cw.list_integrations(),
+        anaplan.cw.flows.list_flows(),
+    )
+    ```
+
+All the examples below are shown using the synchronous API. The syntax for the asynchronous API is identical.
 
 ## Create a Connection
 
