@@ -198,11 +198,13 @@ class ScheduleInput(ScheduleBase):
             "day, if the `time` is greater than the current time or any future date. "
         )
     )
-    end_date: str = Field(
+    end_date: str | None = Field(
+        default=None,
         description=(
             "End date for the schedule in YYYY-MM-DD format. Must be in the Future, i.e. current "
-            "day, if the `time` is greater than the current time or any future date. "
-        )
+            "day, if the `time` is greater than the current time or any future date. Can also be "
+            "omitted to create a schedule that runs indefinitely."
+        ),
     )
 
 
@@ -211,7 +213,7 @@ class Schedule(ScheduleBase):
     to_time: str | None = Field(default=None, description="End time for scheduled runs.")
     from_time: str | None = Field(default=None, description="Start time for scheduled runs.")
     start_date: datetime = Field(description="Start date of the schedule.")
-    end_date: datetime = Field(description="End date of the schedule.")
+    end_date: datetime | None = Field(default=None, description="End date of the schedule, if set.")
     days_of_week: list[int] = Field(default=[], description="Days of week when schedule is active.")
     repeat_every: int | None = Field(default=None, description="Frequency of repetition.")
     status: str = Field(description="Current status of the schedule.")
