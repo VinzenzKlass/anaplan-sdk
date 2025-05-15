@@ -66,7 +66,7 @@ exclude = [
     "venv",
 ]
 
-line-length = 80
+line-length = 100
 fix = true
 target-version = "py312"
 
