@@ -1,9 +1,15 @@
-:root {
+:root > * {
+    --md-accent-fg-color: #0075ff;
     --md-primary-fg-color: #0075ff;
 }
 
 :root, [data-md-color-scheme=default] {
-    --md-code-bg-color: #fAfAfA;
+    --md-code-bg-color: #efefef;
+    --header-bg-color: rgba(0, 75, 255, 0.75);
+}
+
+:root, [data-md-color-scheme=slate] {
+    --header-bg-color: rgba(0, 117, 255, 0.75);
 }
 
 .md-typeset .tabbed-labels:before {
@@ -12,9 +18,13 @@
     border-bottom-color: var(--md-primary-fg-color);
 }
 
+.md-header, .md-tabs {
+    background-color: var(--header-bg-color);
+    backdrop-filter: blur(4px);
+}
+
 .md-header__button.md-logo > img {
-    border-radius: 5px;
-    box-shadow: rgba(46, 46, 46, 0.3) 0 0 5px 2px;
+    border-radius: 4px;
 }
 
 .hljs-comment, .hljs-quote {
@@ -72,5 +82,4 @@
 
 .md-nav__title .md-nav__button.md-logo img {
     border-radius: 5px;
-    box-shadow: rgba(46, 46, 46, 0.3) 0 0 5px 2px;
 }

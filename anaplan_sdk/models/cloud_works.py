@@ -58,6 +58,17 @@ Timezone = Literal[
 ]
 
 
+class _VersionedBaseModel(AnaplanModel):
+    creation_date: datetime = Field(description="The initial creation date.")
+    modification_date: datetime = Field(
+        description=(
+            "The last modification date. If never modified, this is equal to creation_date."
+        )
+    )
+    created_by: str = Field(description="The user who created this.")
+    modified_by: str | None = Field(description="The user who last modified this.")
+
+
 class BaseConnectionInput(AnaplanModel):
     workspace_id: str | None = Field(
         default=None,
@@ -93,7 +104,6 @@ class AmazonS3ConnectionInput(AmazonS3ConnectionInfo, BaseConnectionInput):
     secret_access_key: str = Field(
         description="The secret access key for the Amazon S3 connection."
     )
-    bucket_name: str = Field(description="The name of the Amazon S3 bucket.")
 
 
 class GoogleBigQueryConnectionInfo(AnaplanModel):
@@ -130,21 +140,12 @@ class ConnectionInput(AnaplanModel):
     body: ConnectionBody = Field(description="Connection information.")
 
 
-class Connection(AnaplanModel):
+class Connection(_VersionedBaseModel):
     connection_id: str = Field(description="The unique identifier of this connection.")
     connection_type: ConnectionType = Field(description="The type of this connection.")
     body: AzureBlobConnectionInfo | AmazonS3ConnectionInfo | GoogleBigQueryConnectionInfo = Field(
         description="Connection information."
     )
-    creation_date: datetime = Field(description="The initial creation date of this connection.")
-    modification_date: datetime = Field(
-        description=(
-            "The last modification date of this connection. If never modified, this is equal to "
-            "creation_date."
-        )
-    )
-    created_by: str = Field(description="The user who created this connection.")
-    modified_by: str | None = Field(description="The user who last modified this connection.")
     status: int = Field(
         description=(
             "The status of this connection. 1 indicates a valid connection, 0 indicates an invalid "
@@ -219,16 +220,9 @@ class Schedule(ScheduleBase):
     status: str = Field(description="Current status of the schedule.")
 
 
-class _BaseIntegration(AnaplanModel):
+class _BaseIntegration(_VersionedBaseModel):
     name: str = Field(description="The name of this integration.")
     created_by: str = Field(description="The user who created this integration.")
-    creation_date: datetime = Field(description="The initial creation date of this integration.")
-    modification_date: datetime = Field(
-        description="The last modification date of this integration."
-    )
-    modified_by: str | None = Field(
-        None, description="The user who last modified this integration."
-    )
     notification_id: str | None = Field(
         default=None, description="The ID of the associated notification configuration, if any."
     )
@@ -391,12 +385,6 @@ class RunStatus(AnaplanModel):
     )
     success: bool = Field(description="Whether this run was successful.")
     message: str = Field(description="Result message of this run.")
-    creation_date: datetime = Field(description="The initial creation date of this run.")
-    modification_date: datetime = Field(description="The last modification date of this run.")
-    created_by: str = Field(description="The user who created this run.")
-    modified_by: str | None = Field(
-        default=None, description="The user who last modified this run, if it was ever modified."
-    )
     execution_error_code: int | None = Field(default=None, description="Error code if run failed.")
     flow_group_id: str | None = Field(default=None, description="The ID of the flow group, if any.")
     trigger_source: Literal["manual", "scheduled"] = Field(
@@ -418,17 +406,6 @@ class ErrorMessage(AnaplanModel):
 class RunError(AnaplanModel):
     task_id: str = Field(description="The Task ID of the invoked Anaplan Action.")
     error_messages: list[ErrorMessage] = Field(description="The error messages of the run.")
-    creation_date: datetime = Field(description="The initial creation date of this run.")
-    modification_date: datetime = Field(
-        description=(
-            "The last modification date of this connection. If never modified, this is equal to "
-            "creation_date."
-        )
-    )
-    created_by: str = Field(description="The user who created this run.")
-    modified_by: str | None = Field(
-        default=None, description="The user who last modified this run."
-    )
 
 
 class NotificationUser(AnaplanModel):
