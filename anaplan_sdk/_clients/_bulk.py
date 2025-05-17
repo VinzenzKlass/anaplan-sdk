@@ -3,12 +3,12 @@ import multiprocessing
 import time
 from concurrent.futures import ThreadPoolExecutor
 from copy import copy
-from typing import Iterator
+from typing import Callable, Iterator
 
 import httpx
 from typing_extensions import Self
 
-from anaplan_sdk._auth import AnaplanBasicAuth, AnaplanCertAuth, get_certificate, get_private_key
+from anaplan_sdk._auth import create_auth
 from anaplan_sdk._base import _BaseClient, action_url
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
 from anaplan_sdk.models import (
@@ -53,6 +53,13 @@ class Client(_BaseClient):
         certificate: str | bytes | None = None,
         private_key: str | bytes | None = None,
         private_key_password: str | bytes | None = None,
+        client_id: str | None = None,
+        client_secret: str | None = None,
+        redirect_uri: str | None = None,
+        refresh_token: str | None = None,
+        oauth2_scope: str = "openid profile email offline_access",
+        on_token_refresh: Callable[[dict[str, str]], None] | None = None,
+        timeout: float = 30,
         timeout: float | httpx.Timeout = 30,
         retry_count: int = 2,
         status_poll_delay: int = 1,
@@ -99,18 +106,21 @@ class Client(_BaseClient):
                                     manually assigned so there is typically no value in dynamically
                                     creating new files and uploading content to them.
         """
-        if not ((user_email and password) or (certificate and private_key)):
-            raise ValueError(
-                "Either `certificate` and `private_key` or `user_email` and `password` must be "
-                "provided."
-            )
         _client = httpx.Client(
             auth=(
-                AnaplanCertAuth(
-                    get_certificate(certificate), get_private_key(private_key, private_key_password)
+                create_auth(
+                    user_email=user_email,
+                    password=password,
+                    certificate=certificate,
+                    private_key=private_key,
+                    private_key_password=private_key_password,
+                    client_id=client_id,
+                    client_secret=client_secret,
+                    redirect_uri=redirect_uri,
+                    refresh_token=refresh_token,
+                    oauth2_scope=oauth2_scope,
+                    on_token_refresh=on_token_refresh,
                 )
-                if certificate
-                else AnaplanBasicAuth(user_email=user_email, password=password)
             ),
             timeout=timeout,
         )
