@@ -59,7 +59,6 @@ class Client(_BaseClient):
         refresh_token: str | None = None,
         oauth2_scope: str = "openid profile email offline_access",
         on_token_refresh: Callable[[dict[str, str]], None] | None = None,
-        timeout: float = 30,
         timeout: float | httpx.Timeout = 30,
         retry_count: int = 2,
         status_poll_delay: int = 1,
