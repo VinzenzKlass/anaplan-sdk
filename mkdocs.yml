@@ -10,77 +10,99 @@ theme:
   palette:
     - scheme: 'default'
       media: '(prefers-color-scheme: light)'
-      primary: indigo
+      primary: custom
       toggle:
         icon: 'material/lightbulb'
         name: "Switch to dark mode"
     - scheme: 'slate'
       media: '(prefers-color-scheme: dark)'
-      primary: indigo
+      primary: custom
       toggle:
         icon: 'material/lightbulb-outline'
         name: 'Switch to light mode'
   features:
     - content.code.copy
     - content.tabs.link
+    - search.suggest
+    - navigation.tabs
+    - navigation.top
+
   icon:
     repo: fontawesome/brands/github
   favicon: img/anaplan-sdk.webp
   logo: img/anaplan-sdk.webp
 
 nav:
-  - Introduction: 'index.md'
-  - Installation: 'installation.md'
-  - Quick Start: 'quickstart.md'
-  - Anaplan Explained: 'anaplan_explained.md'
+  - Home: 'index.md'
+  - Getting Started:
+      - Installation: 'installation.md'
+      - Quick Start: 'quickstart.md'
   - Guides:
-      - Bulk vs Transactional: 'guides/bulk_vs_transactional.md'
-      - Use the Bulk API: 'guides/bulk.md'
-      - Use the Transactional API: 'guides/transactional.md'
-      - Use the ALM API: 'guides/alm.md'
-      - Use the Audit API: 'guides/audit.md'
+      - Index: 'guides/index.md'
+      - Bulk API: 'guides/bulk.md'
+      - Transactional API: 'guides/transactional.md'
+      - CloudWorks API: 'guides/cloud_works.md'
+      - ALM API: 'guides/alm.md'
+      - Audit API: 'guides/audit.md'
       - Multiple Models: 'guides/multiple_models.md'
       - Logging: 'guides/logging.md'
   - API Reference:
-      - Developer Interface:
-          - Asynchronous:
-              - Async Client: 'api/async_client.md'
-              - Async Transactional Client: 'api/async_transactional_client.md'
-              - Async ALM Client: 'api/async_alm_client.md'
-              - Async Audit Client: 'api/async_audit_client.md'
-          - Synchronous:
-              - Client: 'api/client.md'
-              - Transactional Client: 'api/transactional_client.md'
-              - ALM Client: 'api/alm_client.md'
-              - Audit Client: 'api/audit_client.md'
+      - Asynchronous:
+          - Bulk: 'api/async/async_client.md'
+          - Transactional: 'api/async/async_transactional_client.md'
+          - Audit: 'api/async/async_audit_client.md'
+          - ALM: 'api/async/async_alm_client.md'
+          - CloudWorks:
+              - Client: 'api/async/async_cw_client.md'
+              - Flows: 'api/async/async_flows_client.md'
+      - Synchronous:
+          - Bulk: 'api/sync/sync_client.md'
+          - Transactional: 'api/sync/sync_transactional_client.md'
+          - Audit: 'api/sync/sync_audit_client.md'
+          - ALM: 'api/sync/sync_alm_client.md'
+          - CloudWorks:
+              - Client: 'api/sync/sync_cw_client.md'
+              - Flows: 'api/sync/sync_flows_client.md'
       - Models: 'api/models.md'
       - Exceptions: 'api/exceptions.md'
+  - Concepts:
+      - Anaplan Explained: 'anaplan_explained.md'
+      - Bulk vs Transactional: 'guides/bulk_vs_transactional.md'
 
 plugins:
-  - search
+  - search:
+      lang: en
   - mkdocstrings:
       handlers:
         python:
           options:
             separate_signature: true
             show_signature_annotations: true
-            line_length: 88
+            line_length: 80
             docstring_style: sphinx
             members_order: source
+            group_by_category: false
             show_source: false
             show_bases: false
             extensions:
               - griffe_fieldz
 
+watch:
+  - "anaplan_sdk"
 
 extra_javascript:
-  - js/highlight.js
+  - js/highlight.min.js
 
 extra_css:
   - css/styles.css
 
 markdown_extensions:
+  - attr_list
+  - md_in_html
   - pymdownx.superfences
-  - pymdownx.blocks.tab:
+  - pymdownx.details
+  - pymdownx.highlight:
+      use_pygments: false
+  - pymdownx.tabbed:
       alternate_style: true
   - admonition
