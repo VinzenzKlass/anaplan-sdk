@@ -88,7 +88,19 @@ class Client(_BaseClient):
                             itself.
         :param private_key: The absolute path to the private key file or the private key itself.
         :param private_key_password: The password to access the private key if there is one.
-        :param timeout: The timeout in seconds for the HTTP requests.
+        :param client_id: The client Id of the Oauth2 Anaplan Client.
+        :param client_secret: The client secret for your Oauth2 Anaplan Client.
+        :param redirect_uri: The redirect URI for your Oauth2 Anaplan Client.
+        :param refresh_token: If you have a valid refresh token, you can pass it to skip the
+                              interactive authentication code step.
+        :param oauth2_scope: The scope of the Oauth2 token, if you want to narrow it.
+        :param on_token_refresh: A callback function that is called whenever the token is refreshed.
+                                 With this you can for example securely store the token in your
+                                 application or on your server for later reuse. The function
+                                 must accept a single argument, which is the token dictionary
+                                 returned by the Oauth2 token endpoint.
+        :param timeout: The timeout in seconds for the HTTP requests. Alternatively, you can pass
+                        an instance of `httpx.Timeout` to set the timeout for the HTTP requests.
         :param retry_count: The number of times to retry an HTTP request if it fails. Set this to 0
                             to never retry. Defaults to 2, meaning each HTTP Operation will be
                             tried a total number of 2 times.
