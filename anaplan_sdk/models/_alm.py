@@ -26,7 +26,13 @@ class ModelRevision(AnaplanModel):
         description="The unique identifier of the model this revision belongs to.",
     )
     name: str = Field(
-        validation_alias="modelName", description="The name of the model this revision belongs to."
+        default="",
+        validation_alias="modelName",
+        description=(
+            "The name of the model this revision belongs to. This can be an empty string, when the "
+            "calling user does not have access to the model, but is workspace admin in the "
+            "workspace."
+        ),
     )
     workspace_id: str = Field(
         description="The unique identifier of the workspace this revision belongs to."
