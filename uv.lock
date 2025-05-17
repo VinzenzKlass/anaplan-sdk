@@ -11,12 +11,18 @@ dependencies = [
     { name = "pydantic" },
 ]
 
+[package.optional-dependencies]
+oauth = [
+    { name = "oauthlib" },
+]
+
 [package.dev-dependencies]
 dev = [
     { name = "griffe-fieldz" },
     { name = "mkdocs" },
     { name = "mkdocs-material" },
     { name = "mkdocstrings", extra = ["python"] },
+    { name = "oauthlib" },
     { name = "polars" },
     { name = "pre-commit" },
     { name = "pytest" },
@@ -29,6 +35,7 @@ dev = [
 requires-dist = [
     { name = "cryptography", specifier = ">=42.0.7,<45.0.0" },
     { name = "httpx", specifier = ">=0.27.0,<1.0.0" },
+    { name = "oauthlib", marker = "extra == 'oauth'", specifier = ">=3.0.0" },
     { name = "pydantic", specifier = ">=2.7.2,<3.0.0" },
 ]
 
@@ -38,6 +45,7 @@ dev = [
     { name = "mkdocs", specifier = ">=1.6.1" },
     { name = "mkdocs-material", specifier = ">=9.5.41" },
     { name = "mkdocstrings", extras = ["python"], specifier = ">=0.26.2" },
+    { name = "oauthlib", specifier = ">=3.2.2" },
     { name = "polars", specifier = ">=1.25.2" },
     { name = "pre-commit", specifier = ">=4.0.1" },
     { name = "pytest", specifier = ">=8.3.3" },
@@ -658,6 +666,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/43/16/fc88b08840de0e0a72a2f9d8c6bae36be573e475a6326ae854bcc549fc45/nodeenv-1.9.1.tar.gz", hash = "sha256:6ec12890a2dab7946721edbfbcd91f3319c6ccc9aec47be7c7e6b7011ee6645f", size = 47437 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d2/1d/1b658dbd2b9fa9c4c9f32accbfc0205d532c8c6194dc0f2a4c0428e7128a/nodeenv-1.9.1-py2.py3-none-any.whl", hash = "sha256:ba11c9782d29c27c70ffbdda2d7415098754709be8a7056d79a737cd901155c9", size = 22314 },
+]
+
+[[package]]
+name = "oauthlib"
+version = "3.2.2"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/6d/fa/fbf4001037904031639e6bfbfc02badfc7e12f137a8afa254df6c4c8a670/oauthlib-3.2.2.tar.gz", hash = "sha256:9859c40929662bec5d64f34d01c99e093149682a3f38915dc0655d5a633dd918", size = 177352 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7e/80/cab10959dc1faead58dc8384a781dfbf93cb4d33d50988f7a69f1b7c9bbe/oauthlib-3.2.2-py3-none-any.whl", hash = "sha256:8139f29aac13e25d502680e9e19963e83f16838d48a0d71c287fe40e7067fbca", size = 151688 },
 ]
 
 [[package]]

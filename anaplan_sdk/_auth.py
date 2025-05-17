@@ -93,6 +93,49 @@ class AnaplanCertAuth(_AnaplanAuth):
         )
 
 
+class AnaplanOauth2AuthCodeAuth(_AnaplanAuth):
+    def __init__(
+        self,
+        client_id: str,
+        client_secret: str,
+        redirect_uri: str,
+        auth_code: str | None = None,
+        refresh_token: str | None = None,
+    ):
+        try:
+            from oauthlib.oauth2 import Client
+        except ImportError as e:
+            raise AnaplanException(
+                "oauthlib is not available. Please install anaplan-sdk with the oauth extra "
+                "`pip install anaplan-sdk[oauth]` or install oauthlib separately."
+            ) from e
+        self._oauth = Client(
+            client_id=client_id, client_secret=client_secret, refresh_token=refresh_token
+        )
+        self._client_id = client_id
+        self._client_secret = client_secret
+        self._redirect_uri = redirect_uri
+        self._auth_code = auth_code
+        self._refresh_token = refresh_token
+        self._oauth.prepare_token_request()
+        super().__init__()
+
+    def _build_auth_request(self) -> httpx.Request:
+        url, headers, body = self._oauth.prepare_refresh_token_request(
+            token_url="https://us1a.app.anaplan.com/oauth/token", refresh_token=self._refresh_token
+        )
+        return httpx.Request(method="post", url=url, headers=headers, data=body)
+
+    def _parse_auth_response(self, response: httpx.Response) -> None:
+        if response.status_code == 401:
+            raise InvalidCredentialsException
+        if not response.is_success:
+            raise AnaplanException(f"Authentication failed: {response.status_code} {response.text}")
+        token = response.json()
+        self._token: str = token["access_token"]
+        self._refresh_token = token.get("refresh_token")
+
+
 def get_certificate(certificate: str | bytes) -> bytes:
     """
     Get the certificate from a file or string.
