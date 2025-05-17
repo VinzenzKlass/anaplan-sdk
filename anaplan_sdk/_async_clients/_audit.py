@@ -10,7 +10,6 @@ Event = Literal["all", "byok", "user_activity"]
 
 class _AsyncAuditClient(_AsyncBaseClient):
     def __init__(self, client: httpx.AsyncClient, retry_count: int) -> None:
-        self._client = client
         self._limit = 10_000
         self._url = "https://audit.anaplan.com/audit/api/1/events"
         super().__init__(retry_count, client)

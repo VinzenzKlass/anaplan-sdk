@@ -1,16 +1,12 @@
-"""
-Asynchronous Client.
-"""
-
 import logging
 from asyncio import gather, sleep
 from copy import copy
-from typing import AsyncIterator, Iterator
+from typing import AsyncIterator, Callable, Iterator
 
 import httpx
 from typing_extensions import Self
 
-from anaplan_sdk._auth import AnaplanBasicAuth, AnaplanCertAuth, get_certificate, get_private_key
+from anaplan_sdk._auth import create_auth
 from anaplan_sdk._base import _AsyncBaseClient, action_url
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
 from anaplan_sdk.models import (
@@ -27,6 +23,7 @@ from anaplan_sdk.models import (
 
 from ._alm import _AsyncAlmClient
 from ._audit import _AsyncAuditClient
+from ._cloud_works import _AsyncCloudWorksClient
 from ._transactional import _AsyncTransactionalClient
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
@@ -54,7 +51,13 @@ class AsyncClient(_AsyncBaseClient):
         certificate: str | bytes | None = None,
         private_key: str | bytes | None = None,
         private_key_password: str | bytes | None = None,
-        timeout: float = 30,
+        client_id: str | None = None,
+        client_secret: str | None = None,
+        redirect_uri: str | None = None,
+        refresh_token: str | None = None,
+        oauth2_scope: str = "openid profile email offline_access",
+        on_token_refresh: Callable[[dict[str, str]], None] | None = None,
+        timeout: float | httpx.Timeout = 30,
         retry_count: int = 2,
         status_poll_delay: int = 1,
         upload_chunk_size: int = 25_000_000,
@@ -82,7 +85,19 @@ class AsyncClient(_AsyncBaseClient):
                             itself.
         :param private_key: The absolute path to the private key file or the private key itself.
         :param private_key_password: The password to access the private key if there is one.
-        :param timeout: The timeout in seconds for the HTTP requests.
+        :param client_id: The client Id of the Oauth2 Anaplan Client.
+        :param client_secret: The client secret for your Oauth2 Anaplan Client.
+        :param redirect_uri: The redirect URI for your Oauth2 Anaplan Client.
+        :param refresh_token: If you have a valid refresh token, you can pass it to skip the
+                              interactive authentication code step.
+        :param oauth2_scope: The scope of the Oauth2 token, if you want to narrow it.
+        :param on_token_refresh: A callback function that is called whenever the token is refreshed.
+                                 With this you can for example securely store the token in your
+                                 application or on your server for later reuse. The function
+                                 must accept a single argument, which is the token dictionary
+                                 returned by the Oauth2 token endpoint and does not return anything.
+        :param timeout: The timeout in seconds for the HTTP requests. Alternatively, you can pass
+                        an instance of `httpx.Timeout` to set the timeout for the HTTP requests.
         :param retry_count: The number of times to retry an HTTP request if it fails. Set this to 0
                             to never retry. Defaults to 2, meaning each HTTP Operation will be
                             tried a total number of 2 times.
@@ -96,34 +111,38 @@ class AsyncClient(_AsyncBaseClient):
                             manually assigned so there is typically no value in dynamically
                             creating new files and uploading content to them.
         """
-        if not ((user_email and password) or (certificate and private_key)):
-            raise ValueError(
-                "Must provide `certificate` and `private_key` or `user_email` and `password`."
-                "If you Private Key is Password protected, must also pass `private_key_password`."
-            )
-        self._client = httpx.AsyncClient(
+        _client = httpx.AsyncClient(
             auth=(
-                AnaplanCertAuth(
-                    get_certificate(certificate), get_private_key(private_key, private_key_password)
+                create_auth(
+                    user_email=user_email,
+                    password=password,
+                    certificate=certificate,
+                    private_key=private_key,
+                    private_key_password=private_key_password,
+                    client_id=client_id,
+                    client_secret=client_secret,
+                    redirect_uri=redirect_uri,
+                    refresh_token=refresh_token,
+                    oauth2_scope=oauth2_scope,
+                    on_token_refresh=on_token_refresh,
                 )
-                if certificate
-                else AnaplanBasicAuth(user_email=user_email, password=password)
             ),
             timeout=timeout,
         )
         self._retry_count = retry_count
         self._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
         self._transactional_client = (
-            _AsyncTransactionalClient(self._client, model_id, retry_count) if model_id else None
+            _AsyncTransactionalClient(_client, model_id, retry_count) if model_id else None
         )
         self._alm_client = (
-            _AsyncAlmClient(self._client, model_id, self._retry_count) if model_id else None
+            _AsyncAlmClient(_client, model_id, self._retry_count) if model_id else None
         )
-        self.audit = _AsyncAuditClient(self._client, self._retry_count)
+        self._audit = _AsyncAuditClient(_client, self._retry_count)
+        self._cloud_works = _AsyncCloudWorksClient(_client, self._retry_count)
         self.status_poll_delay = status_poll_delay
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
-        super().__init__(retry_count, self._client)
+        super().__init__(retry_count, _client)
 
     @classmethod
     def from_existing(cls, existing: Self, workspace_id: str, model_id: str) -> Self:
@@ -144,6 +163,22 @@ class AsyncClient(_AsyncBaseClient):
         )
         client._alm_client = _AsyncAlmClient(existing._client, model_id, existing._retry_count)
         return client
+
+    @property
+    def audit(self) -> _AsyncAuditClient:
+        """
+        The Audit Client provides access to the Anaplan Audit API.
+        For details, see https://vinzenzklass.github.io/anaplan-sdk/guides/audit/.
+        """
+        return self._audit
+
+    @property
+    def cw(self) -> _AsyncCloudWorksClient:
+        """
+        The Cloud Works Client provides access to the Anaplan Cloud Works API.
+        For details, see https://vinzenzklass.github.io/anaplan-sdk/guides/cloud_works/.
+        """
+        return self._cloud_works
 
     @property
     def transactional(self) -> _AsyncTransactionalClient:
