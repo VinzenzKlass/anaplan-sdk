@@ -1,18 +1,9 @@
-"""
-Custom Authentication class to pass to httpx alongside some helper functions.
-"""
-
 import logging
 import os
 from base64 import b64encode
 from typing import Callable
 
 import httpx
-from cryptography.exceptions import InvalidKey, UnsupportedAlgorithm
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
-from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 
 from .exceptions import AnaplanException, InvalidCredentialsException, InvalidPrivateKeyException
 
@@ -91,6 +82,9 @@ class AnaplanCertAuth(_AnaplanAuth):
         )
 
     def _prep_credentials(self) -> tuple[str, str, str]:
+        from cryptography.hazmat.primitives import hashes
+        from cryptography.hazmat.primitives.asymmetric.padding import PKCS1v15
+
         message = os.urandom(150)
         return (
             b64encode(self._certificate).decode(),
@@ -111,6 +105,16 @@ class AnaplanCertAuth(_AnaplanAuth):
     def __set_private_key(
         self, private_key: str | bytes, private_key_password: str | bytes
     ) -> None:
+        try:
+            from cryptography.exceptions import InvalidKey, UnsupportedAlgorithm
+            from cryptography.hazmat.backends import default_backend
+            from cryptography.hazmat.primitives import serialization
+            from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
+        except ImportError as e:
+            raise AnaplanException(
+                "cryptography is not available. Please install anaplan-sdk with the cert extra "
+                "`pip install anaplan-sdk[cert]` or install cryptography separately."
+            ) from e
         try:
             if isinstance(private_key, str):
                 if os.path.isfile(private_key):
@@ -196,8 +200,8 @@ class AnaplanOauth2AuthCodeAuth(_AnaplanAuth):
                 scope=self._scope,
             )
             authorization_response = input(
-                f"Please go to {url} and authorize the app. Then paste the entire redirect URL "
-                f"here: "
+                f"Please go to {url} and authorize the app.\n"
+                "Then paste the entire redirect URL here: "
             )
             url, headers, body = self._oauth.prepare_token_request(
                 token_url=self._token_url,
