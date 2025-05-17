@@ -1,7 +1,3 @@
-"""
-Synchronous Client.
-"""
-
 import logging
 import multiprocessing
 import time
@@ -29,6 +25,7 @@ from anaplan_sdk.models import (
 
 from ._alm import _AlmClient
 from ._audit import _AuditClient
+from ._cloud_works import _CloudWorksClient
 from ._transactional import _TransactionalClient
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
@@ -56,7 +53,7 @@ class Client(_BaseClient):
         certificate: str | bytes | None = None,
         private_key: str | bytes | None = None,
         private_key_password: str | bytes | None = None,
-        timeout: float = 30,
+        timeout: float | httpx.Timeout = 30,
         retry_count: int = 2,
         status_poll_delay: int = 1,
         upload_parallel: bool = True,
@@ -107,7 +104,7 @@ class Client(_BaseClient):
                 "Either `certificate` and `private_key` or `user_email` and `password` must be "
                 "provided."
             )
-        self._client = httpx.Client(
+        _client = httpx.Client(
             auth=(
                 AnaplanCertAuth(
                     get_certificate(certificate), get_private_key(private_key, private_key_password)
@@ -120,18 +117,17 @@ class Client(_BaseClient):
         self._retry_count = retry_count
         self._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
         self._transactional_client = (
-            _TransactionalClient(self._client, model_id, self._retry_count) if model_id else None
+            _TransactionalClient(_client, model_id, self._retry_count) if model_id else None
         )
-        self._alm_client = (
-            _AlmClient(self._client, model_id, self._retry_count) if model_id else None
-        )
+        self._alm_client = _AlmClient(_client, model_id, self._retry_count) if model_id else None
+        self._cloud_works = _CloudWorksClient(_client, self._retry_count)
         self._thread_count = multiprocessing.cpu_count()
-        self.audit = _AuditClient(self._client, self._retry_count, self._thread_count)
+        self._audit = _AuditClient(_client, self._retry_count, self._thread_count)
         self.status_poll_delay = status_poll_delay
         self.upload_parallel = upload_parallel
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
-        super().__init__(self._retry_count, self._client)
+        super().__init__(self._retry_count, _client)
 
     @classmethod
     def from_existing(cls, existing: Self, workspace_id: str, model_id: str) -> Self:
@@ -152,6 +148,22 @@ class Client(_BaseClient):
         )
         client._alm_client = _AlmClient(existing._client, model_id, existing._retry_count)
         return client
+
+    @property
+    def audit(self) -> _AuditClient:
+        """
+        The Audit Client provides access to the Anaplan Audit API.
+        For details, see https://vinzenzklass.github.io/anaplan-sdk/guides/audit/.
+        """
+        return self._audit
+
+    @property
+    def cw(self) -> _CloudWorksClient:
+        """
+        The Cloud Works Client provides access to the Anaplan Cloud Works API.
+        For details, see https://vinzenzklass.github.io/anaplan-sdk/guides/cloud_works/.
+        """
+        return self._cloud_works
 
     @property
     def transactional(self) -> _TransactionalClient:

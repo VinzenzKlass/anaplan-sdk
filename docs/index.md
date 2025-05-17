@@ -1,3 +1,9 @@
+---
+hide:
+  - navigation
+  - toc
+---
+
 <p align="center" style="margin: 0 0 10px">
     <img width="200" height="200" src="img/anaplan-sdk.webp" alt='Python' style="border-radius: 15px">
 </p>
@@ -23,12 +29,13 @@ the [Bulk APIs](https://help.anaplan.com/use-the-bulk-apis-93218e5e-00e5-406e-83
 the [Transactional APIs](https://help.anaplan.com/use-the-transactional-apis-cc1c1e91-39fc-4272-a4b5-16bc91e9c313) and
 the [ALM APIs](https://help.anaplan.com/application-lifecycle-management-api-2565cfa6-e0c2-4e24-884e-d0df957184d6),
 the [Audit APIs](https://auditservice.docs.apiary.io/#),
+and the [CloudWorks APIs](https://help.anaplan.com/cloudworks-api-94bfcdc3-fff0-48d6-be9c-0e1bba2e889c)
 providing both synchronous and asynchronous Clients.
 
 ---
 
 Head over to the [Quick Start](quickstart.md) to get started with the basics.
 
-If you find any issues or feel that this SDK is not adequately covering your use case,
+If you find any issues or feel that this SDK is not adequately covering your use case, 
 please [open an issue](https://github.com/VinzenzKlass/anaplan-sdk/issues/new).
 

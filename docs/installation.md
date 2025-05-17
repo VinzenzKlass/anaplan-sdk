@@ -1,23 +1,20 @@
 This Project requires Python 3.10.4 or higher.
 
-### pip
+=== "pip"
+    ```shell
+    pip install anaplan-sdk
+    ```
 
-```shell
-pip install anaplan-sdk
-```
+===+ "uv"
+    ```shell
+    uv add anaplan-sdk
+    ```
 
-### Poetry
+=== "Poetry"
+    ```shell
+    poetry add anaplan-sdk
+    ```
 
-```shell
-poetry add anaplan-sdk
-```
-
-### uv
-
-```shell
-uv add anaplan-sdk
-
-```
 
 ### Dependencies
 

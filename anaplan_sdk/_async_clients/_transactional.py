@@ -21,7 +21,6 @@ warnings.filterwarnings("always", category=DeprecationWarning)
 
 class _AsyncTransactionalClient(_AsyncBaseClient):
     def __init__(self, client: httpx.AsyncClient, model_id: str, retry_count: int) -> None:
-        self._client = client
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
         super().__init__(retry_count, client)
 

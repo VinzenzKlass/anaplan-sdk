@@ -13,6 +13,8 @@ jobs:
       ANAPLAN_SDK_TEST_MODEL_ID: ${{secrets.ANAPLAN_SDK_TEST_MODEL_ID}}
       ANAPLAN_SDK_TEST_CERT: ${{secrets.ANAPLAN_SDK_TEST_CERT}}
       ANAPLAN_SDK_TEST_PK: ${{secrets.ANAPLAN_SDK_TEST_PK}}
+      AZ_STORAGE_ACCOUNT: ${{secrets.AZ_STORAGE_ACCOUNT}}
+      AZ_STORAGE_SAS_TOKEN: ${{secrets.AZ_STORAGE_SAS_TOKEN}}
 
     name: "Python ${{ matrix.python-version }}"
     runs-on: "ubuntu-latest"
@@ -32,4 +34,4 @@ jobs:
           pip install uv
           uv sync
       - name: "Run tests"
-        run: "uv run python -m pytest -n 8 --dist loadfile tests/"
+        run: "uv run python -m pytest -n 12 --dist loadfile tests/"
