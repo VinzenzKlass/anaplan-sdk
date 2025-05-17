@@ -204,12 +204,12 @@ export default function (hljs) {
             {
                 begin: `(\\b(${digitpart})|(${pointfloat}))[eE][+-]?(${digitpart})[jJ]?(?=${lookahead})`,
             },
-            { begin: `(${pointfloat})[jJ]?` },
-            { begin: `\\b([1-9](_?[0-9])*|0+(_?0)*)[lLjJ]?(?=${lookahead})` },
-            { begin: `\\b0[bB](_?[01])+[lL]?(?=${lookahead})` },
-            { begin: `\\b0[oO](_?[0-7])+[lL]?(?=${lookahead})` },
-            { begin: `\\b0[xX](_?[0-9a-fA-F])+[lL]?(?=${lookahead})` },
-            { begin: `\\b(${digitpart})[jJ](?=${lookahead}) ` },
+            {begin: `(${pointfloat})[jJ]?`},
+            {begin: `\\b([1-9](_?[0-9])*|0+(_?0)*)[lLjJ]?(?=${lookahead})`},
+            {begin: `\\b0[bB](_?[01])+[lL]?(?=${lookahead})`},
+            {begin: `\\b0[oO](_?[0-7])+[lL]?(?=${lookahead})`},
+            {begin: `\\b0[xX](_?[0-9a-fA-F])+[lL]?(?=${lookahead})`},
+            {begin: `\\b(${digitpart})[jJ](?=${lookahead}) `},
         ],
     }
     const COMMENT_TYPE = {
@@ -266,8 +266,7 @@ export default function (hljs) {
                 beginKeywords: 'if',
                 relevance: 0,
             },
-            { match: /\bor\b/, scope: 'keyword' },
-            STRING,
+            {match: /\bor\b/, scope: 'keyword'},
             COMMENT_TYPE,
             hljs.HASH_COMMENT_MODE,
             {
@@ -323,12 +322,13 @@ export default function (hljs) {
                         )})(?=\\s*\\())([\\p{XID_Start}_][\\p{XID_Continue}]*)`,
                         'u'
                     ),
-                    /\s*\(/,
+                    /\(\s*/,
                 ],
                 scope: {
                     1: 'title.function',
                 },
             },
+            STRING,
         ],
     }
 }

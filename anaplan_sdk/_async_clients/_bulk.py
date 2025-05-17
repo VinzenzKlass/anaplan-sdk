@@ -1,7 +1,3 @@
-"""
-Asynchronous Client.
-"""
-
 import logging
 from asyncio import gather, sleep
 from copy import copy
@@ -27,6 +23,7 @@ from anaplan_sdk.models import (
 
 from ._alm import _AsyncAlmClient
 from ._audit import _AsyncAuditClient
+from ._cloud_works import _AsyncCloudWorksClient
 from ._transactional import _AsyncTransactionalClient
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
@@ -60,7 +57,7 @@ class AsyncClient(_AsyncBaseClient):
         refresh_token: str | None = None,
         oauth2_scope: str = "openid profile email offline_access",
         on_token_refresh: Callable[[dict[str, str]], None] | None = None,
-        timeout: float = 30,
+        timeout: float | httpx.Timeout = 30,
         retry_count: int = 2,
         status_poll_delay: int = 1,
         upload_chunk_size: int = 25_000_000,
@@ -102,7 +99,7 @@ class AsyncClient(_AsyncBaseClient):
                             manually assigned so there is typically no value in dynamically
                             creating new files and uploading content to them.
         """
-        self._client = httpx.AsyncClient(
+        _client = httpx.AsyncClient(
             auth=(
                 create_auth(
                     user_email=user_email,
@@ -123,16 +120,17 @@ class AsyncClient(_AsyncBaseClient):
         self._retry_count = retry_count
         self._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
         self._transactional_client = (
-            _AsyncTransactionalClient(self._client, model_id, retry_count) if model_id else None
+            _AsyncTransactionalClient(_client, model_id, retry_count) if model_id else None
         )
         self._alm_client = (
-            _AsyncAlmClient(self._client, model_id, self._retry_count) if model_id else None
+            _AsyncAlmClient(_client, model_id, self._retry_count) if model_id else None
         )
-        self.audit = _AsyncAuditClient(self._client, self._retry_count)
+        self._audit = _AsyncAuditClient(_client, self._retry_count)
+        self._cloud_works = _AsyncCloudWorksClient(_client, self._retry_count)
         self.status_poll_delay = status_poll_delay
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
-        super().__init__(retry_count, self._client)
+        super().__init__(retry_count, _client)
 
     @classmethod
     def from_existing(cls, existing: Self, workspace_id: str, model_id: str) -> Self:
@@ -153,6 +151,22 @@ class AsyncClient(_AsyncBaseClient):
         )
         client._alm_client = _AsyncAlmClient(existing._client, model_id, existing._retry_count)
         return client
+
+    @property
+    def audit(self) -> _AsyncAuditClient:
+        """
+        The Audit Client provides access to the Anaplan Audit API.
+        For details, see https://vinzenzklass.github.io/anaplan-sdk/guides/audit/.
+        """
+        return self._audit
+
+    @property
+    def cw(self) -> _AsyncCloudWorksClient:
+        """
+        The Cloud Works Client provides access to the Anaplan Cloud Works API.
+        For details, see https://vinzenzklass.github.io/anaplan-sdk/guides/cloud_works/.
+        """
+        return self._cloud_works
 
     @property
     def transactional(self) -> _AsyncTransactionalClient:

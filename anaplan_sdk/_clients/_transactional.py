@@ -19,7 +19,6 @@ from anaplan_sdk.models import (
 
 class _TransactionalClient(_BaseClient):
     def __init__(self, client: httpx.Client, model_id: str, retry_count: int) -> None:
-        self._client = client
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
         super().__init__(retry_count, client)
 
