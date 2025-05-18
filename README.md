@@ -2,13 +2,13 @@
     <img width="160" height="160" src="https://vinzenzklass.github.io/anaplan-sdk/img/anaplan-sdk.webp" alt='Python' style="border-radius: 15px">
 </p>
 
-<h1 align="center" style="font-size: 3rem; font-weight: 600; margin: -15px 0; color: var(--md-typeset-color)">
-Anaplan SDK
-</h1>
+<h3 align="center" style="font-size: 3rem; font-weight: 600;">
+    Anaplan SDK
+</h3>
 
-<h1 align="center" style="font-size: 1.2rem; font-weight: 300; margin: 15px 0">
+<p align="center" style="font-size: 1.2rem; font-weight: 300; margin: 15px 0">
     Streamlined Python Interface for Anaplan
-</h1>
+</p>
 
 <div align="center">
     <a href="https://pepy.tech/projects/anaplan-sdk">
