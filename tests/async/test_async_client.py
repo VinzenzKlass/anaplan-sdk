@@ -1,3 +1,5 @@
+from asyncio import gather
+
 import pytest
 
 from anaplan_sdk import AsyncClient
@@ -6,13 +8,17 @@ from anaplan_sdk.exceptions import (
     InvalidCredentialsException,
     InvalidIdentifierException,
 )
-from anaplan_sdk.models import TaskStatus
+from anaplan_sdk.models import Model, TaskStatus, Workspace
 
 
 async def test_list_workspaces(client: AsyncClient):
-    workspaces = await client.list_workspaces()
+    workspaces, search = await gather(client.list_workspaces(), client.list_workspaces("Demo"))
     assert isinstance(workspaces, list)
+    assert all(isinstance(workspace, Workspace) for workspace in workspaces)
+    assert all(isinstance(workspace, Workspace) for workspace in search)
     assert len(workspaces) > 0
+    assert len(search) > 0
+    assert len(search) < len(workspaces)
 
 
 async def test_broken_list_files_raises_invalid_identifier_error(broken_client):
@@ -26,9 +32,13 @@ async def unauthenticated_client_raises_exception():
 
 
 async def test_list_models(client: AsyncClient):
-    models = await client.list_models()
+    models, search = await gather(client.list_models(), client.list_models("Demo"))
     assert isinstance(models, list)
+    assert all(isinstance(model, Model) for model in models)
+    assert all(isinstance(model, Model) for model in search)
     assert len(models) > 0
+    assert len(search) > 0
+    assert len(search) < len(models)
 
 
 async def test_list_actions(client: AsyncClient):
