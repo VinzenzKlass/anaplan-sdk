@@ -1,4 +1,3 @@
-import warnings
 from concurrent.futures import ThreadPoolExecutor
 from itertools import chain
 from typing import Any
@@ -164,23 +163,3 @@ class _TransactionalClient(_BaseClient):
         """
         res = self._post(f"{self._url}/modules/{module_id}/data", json=data)
         return res if "failures" in res else res["numberOfCellsChanged"]
-
-    def write_to_module(self, module_id: int, data: list[dict[str, Any]]) -> int | dict[str, Any]:
-        warnings.warn(
-            "`write_to_module()` is deprecated and will be removed in a future version. "
-            "Use `update_module_data()` instead.",
-            DeprecationWarning,
-            stacklevel=1,
-        )
-        return self.update_module_data(module_id, data)
-
-    def add_items_to_list(
-        self, list_id: int, items: list[dict[str, str | int | dict]]
-    ) -> InsertionResult:
-        warnings.warn(
-            "`add_items_to_list()` is deprecated and will be removed in a future version. "
-            "Use `insert_list_items()` instead.",
-            DeprecationWarning,
-            stacklevel=1,
-        )
-        return self.insert_list_items(list_id, items)
