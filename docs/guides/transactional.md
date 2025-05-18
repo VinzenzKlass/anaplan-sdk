@@ -1,8 +1,7 @@
 If you need to go beyond the standard flows of importing and exporting data to and from Anaplan, you likely will need
 some functionality of the Transactional APIs. The Transactional APIs can provide a lot of Information about the Model,
 the data that resides in the model, ongoing Tasks etc. You can also use them to insert data directly into Lists and
-Modules or read data from Lists and Modules. Whenever the need to do so arises, always consider if the same could be
-achieved using the Bulk API first.
+Modules or read data from Lists and Modules.
 
 ## Accessing the Namespace
 
@@ -40,24 +39,12 @@ Transactional Client to its own variable.
 
 === "Synchronous"
     ```python
-    anaplan = anaplan_sdk.Client(
-        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        model_id="11111111111111111111111111111111",
-        certificate="~/certs/anaplan.pem",
-        private_key="~/keys/anaplan.pem",
-    )
     trans_anaplan = anaplan.transactional
     lists = trans_anaplan.list_lists()
     modules = trans_anaplan.list_modules()
     ```
 === "Asynchronous"
     ```python
-    anaplan = anaplan_sdk.AsyncClient(
-        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        model_id="11111111111111111111111111111111",
-        certificate="~/certs/anaplan.pem",
-        private_key="~/keys/anaplan.pem",
-    )
     trans_anaplan = anaplan.transactional
     lists, modules = await gather(
        trans_anaplan.list_lists(), trans_anaplan.list_modules()

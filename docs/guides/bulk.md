@@ -13,63 +13,31 @@ the greatest efficiency.
 
 ### Instantiate a Client
 
-Clients are instantiated with the workspace, model and authentication information. There are two primary means of
-Authentication.
-
-#### Basic Authentication
-
-Basic Authentication is unsuitable for Production. Anaplan password policies force password changes every 30, 60 or 90
-days, depending on tenant settings, making this approach annoying to maintain and error-prone and is thus not
-recommended for production.
+Clients can be instantiated with just authentication information. This will give you access to all the 
+non-model-specific APIs. For the Bulk API, you also need to provide the `workspace_id` and `model_id`. Here, we're 
+using Certificate Authentication. You can read about other Authentication methods in the respective 
+[Guide](authentication.md).
 
 === "Synchronous"
     ```python
     import anaplan_sdk
-    
-    anaplan = anaplan_sdk.Client(
-        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        model_id="11111111111111111111111111111111",
-        user_email="admin@company.com",
-        password="my_super_secret_password",
-    )
-    ```
 
-=== "Asynchronous"
-    ```python
-    import anaplan_sdk
-    
-    anaplan = anaplan_sdk.AsyncClient(
-        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        model_id="11111111111111111111111111111111",
-        user_email="admin@company.com",
-        password="my_super_secret_password",
-    )
-    ```
-
-#### Certificate Authentication
-
-=== "Synchronous"
-    ```python
-    import anaplan_sdk
-    
     anaplan = anaplan_sdk.Client(
         workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
         model_id="11111111111111111111111111111111",
         certificate="~/certs/anaplan.pem",
         private_key="~/keys/anaplan.pem",
-        private_key_password="my_super_secret_password",
     )
     ```
 === "Asynchronous"
     ```python
     import anaplan_sdk
-    
+
     anaplan = anaplan_sdk.AsyncClient(
         workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
         model_id="11111111111111111111111111111111",
         certificate="~/certs/anaplan.pem",
         private_key="~/keys/anaplan.pem",
-        private_key_password="my_super_secret_password",
     )
     ```
 ### Listing Resources
@@ -84,16 +52,15 @@ provide the workspace and model IDs.
 
 === "Synchronous"
     ```python
-    workspaces, models = (
-        anaplan.list_workspaces(), anaplan.list_models()
-    ) # Globals, this will work on an instance with auth info only
+    # Globals, this will work on an instance with auth info only
+    workspaces = anaplan.list_workspaces()
+    models = anaplan.list_models()
     
-    imports, exports, actions, processes = (
-        anaplan.list_imports(),
-        anaplan.list_exports(),
-        anaplan.list_actions(),
-        anaplan.list_processes(),
-    ) # These require an instance with workspace and model info
+    # These require an instance with workspace and model info
+    imports = anaplan.list_imports()
+    exports = anaplan.list_exports()
+    actions = anaplan.list_actions()
+    processes = anaplan.list_processes()
     ```
 === "Asynchronous"
     ```python
@@ -114,9 +81,9 @@ provide the workspace and model IDs.
 === "Synchronous"
     ```python
     anaplan.upload_and_import(113000000000, b"Hello Anaplan", 112000000000)
-    
-    # Or if you need more control, 
-    # i.e. to upload multiple files or run things in between:
+    ```
+    Or, if you need more control i.e. to upload multiple files or run things in between:
+    ```python
     anaplan.upload_file(113000000000, b"Hello Anaplan")
     ...
     anaplan.run_action(112000000000)
@@ -124,9 +91,9 @@ provide the workspace and model IDs.
 === "Asynchronous"
     ```python
     await anaplan.upload_and_import(113000000000, b"Hello Anaplan", 112000000000)
-    
-    # Or if you need more control, 
-    # i.e. to upload multiple files or run things in between:
+    ```
+    Or, if you need more control i.e. to upload multiple files or run things in between:
+    ```python
     await anaplan.upload_file(113000000000, b"Hello Anaplan")
     ...
     await anaplan.run_action(112000000000)
@@ -137,8 +104,9 @@ provide the workspace and model IDs.
 === "Synchronous"
     ```python
     content = anaplan.export_and_download(116000000000)
-    
-    # Again, you can do this in multiple steps:
+    ```
+    Again, you can do this in multiple steps:
+    ```python
     anaplan.run_action(116000000000)
     ...
     content = anaplan.get_file(116000000000)
@@ -146,8 +114,9 @@ provide the workspace and model IDs.
 === "Asynchronous"
     ```python
     content = await anaplan.export_and_download(116000000000)
-    
-    # Again, you can do this in multiple steps:
+    ```
+    Again, you can do this in multiple steps:
+    ```python
     await anaplan.run_action(116000000000)
     ...
     content = await anaplan.get_file(116000000000)
@@ -166,6 +135,11 @@ One of the most common patterns you'll find working with Anaplan is:
 The recommended way to do this is to have your model builder create two actions that reference the same file, one
 importing into the list and the other one importing into the module and then wrap them into a process. This would again
 just look like this:
+
+??? danger "Processes are not atomic"
+    Please note that Anaplan Processes are not like Transactions in Databases, i.e. they are not atomic, and they will
+    not roll back if one of the actions fails. This means that if you run a process that contains multiple actions, and
+    one of them fails, all changes of all other actions that ran before the failure are permanently applied.
 
 === "Synchronous"
     ```python
@@ -199,7 +173,7 @@ This is by some margin the most efficient way to upload larger sets of data.
 
 ### Multiple sources and one Action
 
-Conversely, some imports in Anaplan may need to happen in an atomic manner. For this too, we can apply a very similar
+Conversely, some imports in Anaplan may need to read from several files. For this too, we can apply a very similar
 pattern:
 
 === "Synchronous"

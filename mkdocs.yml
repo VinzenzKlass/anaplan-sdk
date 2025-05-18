@@ -39,6 +39,7 @@ nav:
       - Quick Start: 'quickstart.md'
   - Guides:
       - Index: 'guides/index.md'
+      - Authentication: 'guides/authentication.md'
       - Bulk API: 'guides/bulk.md'
       - Transactional API: 'guides/transactional.md'
       - CloudWorks API: 'guides/cloud_works.md'
@@ -66,7 +67,7 @@ nav:
       - Models: 'api/models.md'
       - Exceptions: 'api/exceptions.md'
   - Concepts:
-      - Anaplan Explained: 'anaplan_explained.md'
+      - Anaplan Basics: 'anaplan_explained.md'
       - Bulk vs Transactional: 'guides/bulk_vs_transactional.md'
 
 plugins:
