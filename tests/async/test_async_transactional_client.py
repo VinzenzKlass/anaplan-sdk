@@ -33,6 +33,8 @@ async def test_get_model_status(client: AsyncClient):
 async def test_long_list_insertion(client: AsyncClient, test_list, list_items_long):
     result = await client.transactional.insert_list_items(test_list, list_items_long)
     assert isinstance(result, InsertionResult)
+    assert result.failures == []
+    assert result.added == 200_000
     assert result.total == 200_000
 
 
@@ -44,6 +46,8 @@ async def test_long_list_deletion(client: AsyncClient, test_list, list_items_lon
 async def test_short_list_insertion(client: AsyncClient, test_list, list_items_short):
     result = await client.transactional.insert_list_items(test_list, list_items_short)
     assert isinstance(result, InsertionResult)
+    assert result.failures == []
+    assert result.added == 1_000
     assert result.total == 1_000
 
 

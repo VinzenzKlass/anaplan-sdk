@@ -86,7 +86,15 @@ class _TransactionalClient(_BaseClient):
         """
         Insert new items to the given list. The items must be a list of dictionaries with at least
         the keys `code` and `name`. You can optionally pass further keys for parents, extra
-        properties etc.
+        properties etc. If you pass a long list, it will be split into chunks of 100,000 items, the
+        maximum allowed by the API.
+
+        **Warning**: If one or some of the requests timeout during large batch operations, the
+        operation may actually complete on the server. Retries for these chunks will then report
+        these items as "ignored" rather than "added", leading to misleading results. The results in
+        Anaplan will be correct, but this function may report otherwise. Be generous with your
+        timeouts and retries if you are using this function for large batch operations.
+
         :param list_id: The ID of the List.
         :param items: The items to insert into the List.
         :return: The result of the insertion, indicating how many items were added,
@@ -120,7 +128,15 @@ class _TransactionalClient(_BaseClient):
 
     def delete_list_items(self, list_id: int, items: list[dict[str, str | int]]) -> int:
         """
-        Deletes items from a List.
+        Deletes items from a List. If you pass a long list, it will be split into chunks of 100,000
+        items, the maximum allowed by the API.
+
+        **Warning**: If one or some of the requests timeout during large batch operations, the
+        operation may actually complete on the server. Retries for these chunks will then report
+        these items as "ignored" rather than "added", leading to misleading results. The results in
+        Anaplan will be correct, but this function may report otherwise. Be generous with your
+        timeouts and retries if you are using this function for large batch operations.
+
         :param list_id: The ID of the List.
         :param items: The items to delete from the List. Must be a dict with either `code` or `id`
                       as the keys to identify the records to delete.
@@ -155,8 +171,13 @@ class _TransactionalClient(_BaseClient):
         """
         Write the passed items to the specified module. If successful, the number of cells changed
         is returned, if only partially successful or unsuccessful, the response with the according
-        details is returned instead. For more details,
-        see: https://anaplan.docs.apiary.io/#UpdateModuleCellData.
+        details is returned instead.
+
+        **You can update a maximum of 100,000 cells or 15 MB of data (whichever is lower) in a
+        single request.** You must chunk your data accordingly. This is not done by this SDK,
+        since it is discouraged. For larger imports, you should use the Bulk API instead.
+
+        For more details see: https://anaplan.docs.apiary.io/#UpdateModuleCellData.
         :param module_id: The ID of the Module.
         :param data: The data to write to the Module.
         :return: The number of cells changed or the response with the according error details.
