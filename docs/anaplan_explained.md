@@ -1,38 +1,48 @@
-This section tries to explain Anaplan specific concepts and design choices to Developers. It is less interesting for
-people already familiar with Anaplan. Most of this page applies to the Bulk API, but some concepts are also
-applicable to the Transactional API. To understand how Anaplan handles data, you are going to have to wrap your head
-around some fundamental concepts, as well as gain a basic understanding of some Anaplan specific terminology.
+# Anaplan Basics
 
-The basic high-level view of any Anaplan Integration looks like this:
-<p align="center" style="margin: 20px 0 40px 0;">
-    <img src="../img/anaplan-overview.webp" alt='Anaplan high-level view' style="border-radius: 15px">
-</p>
-!!! tip "TLDR"
-    You upload contents to files. Import Actions import the content from these files into Lists and Modules. Export
-    Actions export the content of Lists and Modules to files. You can download these files. Processes are just sequences
-    of actions. Anything that references the same file must not be run concurrently.
+This guide explains key Anaplan concepts for developers working with the Bulk API.
 
+## Quick Overview
+
+- You upload data to files in Anaplan. The only supported file formats are `csv` and `xlsx`.
+- Import Actions move data from files to Lists & Modules
+- Export Actions move data from Lists & Modules to files
+- You download these files to retrieve data
+- Processes are sequences of actions
+- **Never** run concurrent operations that reference the same file.
 
 
-## Basic Concepts
+<iframe src="../assets/overview.html" style="width: 100%; height: 400px; border: none;"></iframe>
 
-- All data is exchanged through files. When uploading data, you are uploading the data to a file previously registered
-  with Anaplan. When downloading data, you are downloading a file either registered with Anaplan or produced by an
-  export action. Anaplan does not use (S)FTP, you will reference these files only by their ID and send or receive their
-  content in the body of HTTP Requests.
+## Files
+
+- All data exchange happens through files (referenced by ID (113000000000), not SFTP/FTP)
+- Files have a 48-hour lifetime
+- Files are **not safe for concurrent access**. You can override the content of a file while another import is reading
+  from it. Anaplan does not acquire locks and will not queue the task.
+
+## Actions
+
+All data is exchanged through files. When uploading data, you are uploading the data to a file previously registered
+with Anaplan. When downloading data, you are downloading a file either registered with Anaplan or produced by an
+export action. Anaplan does not use (S)FTP, you will reference these files only by their ID and send or receive their
+content in the body of HTTP Requests.
+
 - Anaplan has the following type of actions:
     - Imports - 112000000000 IDs.
     - Exports - 116000000000 IDs.
     - Processes - 118000000000 IDs.
     - Other Actions - 117000000000 IDs.
 
-- Imports read data from a file and load it into a module. Exports conversely load data from a module to a file. The
-  file id of the resulting file is identical to the export id. "Other Actions" move things around in Anaplan and can
-  also delete data etc. Processes are simply a sequence of the other three.
-- Invoking any Action will spawn a Task. You can then query the status of this task.
-- Files are **NOT Safe** for concurrent access. If you want to override the content of a file while an import is being
-  run against it, you can. Import and Export Actions, however, are. If you run an Export while an Import into a module
-  that will affect the data of the module you are trying to export from, Anaplan will queue this task. No dirty reads.
+Imports read data from a file and load it into a module. Exports conversely load data from a module to a file. The
+file id of the resulting file is identical to the export id. "Other Actions" move things around in Anaplan and can
+also delete data etc. Processes are simply a sequence of the other three.
+
+Invoking any Action will spawn a Task. You can then query the status of this task.
+
+Files are **NOT Safe** for concurrent access. If you want to override the content of a file while an import is being
+run against it, you can. Import and Export Actions, however, are. If you run an Export while an Import into a module
+that will affect the data of the module you are trying to export from, Anaplan will queue this task. No dirty reads.
 
 ## Imports
 
