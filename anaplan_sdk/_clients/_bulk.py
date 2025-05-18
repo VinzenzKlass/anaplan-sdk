@@ -473,8 +473,7 @@ class Client(_BaseClient):
         :return: The identifier of the spawned Task.
         """
         response = self._post(
-            f"{self._url}/{action_url(action_id)}/{action_id}/tasks",
-            json={"localeName": "en_US"},
+            f"{self._url}/{action_url(action_id)}/{action_id}/tasks", json={"localeName": "en_US"}
         )
         task_id = response.get("task").get("taskId")
         logger.info(f"Invoked Action '{action_id}', spawned Task: '{task_id}'.")

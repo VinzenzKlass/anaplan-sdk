@@ -12,11 +12,7 @@ from typing import Any, Callable, Coroutine, Iterator, Literal, Type, TypeVar
 import httpx
 from httpx import HTTPError, Response
 
-from .exceptions import (
-    AnaplanException,
-    AnaplanTimeoutException,
-    InvalidIdentifierException,
-)
+from .exceptions import AnaplanException, AnaplanTimeoutException, InvalidIdentifierException
 from .models import AnaplanModel
 from .models.cloud_works import (
     AmazonS3ConnectionInput,
