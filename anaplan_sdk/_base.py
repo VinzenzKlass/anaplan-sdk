@@ -1,7 +1,3 @@
-"""
-Provides Base Classes for this project.
-"""
-
 import asyncio
 import logging
 import random
@@ -11,18 +7,33 @@ from concurrent.futures import ThreadPoolExecutor
 from gzip import compress
 from itertools import chain
 from math import ceil
-from typing import Any, Callable, Coroutine, Iterator, Literal
+from typing import Any, Callable, Coroutine, Iterator, Literal, Type, TypeVar
 
 import httpx
 from httpx import HTTPError, Response
 
-from anaplan_sdk.exceptions import (
+from .exceptions import (
     AnaplanException,
     AnaplanTimeoutException,
     InvalidIdentifierException,
 )
+from .models import AnaplanModel
+from .models.cloud_works import (
+    AmazonS3ConnectionInput,
+    AzureBlobConnectionInput,
+    ConnectionBody,
+    GoogleBigQueryConnectionInput,
+    IntegrationInput,
+    IntegrationProcessInput,
+    ScheduleInput,
+)
 
 logger = logging.getLogger("anaplan_sdk")
+
+_json_header = {"Content-Type": "application/json"}
+_gzip_header = {"Content-Type": "application/x-gzip"}
+
+T = TypeVar("T", bound=AnaplanModel)
 
 
 class _BaseClient:
@@ -37,19 +48,26 @@ class _BaseClient:
         return self._run_with_retry(self._client.get, url).content
 
     def _post(self, url: str, json: dict | list) -> dict[str, Any]:
-        return self._run_with_retry(
-            self._client.post, url, headers={"Content-Type": "application/json"}, json=json
+        return self._run_with_retry(self._client.post, url, headers=_json_header, json=json).json()
+
+    def _put(self, url: str, json: dict | list) -> dict[str, Any]:
+        return (self._run_with_retry(self._client.put, url, headers=_json_header, json=json)).json()
+
+    def _patch(self, url: str, json: dict | list) -> dict[str, Any]:
+        return (
+            self._run_with_retry(self._client.patch, url, headers=_json_header, json=json)
         ).json()
 
-    def _post_empty(self, url: str) -> None:
-        self._run_with_retry(self._client.post, url)
+    def _delete(self, url: str) -> dict[str, Any]:
+        return (self._run_with_retry(self._client.delete, url, headers=_json_header)).json()
+
+    def _post_empty(self, url: str) -> dict[str, Any]:
+        res = self._run_with_retry(self._client.post, url)
+        return res.json() if res.num_bytes_downloaded > 0 else {}
 
     def _put_binary_gzip(self, url: str, content: bytes) -> Response:
         return self._run_with_retry(
-            self._client.put,
-            url,
-            headers={"Content-Type": "application/x-gzip"},
-            content=compress(content),
+            self._client.put, url, headers=_gzip_header, content=compress(content)
         )
 
     def __get_page(self, url: str, limit: int, offset: int, result_key: str, **kwargs) -> list:
@@ -111,20 +129,29 @@ class _AsyncBaseClient:
 
     async def _post(self, url: str, json: dict | list) -> dict[str, Any]:
         return (
-            await self._run_with_retry(
-                self._client.post, url, headers={"Content-Type": "application/json"}, json=json
-            )
+            await self._run_with_retry(self._client.post, url, headers=_json_header, json=json)
         ).json()
 
-    async def _post_empty(self, url: str) -> None:
-        await self._run_with_retry(self._client.post, url)
+    async def _put(self, url: str, json: dict | list) -> dict[str, Any]:
+        return (
+            await self._run_with_retry(self._client.put, url, headers=_json_header, json=json)
+        ).json()
+
+    async def _patch(self, url: str, json: dict | list) -> dict[str, Any]:
+        return (
+            await self._run_with_retry(self._client.patch, url, headers=_json_header, json=json)
+        ).json()
+
+    async def _delete(self, url: str) -> dict[str, Any]:
+        return (await self._run_with_retry(self._client.delete, url, headers=_json_header)).json()
+
+    async def _post_empty(self, url: str) -> dict[str, Any]:
+        res = await self._run_with_retry(self._client.post, url)
+        return res.json() if res.num_bytes_downloaded > 0 else {}
 
     async def _put_binary_gzip(self, url: str, content: bytes) -> Response:
         return await self._run_with_retry(
-            self._client.put,
-            url,
-            headers={"Content-Type": "application/x-gzip"},
-            content=compress(content),
+            self._client.put, url, headers=_gzip_header, content=compress(content)
         )
 
     async def __get_page(
@@ -176,6 +203,68 @@ class _AsyncBaseClient:
                 logger.info(f"Retrying for: {url}")
 
         raise AnaplanException("Exhausted all retries without a successful response or Error.")
+
+
+def construct_payload(model: Type[T], body: T | dict[str, Any]) -> dict[str, Any]:
+    """
+    Construct a payload for the given model and body.
+    :param model: The model class to use for validation.
+    :param body: The body to validate and optionally convert to a dictionary.
+    :return: A dictionary representation of the validated body.
+    """
+    if isinstance(body, dict):
+        body = model.model_validate(body)
+    return body.model_dump(exclude_none=True, by_alias=True)
+
+
+def connection_body_payload(body: ConnectionBody | dict[str, Any]) -> dict[str, Any]:
+    """
+    Construct a payload for the given integration body.
+    :param body: The body to validate and optionally convert to a dictionary.
+    :return: A dictionary representation of the validated body.
+    """
+    if isinstance(body, dict):
+        if "sasToken" in body:
+            body = AzureBlobConnectionInput.model_validate(body)
+        elif "secretAccessKey" in body:
+            body = AmazonS3ConnectionInput.model_validate(body)
+        else:
+            body = GoogleBigQueryConnectionInput.model_validate(body)
+    return body.model_dump(exclude_none=True, by_alias=True)
+
+
+def integration_payload(
+    body: IntegrationInput | IntegrationProcessInput | dict[str, Any],
+) -> dict[str, Any]:
+    """
+    Construct a payload for the given integration body.
+    :param body: The body to validate and optionally convert to a dictionary.
+    :return: A dictionary representation of the validated body.
+    """
+    if isinstance(body, dict):
+        body = (
+            IntegrationInput.model_validate(body)
+            if "jobs" in body
+            else IntegrationProcessInput.model_validate(body)
+        )
+    return body.model_dump(exclude_none=True, by_alias=True)
+
+
+def schedule_payload(
+    integration_id: str, schedule: ScheduleInput | dict[str, Any]
+) -> dict[str, Any]:
+    """
+    Construct a payload for the given integration ID and schedule.
+    :param integration_id: The ID of the integration.
+    :param schedule: The schedule to validate and optionally convert to a dictionary.
+    :return: A dictionary representation of the validated schedule.
+    """
+    if isinstance(schedule, dict):
+        schedule = ScheduleInput.model_validate(schedule)
+    return {
+        "integrationId": integration_id,
+        "schedule": schedule.model_dump(exclude_none=True, by_alias=True),
+    }
 
 
 def action_url(action_id: int) -> Literal["imports", "exports", "actions", "processes"]:
