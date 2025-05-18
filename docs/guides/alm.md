@@ -34,38 +34,25 @@ the `.get_revisions()` method like so:
       )
       lists = await anaplan.alm.get_revisions()
       ```
+???+ note
+      While you can instantiate a [Client](../api/sync/sync_client.md) without the workspace or model parameters, trying to access
+      the [Transactional Client](../api/sync/sync_transactional_client.md) on an instance without the `model_id` will raise a `ValueError`.
 
 For brevity, if you need to access only the ALM API or need to do so repeatedly, you can assign the
 ALM Client to its own variable.
 
 === "Synchronous"
       ```python
-      anaplan = anaplan_sdk.Client(
-          workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-          model_id="11111111111111111111111111111111",
-          certificate="~/certs/anaplan.pem",
-          private_key="~/keys/anaplan.pem",
-      )
       alm = anaplan.alm
       revisions = alm.get_revisions()
       syncs = alm.get_sync_tasks()
       ```
 === "Asynchronous"
       ```python
-      import asyncio
-      
-      anaplan = anaplan_sdk.AsyncClient(
-          workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-          model_id="11111111111111111111111111111111",
-          certificate="~/certs/anaplan.pem",
-          private_key="~/keys/anaplan.pem",
-      )
       alm = anaplan.alm
       revisions, syncs = await asyncio.gather(
           alm.get_revisions(), alm.get_sync_tasks()
       )
       ```
  
-!!! note
-      While you can instantiate a [Client](../api/sync/sync_client.md) without the workspace or model parameters, trying to access
-      the [Transactional Client](../api/sync/sync_transactional_client.md) on an instance without the `model_id` will raise a `ValueError`.
+

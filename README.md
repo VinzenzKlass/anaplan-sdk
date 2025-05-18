@@ -36,8 +36,6 @@ abstractions over all Anaplan APIs, allowing you to focus on business requiremen
 - **Flexible Client Options**: Both synchronous and asynchronous implementations
 - **Developer-Friendly**: Designed to reduce boilerplate code and accelerate development
 
----
-
 ## Getting Started
 
 Head over to the [Quick Start](quickstart.md) for basic usage instructions and examples.
