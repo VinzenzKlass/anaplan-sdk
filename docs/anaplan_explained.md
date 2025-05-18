@@ -12,7 +12,7 @@ This guide explains key Anaplan concepts for developers working with the Bulk AP
 - **Never** run concurrent operations that reference the same file.
 
 
-<iframe src="../assets/overview.html" style="width: 100%; height: 400px; border: none;"></iframe>
+<iframe id="bulk-overview"  src="../assets/overview.html"></iframe>
 
 ## Files
 

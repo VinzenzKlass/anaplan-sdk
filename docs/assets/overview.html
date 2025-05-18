@@ -1,25 +1,32 @@
 <!DOCTYPE html>
 <html lang="en">
+<!--suppress HtmlRequiredTitleElement -->
 <head>
     <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
     <style>
         html, body {
             width: 100%;
             height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-radius: 10px;
             margin: 0;
             padding: 0;
-            background: transparent;
             font-family: Roboto, apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
         }
 
         .container {
+            height: 100%;
             padding: 1rem;
             display: grid;
-            grid-template-columns: repeat(2, 3fr);
+            grid-template-columns: 1fr 2fr;
             gap: 1rem;
         }
 
         .grid {
+            height: 100%;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 1.2rem;
@@ -52,8 +59,8 @@
 
         .box:hover .box-content {
             transform: scale(1.1) translateY(4px);
+            color: #0075ff;
         }
-
     </style>
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -67,18 +74,25 @@
             svg.style.zIndex = '1'
             document.body.prepend(svg)
 
-            const clientBox = document.querySelector('.container > div:first-child .box')
-            const filesBox = document.querySelector('.grid .box:nth-child(1)')
-            const listsBox = document.querySelector('.grid .box:nth-child(2)')
-            const actionsBox = document.querySelector('.grid .box:nth-child(3)')
-            const modulesBox = document.querySelector('.grid .box:nth-child(4)')
+            const step = document.querySelector('#step')
+            const clientBox = document.querySelector('#client')
+            const filesBox = document.querySelector('#files')
+            const listsBox = document.querySelector('#lists')
+            const actionsBox = document.querySelector('#actions')
+            const modulesBox = document.querySelector('#modules')
 
             const connections = [
-                { from: clientBox, to: filesBox, type: 'horizontal', color: '#0B344D' },
-                { from: clientBox, to: actionsBox, type: 'horizontal', color: '#FF6100' },
-                { from: filesBox, to: actionsBox, type: 'vertical', color: '#0B344D' },
-                { from: actionsBox, to: listsBox, type: 'horizontal', color: '#0B344D' },
-                { from: actionsBox, to: modulesBox, type: 'horizontal', color: '#0B344D' },
+                { step: '1. Upload File', from: clientBox, to: filesBox, type: 'horizontal', color: '#0B344D' },
+                { step: '2. Invoke Action', from: clientBox, to: actionsBox, type: 'horizontal', color: '#FF6100' },
+                { step: '3. Read File', from: filesBox, to: actionsBox, type: 'vertical', color: '#0B344D' },
+                { step: '4. Import into List', from: actionsBox, to: listsBox, type: 'horizontal', color: '#0B344D' },
+                {
+                    step: '5. Import into Module',
+                    from: actionsBox,
+                    to: modulesBox,
+                    type: 'horizontal',
+                    color: '#0B344D',
+                },
             ]
 
             const paths = connections.map(conn => {
@@ -93,7 +107,6 @@
                     start = { x: fromRect.left + fromRect.width / 2, y: fromRect.bottom }
                     end = { x: toRect.left + toRect.width / 2, y: toRect.top }
                 }
-
                 const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
                 const midX = (start.x + end.x) / 2
                 const d = `M${start.x},${start.y} C${midX},${start.y} ${midX},${end.y} ${end.x},${end.y}`
@@ -109,56 +122,39 @@
                     strokeDasharray: pathLength,
                     strokeDashoffset: pathLength,
                 })
-
-                return { path, pathLength }
+                return { path, pathLength, step: conn.step }
             })
 
             function createAnimationSequence() {
                 const mainTimeline = gsap.timeline()
-
-                // Process each path sequentially
-                paths.forEach((p, index) => {
-                    // First make sure this path is visible and reset
+                for (const p of paths) {
+                    mainTimeline.set(step, { innerText: p.step })
                     mainTimeline.set(p.path, {
                         opacity: 1,
                         strokeDasharray: p.pathLength,
                         strokeDashoffset: p.pathLength,
                     })
-
-                    // Draw the path
                     mainTimeline.to(p.path, {
                         strokeDashoffset: 0,
                         duration: 0.8,
                         ease: 'power2.out',
                     })
-
-                    // Add flow effect
                     mainTimeline.to(p.path, {
                         strokeDasharray: '10 15',
                         duration: 0.5,
                     })
-
-                    // Animate the flow
                     mainTimeline.to(p.path, {
                         strokeDashoffset: -200,
                         duration: 2,
                         ease: 'linear',
                     })
-
-                    // Fade out this path before moving to next
                     mainTimeline.to(p.path, {
                         opacity: 0,
                         duration: 0.3,
                     })
-
-                    // Small pause before next path
                     mainTimeline.to({}, { duration: 0.5 })
-                })
-
-                // Add delay at end before restarting
+                }
                 mainTimeline.to({}, { duration: 1 })
-
-                // Loop the animation
                 mainTimeline.eventCallback('onComplete', () => {
                     createAnimationSequence()
                 })
@@ -170,8 +166,9 @@
 </head>
 <body>
 <div class="container">
-    <div style="height: 100%; display: flex; flex-direction: column; justify-content: center; column-span: 1">
-        <div class="box">
+    <div style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+        <h3 id="step"></h3>
+        <div class="box" id="client">
             <div class="box-content">
                 <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -180,15 +177,15 @@
                     <path d="m17 8-5-5-5 5" />
                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                 </svg>
-                <p>
-                    Client
-                </p>
+                <p>Client</p>
             </div>
         </div>
+        <div>
+        </div>
     </div>
-    <div style="padding: 1rem; border: 1px solid; border-radius: 8px; column-span: 2">
+    <div style="padding: 1rem; border: 2px solid #0075ff; border-radius: 12px;">
         <div class="grid">
-            <div class="box">
+            <div class="box" id="files">
                 <div class="box-content">
                     <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
                          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
@@ -203,47 +200,53 @@
                     </p>
                 </div>
             </div>
-            <div class="box">
-                <div class="box-content">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                         class="lucide lucide-list-icon lucide-list">
-                        <path d="M3 12h.01" />
-                        <path d="M3 18h.01" />
-                        <path d="M3 6h.01" />
-                        <path d="M8 12h13" />
-                        <path d="M8 18h13" />
-                        <path d="M8 6h13" />
-                    </svg>
-                    <p>
-                        Lists
-                    </p>
+            <div style="width: 100%; display: flex; justify-content: end;">
+                <div class="box" id="lists">
+                    <div class="box-content">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                             class="lucide lucide-list-icon lucide-list">
+                            <path d="M3 12h.01" />
+                            <path d="M3 18h.01" />
+                            <path d="M3 6h.01" />
+                            <path d="M8 12h13" />
+                            <path d="M8 18h13" />
+                            <path d="M8 6h13" />
+                        </svg>
+                        <p>
+                            Lists
+                        </p>
+                    </div>
                 </div>
             </div>
-            <div class="box">
-                <div class="box-content">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                         class="lucide lucide-circle-play-icon lucide-circle-play">
-                        <circle cx="12" cy="12" r="10" />
-                        <polygon points="10 8 16 12 10 16 10 8" />
-                    </svg>
-                    <p>
-                        Actions
-                    </p>
+            <div style="width: 100%; display: flex; justify-content: end;">
+                <div class="box" id="actions">
+                    <div class="box-content">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                             class="lucide lucide-circle-play-icon lucide-circle-play">
+                            <circle cx="12" cy="12" r="10" />
+                            <polygon points="10 8 16 12 10 16 10 8" />
+                        </svg>
+                        <p>
+                            Actions
+                        </p>
+                    </div>
                 </div>
             </div>
-            <div class="box">
-                <div class="box-content">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
-                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                         class="lucide lucide-table2-icon lucide-table-2">
-                        <path
-                            d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18" />
-                    </svg>
-                    <p>
-                        Modules
-                    </p>
+            <div style="width: 100%; display: flex; justify-content: end;">
+                <div class="box" id="modules">
+                    <div class="box-content">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                             class="lucide lucide-table2-icon lucide-table-2">
+                            <path
+                                d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18" />
+                        </svg>
+                        <p>
+                            Modules
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
