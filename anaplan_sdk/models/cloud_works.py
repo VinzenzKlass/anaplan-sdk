@@ -262,8 +262,7 @@ class SingleIntegration(Integration):
 
 class AnaplanSource(AnaplanModel):
     type: Literal["Anaplan"] = Field(
-        default="Anaplan",
-        description="Literal signifying this is an Anaplan source.",
+        default="Anaplan", description="Literal signifying this is an Anaplan source."
     )
     action_id: int = Field(
         description=(
@@ -294,20 +293,18 @@ class TableSource(AnaplanModel):
 
 class TableTarget(TableSource):
     overwrite: bool = Field(
-        default=False,
-        description="Whether to overwrite the table if it exists.",
+        default=False, description="Whether to overwrite the table if it exists."
     )
 
 
 class AnaplanTarget(AnaplanModel):
     type: Literal["Anaplan"] = Field(
-        default="Anaplan",
-        description="Literal signifying this is an Anaplan target.",
+        default="Anaplan", description="Literal signifying this is an Anaplan target."
     )
     action_id: int = Field(
         description=(
             "The ID of the action to be used as a target. This can be a process, or import."
-        ),
+        )
     )
     file_id: int = Field(description="The ID of the file to be used as a target.")
 
@@ -342,8 +339,7 @@ class IntegrationInput(AnaplanModel):
         ),
     )
     nux_visible: bool = Field(
-        default=False,
-        description="Whether this integration is visible in the UI.",
+        default=False, description="Whether this integration is visible in the UI."
     )
     jobs: list[IntegrationJobInput] = Field(
         description="The jobs in this integration.", min_length=1

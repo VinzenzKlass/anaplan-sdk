@@ -247,12 +247,7 @@ def notification_dict(name):
         "integrationIds": [],
         "channels": ["in_app"],
         "notifications": {
-            "config": [
-                {
-                    "type": "full_failure",
-                    "users": ["8a868cd97f8f98a3017fe45cbdc65e25"],
-                }
-            ],
+            "config": [{"type": "full_failure", "users": ["8a868cd97f8f98a3017fe45cbdc65e25"]}]
         },
     }
 
