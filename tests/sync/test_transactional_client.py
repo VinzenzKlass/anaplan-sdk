@@ -2,7 +2,7 @@ from anaplan_sdk import Client
 from anaplan_sdk.models import InsertionResult, ListMetadata, ModelStatus
 
 
-def test_list_workspaces(client: Client):
+def test_list_modules(client: Client):
     modules = client.transactional.list_modules()
     assert isinstance(modules, list)
     assert len(modules) > 0

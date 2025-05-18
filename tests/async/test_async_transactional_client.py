@@ -2,7 +2,7 @@ from anaplan_sdk import AsyncClient
 from anaplan_sdk.models import InsertionResult, ListMetadata, ModelStatus
 
 
-async def test_list_workspaces(client: AsyncClient):
+async def test_list_modules(client: AsyncClient):
     modules = await client.transactional.list_modules()
     assert isinstance(modules, list)
     assert len(modules) > 0
