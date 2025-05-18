@@ -4,7 +4,6 @@
 }
 
 :root, [data-md-color-scheme=default] {
-    --md-code-bg-color: #efefef;
     --header-bg-color: rgba(0, 75, 255, 0.75);
 }
 

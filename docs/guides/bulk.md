@@ -13,63 +13,31 @@ the greatest efficiency.
 
 ### Instantiate a Client
 
-Clients are instantiated with the workspace, model and authentication information. There are two primary means of
-Authentication.
-
-#### Basic Authentication
-
-Basic Authentication is unsuitable for Production. Anaplan password policies force password changes every 30, 60 or 90
-days, depending on tenant settings, making this approach annoying to maintain and error-prone and is thus not
-recommended for production.
+Clients can be instantiated with just authentication information. This will give you access to all the 
+non-model-specific APIs. For the Bulk API, you also need to provide the `workspace_id` and `model_id`. Here, we're  
+using Certificate Authentication. You can read about other Authentication methods in the respective 
+[Guide](authentication.md).
 
 === "Synchronous"
     ```python
     import anaplan_sdk
-    
-    anaplan = anaplan_sdk.Client(
-        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        model_id="11111111111111111111111111111111",
-        user_email="admin@company.com",
-        password="my_super_secret_password",
-    )
-    ```
 
-=== "Asynchronous"
-    ```python
-    import anaplan_sdk
-    
-    anaplan = anaplan_sdk.AsyncClient(
-        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        model_id="11111111111111111111111111111111",
-        user_email="admin@company.com",
-        password="my_super_secret_password",
-    )
-    ```
-
-#### Certificate Authentication
-
-=== "Synchronous"
-    ```python
-    import anaplan_sdk
-    
     anaplan = anaplan_sdk.Client(
         workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
         model_id="11111111111111111111111111111111",
         certificate="~/certs/anaplan.pem",
         private_key="~/keys/anaplan.pem",
-        private_key_password="my_super_secret_password",
     )
     ```
 === "Asynchronous"
     ```python
     import anaplan_sdk
-    
+
     anaplan = anaplan_sdk.AsyncClient(
         workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
         model_id="11111111111111111111111111111111",
         certificate="~/certs/anaplan.pem",
         private_key="~/keys/anaplan.pem",
-        private_key_password="my_super_secret_password",
     )
     ```
 ### Listing Resources

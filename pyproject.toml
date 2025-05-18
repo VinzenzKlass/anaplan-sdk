@@ -29,7 +29,8 @@ dev = [
     "polars>=1.29.0",
     "griffe-fieldz>=0.2.1",
     "oauthlib>=3.2.2",
-    "cryptography>=42.0.7"
+    "cryptography>=42.0.7",
+    "pykeepass>=4.1.1.post1",
 ]
 
 [project.urls]

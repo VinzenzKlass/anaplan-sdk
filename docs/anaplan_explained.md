@@ -1,6 +1,10 @@
 # Anaplan Basics
 
-This guide explains key Anaplan concepts for developers working with the Bulk API.
+This guide explains key Anaplan concepts for developers working with the Bulk API. You can think of the flow of uploading data to Anaplan with the Bulk API like so:
+
+<iframe id="bulk-overview"  src="../assets/overview.html"></iframe>
+
+---
 
 ## Quick Overview
 
@@ -11,8 +15,6 @@ This guide explains key Anaplan concepts for developers working with the Bulk AP
 - Processes are sequences of actions
 - **Never** run concurrent operations that reference the same file.
 
-
-<iframe id="bulk-overview"  src="../assets/overview.html"></iframe>
 
 ## Files
 
