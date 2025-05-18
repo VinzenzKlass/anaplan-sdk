@@ -133,9 +133,10 @@ class _TransactionalClient(_BaseClient):
 
         **Warning**: If one or some of the requests timeout during large batch operations, the
         operation may actually complete on the server. Retries for these chunks will then report
-        these items as "ignored" rather than "added", leading to misleading results. The results in
-        Anaplan will be correct, but this function may report otherwise. Be generous with your
-        timeouts and retries if you are using this function for large batch operations.
+        none of these items as deleted, since on the retry none are removed, leading to misleading
+        results. The results in Anaplan will be correct, but this function may report otherwise.
+        Be generous with your timeouts and retries if you are using this function for large batch
+        operations.
 
         :param list_id: The ID of the List.
         :param items: The items to delete from the List. Must be a dict with either `code` or `id`
