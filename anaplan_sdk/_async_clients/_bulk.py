@@ -222,9 +222,10 @@ class AsyncClient(_AsyncBaseClient):
     async def list_workspaces(self, search_pattern: str | None = None) -> list[Workspace]:
         """
         Lists all the Workspaces the authenticated user has access to.
-        :param search_pattern: Optional filter for workspaces. When provided, case-insensitive
-               matches workspaces with names containing this string. When None (default),
-               returns all workspaces.
+        :param search_pattern: Optionally filter for specific workspaces. When provided,
+               case-insensitive matches workspaces with names containing this string.
+               You can use the wildcards `%` for 0-n characters, and `_` for exactly 1 character.
+               When None (default), returns all users.
         :return: The List of Workspaces.
         """
         params = {"tenantDetails": "true"}
@@ -240,8 +241,10 @@ class AsyncClient(_AsyncBaseClient):
     async def list_models(self, search_pattern: str | None = None) -> list[Model]:
         """
         Lists all the Models the authenticated user has access to.
-        :param search_pattern: Optional filter for models. When provided, case-insensitive matches
-               models with names containing this string. When None (default), returns all models.
+        :param search_pattern: Optionally filter for specific models. When provided,
+               case-insensitive matches models names containing this string.
+               You can use the wildcards `%` for 0-n characters, and `_` for exactly 1 character.
+               When None (default), returns all users.
         :return: The List of Models.
         """
         params = {"modelDetails": "true"}

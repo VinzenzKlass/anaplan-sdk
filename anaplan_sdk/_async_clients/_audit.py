@@ -17,8 +17,10 @@ class _AsyncAuditClient(_AsyncBaseClient):
     async def list_users(self, search_pattern: str | None = None) -> list[User]:
         """
         Lists all the Users in the authenticated users default tenant.
-        :param search_pattern: Optional filter for users. When provided, case-insensitive matches
-               users with emails containing this string. When None (default), returns all users.
+        :param search_pattern: Optionally filter for specific users. When provided,
+               case-insensitive matches users with emails or names containing this string.
+               You can use the wildcards `%` for 0-n characters, and `_` for exactly 1 character.
+               When None (default), returns all users.
         :return: The List of Users.
         """
         params = {"s": search_pattern} if search_pattern else None
