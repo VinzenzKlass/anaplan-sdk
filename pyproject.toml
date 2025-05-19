@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-cert = ["cryptography>=42.0.7,<45.0.0"]
+cert = ["cryptography>=42.0.7,<46.0.0"]
 oauth = ["oauthlib>=3.0.0,<4.0.0"]
 
 [dependency-groups]
@@ -40,7 +40,7 @@ dev = [
     "polars>=1.29.0",
     "griffe-fieldz>=0.2.1",
     "oauthlib>=3.2.2",
-    "cryptography>=42.0.7",
+    "cryptography>=45.0.0",
 ]
 
 [project.urls]
