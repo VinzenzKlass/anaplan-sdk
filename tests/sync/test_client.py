@@ -6,13 +6,17 @@ from anaplan_sdk.exceptions import (
     InvalidCredentialsException,
     InvalidIdentifierException,
 )
-from anaplan_sdk.models import TaskStatus
+from anaplan_sdk.models import Model, TaskStatus, Workspace
 
 
-def test_list_workspaces(client: Client):
-    workspaces = client.list_workspaces()
+def test_list_workspaces(client):
+    workspaces, search = client.list_workspaces(), client.list_workspaces("Demo")
     assert isinstance(workspaces, list)
+    assert all(isinstance(workspace, Workspace) for workspace in workspaces)
+    assert all(isinstance(workspace, Workspace) for workspace in search)
     assert len(workspaces) > 0
+    assert len(search) > 0
+    assert len(search) < len(workspaces)
 
 
 def test_broken_list_files_raises_invalid_identifier_error(broken_client):
@@ -25,10 +29,14 @@ def unauthenticated_client_raises_exception():
         _ = Client(user_email="invalid_email", password="pass")
 
 
-def test_list_models(client: Client):
-    models = client.list_models()
+def test_list_models(client):
+    models, search = client.list_models(), client.list_models("Demo")
     assert isinstance(models, list)
+    assert all(isinstance(model, Model) for model in models)
+    assert all(isinstance(model, Model) for model in search)
     assert len(models) > 0
+    assert len(search) > 0
+    assert len(search) < len(models)
 
 
 def test_list_actions(client: Client):
