@@ -1,4 +1,3 @@
-import warnings
 from asyncio import gather
 from itertools import chain
 from typing import Any
@@ -16,12 +15,9 @@ from anaplan_sdk.models import (
     Module,
 )
 
-warnings.filterwarnings("always", category=DeprecationWarning)
-
 
 class _AsyncTransactionalClient(_AsyncBaseClient):
     def __init__(self, client: httpx.AsyncClient, model_id: str, retry_count: int) -> None:
-        self._client = client
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
         super().__init__(retry_count, client)
 
@@ -96,7 +92,15 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         """
         Insert new items to the given list. The items must be a list of dictionaries with at least
         the keys `code` and `name`. You can optionally pass further keys for parents, extra
-        properties etc.
+        properties etc. If you pass a long list, it will be split into chunks of 100,000 items, the
+        maximum allowed by the API.
+
+        **Warning**: If one or some of the requests timeout during large batch operations, the
+        operation may actually complete on the server. Retries for these chunks will then report
+        these items as "ignored" rather than "added", leading to misleading results. The results in
+        Anaplan will be correct, but this function may report otherwise. Be generous with your
+        timeouts and retries if you are using this function for large batch operations.
+
         :param list_id: The ID of the List.
         :param items: The items to insert into the List.
         :return: The result of the insertion, indicating how many items were added,
@@ -127,7 +131,16 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
 
     async def delete_list_items(self, list_id: int, items: list[dict[str, str | int]]) -> int:
         """
-        Deletes items from a List.
+        Deletes items from a List. If you pass a long list, it will be split into chunks of 100,000
+        items, the maximum allowed by the API.
+
+        **Warning**: If one or some of the requests timeout during large batch operations, the
+        operation may actually complete on the server. Retries for these chunks will then report
+        none of these items as deleted, since on the retry none are removed, leading to misleading
+        results. The results in Anaplan will be correct, but this function may report otherwise.
+        Be generous with your timeouts and retries if you are using this function for large batch
+        operations.
+
         :param list_id: The ID of the List.
         :param items: The items to delete from the List. Must be a dict with either `code` or `id`
                       as the keys to identify the records to delete.
@@ -162,33 +175,16 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         """
         Write the passed items to the specified module. If successful, the number of cells changed
         is returned, if only partially successful or unsuccessful, the response with the according
-        details is returned instead. For more details,
-        see: https://anaplan.docs.apiary.io/#UpdateModuleCellData.
+        details is returned instead.
+
+        **You can update a maximum of 100,000 cells or 15 MB of data (whichever is lower) in a
+        single request.** You must chunk your data accordingly. This is not done by this SDK,
+        since it is discouraged. For larger imports, you should use the Bulk API instead.
+
+        For more details see: https://anaplan.docs.apiary.io/#UpdateModuleCellData.
         :param module_id: The ID of the Module.
         :param data: The data to write to the Module.
         :return: The number of cells changed or the response with the according error details.
         """
         res = await self._post(f"{self._url}/modules/{module_id}/data", json=data)
         return res if "failures" in res else res["numberOfCellsChanged"]
-
-    async def write_to_module(
-        self, module_id: int, data: list[dict[str, Any]]
-    ) -> int | dict[str, Any]:
-        warnings.warn(
-            "`write_to_module()` is deprecated and will be removed in a future version. "
-            "Use `update_module_data()` instead.",
-            DeprecationWarning,
-            stacklevel=1,
-        )
-        return await self.update_module_data(module_id, data)
-
-    async def add_items_to_list(
-        self, list_id: int, items: list[dict[str, str | int | dict]]
-    ) -> InsertionResult:
-        warnings.warn(
-            "`add_items_to_list()` is deprecated and will be removed in a future version. "
-            "Use `insert_list_items()` instead.",
-            DeprecationWarning,
-            stacklevel=1,
-        )
-        return await self.insert_list_items(list_id, items)
