@@ -142,6 +142,41 @@ will need to copy the entire redirect URI from your browser and paste it into th
     Unfortunately, registering localhost redirect URIs is not supported by Anaplan. This means we cannot intercept the
     redirect URI and extract the `authorization_code` automatically. This is a limitation of Anaplan's OAuth2 implementation. See [this Community Note](https://community.anaplan.com/discussion/156599/oauth-rediredt-url-port-for-desktop-apps).
 
+### Authorization Code
+
+When using OAuth authentication, the default behavior prompts you to manually open a URL, authorize the application, and paste the redirect URL back into your terminal. However, you can customize this flow by providing the `on_auth_code` callback.
+
+The `on_auth_code` callback lets you hook into the Auth Flow to handle the authorization URL programmatically and return the authorization response. `on_auth_code` must be a callable that takes the authorization URL as a single argument of type `str` and returns the redirect URL as a `str`.
+
+=== "Synchronous"
+    ```python
+    def on_auth_code(redirect_uri: str) -> str:
+        return input(f"Go fetch! {redirect_uri}\nPaste here: ")
+
+    anaplan = anaplan_sdk.Client(
+        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        model_id="11111111111111111111111111111111",
+        redirect_uri="https://vinzenzklass.github.io/anaplan-sdk",
+        client_id="my_anaplan_oauth_client_id",
+        client_secret="my_anaplan_oauth_client_secret",
+        on_auth_code=on_auth_code,
+    )
+    ```
+=== "Asynchronous"
+    ```python
+    def on_auth_code(redirect_uri: str) -> str:
+        return input(f"Go fetch! {redirect_uri}\nPaste here: ")
+
+    anaplan = anaplan_sdk.AsyncClient(
+        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        model_id="11111111111111111111111111111111",
+        redirect_uri="https://vinzenzklass.github.io/anaplan-sdk",
+        client_id="my_anaplan_oauth_client_id",
+        client_secret="my_anaplan_oauth_client_secret",
+        on_auth_code=on_auth_code,
+    )
+    ```
+
 ### Refresh Tokens
 
 You can extend the above example to also pass a `refresh_token` to authenticate without any user interaction, and 

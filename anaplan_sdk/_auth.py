@@ -144,6 +144,7 @@ class AnaplanOauth2AuthCodeAuth(_AnaplanAuth):
         redirect_uri: str,
         refresh_token: str | None = None,
         scope: str = "openid profile email offline_access",
+        on_auth_code: Callable[[str], str] | None = None,
         on_token_refresh: Callable[[dict[str, str]], None] | None = None,
     ):
         try:
@@ -163,6 +164,7 @@ class AnaplanOauth2AuthCodeAuth(_AnaplanAuth):
         self._refresh_token = refresh_token
         self._scope = scope
         self._id_token = None
+        self._on_auth_code = on_auth_code
         self._on_token_refresh = on_token_refresh
         if not refresh_token:
             self.__auth_code_flow()
@@ -195,13 +197,17 @@ class AnaplanOauth2AuthCodeAuth(_AnaplanAuth):
         try:
             logger.info("Creating Authentication Token with OAuth2 Authorization Code Flow.")
             url, _, _ = self._oauth.prepare_authorization_request(
-                "https://us1a.app.anaplan.com/auth/authorize",
+                "https://us1a.app.anaplan.com/auth/prelogin",
                 redirect_url=self._redirect_uri,
                 scope=self._scope,
             )
-            authorization_response = input(
-                f"Please go to {url} and authorize the app.\n"
-                "Then paste the entire redirect URL here: "
+            authorization_response = (
+                self._on_auth_code(url)
+                if self._on_auth_code
+                else input(
+                    f"Please go to {url} and authorize the app.\n"
+                    "Then paste the entire redirect URL here: "
+                )
             )
             url, headers, body = self._oauth.prepare_token_request(
                 token_url=self._token_url,
@@ -211,7 +217,7 @@ class AnaplanOauth2AuthCodeAuth(_AnaplanAuth):
             )
             self._parse_auth_response(httpx.post(url=url, headers=headers, content=body))
         except (httpx.HTTPError, ValueError, TypeError, OAuth2Error) as error:
-            raise AnaplanException("Error during OAuth2 authorization flow.") from error
+            raise InvalidCredentialsException("Error during OAuth2 authorization flow.") from error
 
 
 def create_auth(
@@ -225,6 +231,7 @@ def create_auth(
     redirect_uri: str | None = None,
     refresh_token: str | None = None,
     oauth2_scope: str = "openid profile email offline_access",
+    on_auth_code: Callable[[str], str] | None = None,
     on_token_refresh: Callable[[dict[str, str]], None] | None = None,
 ) -> _AnaplanAuth:
     if certificate and private_key:
@@ -238,6 +245,7 @@ def create_auth(
             redirect_uri=redirect_uri,
             refresh_token=refresh_token,
             scope=oauth2_scope,
+            on_auth_code=on_auth_code,
             on_token_refresh=on_token_refresh,
         )
     raise ValueError(
