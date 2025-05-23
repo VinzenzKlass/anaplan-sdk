@@ -58,6 +58,7 @@ class Client(_BaseClient):
         redirect_uri: str | None = None,
         refresh_token: str | None = None,
         oauth2_scope: str = "openid profile email offline_access",
+        on_auth_code: Callable[[str], str] | None = None,
         on_token_refresh: Callable[[dict[str, str]], None] | None = None,
         timeout: float | httpx.Timeout = 30,
         retry_count: int = 2,
@@ -94,6 +95,9 @@ class Client(_BaseClient):
         :param refresh_token: If you have a valid refresh token, you can pass it to skip the
                               interactive authentication code step.
         :param oauth2_scope: The scope of the Oauth2 token, if you want to narrow it.
+        :param on_auth_code: A callback that takes the redirect URI as a single argument and must
+                     return the entire response URI. This will substitute the interactive
+                     authentication code step in the terminal.
         :param on_token_refresh: A callback function that is called whenever the token is refreshed.
                                  With this you can for example securely store the token in your
                                  application or on your server for later reuse. The function
@@ -130,6 +134,7 @@ class Client(_BaseClient):
                     redirect_uri=redirect_uri,
                     refresh_token=refresh_token,
                     oauth2_scope=oauth2_scope,
+                    on_auth_code=on_auth_code,
                     on_token_refresh=on_token_refresh,
                 )
             ),
