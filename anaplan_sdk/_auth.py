@@ -1,13 +1,22 @@
+import asyncio
+import inspect
 import logging
 import os
+import threading
 from base64 import b64encode
-from typing import Callable
+from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Awaitable, Callable, Coroutine
 
 import httpx
 
 from .exceptions import AnaplanException, InvalidCredentialsException, InvalidPrivateKeyException
 
 logger = logging.getLogger("anaplan_sdk")
+
+AuthCodeCallback = (Callable[[str], str] | Callable[[str], Awaitable[str]]) | None
+AuthTokenRefreshCallback = (
+    Callable[[dict[str, str]], None] | Callable[[dict[str, str]], Awaitable[None]]
+) | None
 
 
 class _AnaplanAuth(httpx.Auth):
@@ -144,8 +153,8 @@ class AnaplanOauth2AuthCodeAuth(_AnaplanAuth):
         redirect_uri: str,
         refresh_token: str | None = None,
         scope: str = "openid profile email offline_access",
-        on_auth_code: Callable[[str], str] | None = None,
-        on_token_refresh: Callable[[dict[str, str]], None] | None = None,
+        on_auth_code: AuthCodeCallback = None,
+        on_token_refresh: AuthTokenRefreshCallback = None,
     ):
         try:
             from oauthlib.oauth2 import WebApplicationClient
@@ -188,7 +197,7 @@ class AnaplanOauth2AuthCodeAuth(_AnaplanAuth):
         self._token = token["access_token"]
         self._refresh_token = token["refresh_token"]
         if self._on_token_refresh:
-            self._on_token_refresh(token)
+            _run_callback(self._on_token_refresh, token)
         self._id_token = token.get("id_token")
 
     def __auth_code_flow(self):
@@ -202,7 +211,7 @@ class AnaplanOauth2AuthCodeAuth(_AnaplanAuth):
                 scope=self._scope,
             )
             authorization_response = (
-                self._on_auth_code(url)
+                _run_callback(self._on_auth_code, url)
                 if self._on_auth_code
                 else input(
                     f"Please go to {url} and authorize the app.\n"
@@ -231,8 +240,8 @@ def create_auth(
     redirect_uri: str | None = None,
     refresh_token: str | None = None,
     oauth2_scope: str = "openid profile email offline_access",
-    on_auth_code: Callable[[str], str] | None = None,
-    on_token_refresh: Callable[[dict[str, str]], None] | None = None,
+    on_auth_code: AuthCodeCallback = None,
+    on_token_refresh: AuthTokenRefreshCallback = None,
 ) -> _AnaplanAuth:
     if certificate and private_key:
         return AnaplanCertAuth(certificate, private_key, private_key_password)
@@ -254,3 +263,32 @@ def create_auth(
         "- certificate and private_key, or\n"
         "- client_id, client_secret, and redirect_uri"
     )
+
+
+def _run_callback(func, *arg, **kwargs):
+    if not inspect.iscoroutinefunction(func):
+        return func(*arg, **kwargs)
+    coro = func(*arg, **kwargs)
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        return asyncio.run(coro)
+
+    if threading.current_thread() is threading.main_thread():
+        if not loop.is_running():
+            return loop.run_until_complete(coro)
+        else:
+            with ThreadPoolExecutor() as pool:
+                future = pool.submit(__run_in_new_loop, coro)
+                return future.result(timeout=30)
+    else:
+        return asyncio.run_coroutine_threadsafe(coro, loop).result()
+
+
+def __run_in_new_loop(coroutine: Coroutine[Any, Any, Any]):
+    new_loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(new_loop)
+    try:
+        return new_loop.run_until_complete(coroutine)
+    finally:
+        new_loop.close()

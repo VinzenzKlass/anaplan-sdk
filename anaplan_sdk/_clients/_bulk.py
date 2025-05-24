@@ -99,6 +99,7 @@ class Client(_BaseClient):
                      return the entire response URI. This will substitute the interactive
                      authentication code step in the terminal.
         :param on_token_refresh: A callback function that is called whenever the token is refreshed.
+                                 This includes the initial token retrieval and any subsequent calls.
                                  With this you can for example securely store the token in your
                                  application or on your server for later reuse. The function
                                  must accept a single argument, which is the token dictionary
