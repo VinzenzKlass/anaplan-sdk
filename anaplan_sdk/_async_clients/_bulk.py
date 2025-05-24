@@ -98,14 +98,21 @@ class AsyncClient(_AsyncBaseClient):
                              a synchronous function or an async coroutine function - both will be
                              handled appropriately regardless of the execution context (in a thread,
                              with or without an event loop, etc.).
+                             **Note**: When using asynchronous callbacks in complex applications
+                             with multiple event loops, be aware that callbacks may execute in a
+                             separate event loop context from where they were defined, which can
+                             make debugging challenging.
         :param on_token_refresh: A callback function that is called whenever the token is refreshed.
                                  This includes the initial token retrieval and any subsequent calls.
                                  With this you can for example securely store the token in your
                                  application or on your server for later reuse. The function
                                  must accept a single argument, which is the token dictionary
                                  returned by the Oauth2 token endpoint and does not return anything.
-                                 Like `on_auth_code`, this can be either a synchronous function or
-                                 an async coroutine function.
+                                 This can be either a synchronous function or an async coroutine
+                                 function. **Note**: When using asynchronous callbacks in complex
+                                 applications with multiple event loops, be aware that callbacks
+                                 may execute in a separate event loop context from where they were
+                                 defined, which can make debugging challenging.
         :param timeout: The timeout in seconds for the HTTP requests. Alternatively, you can pass
                         an instance of `httpx.Timeout` to set the timeout for the HTTP requests.
         :param retry_count: The number of times to retry an HTTP request if it fails. Set this to 0

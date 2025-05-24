@@ -148,6 +148,12 @@ When using OAuth authentication, the default behavior prompts you to manually op
 
 The `on_auth_code` callback lets you hook into the Auth Flow to handle the authorization URL programmatically and return the authorization response. `on_auth_code` must be a callable that takes the authorization URL as a single argument of type `str` and returns the redirect URL as a `str`.
 
+
+???+ warning "Asynchronous Callbacks"
+    Both `on_auth_code` and `on_token_refresh` can be either synchronous or asynchronous. When using asynchronous 
+    callbacks in complex applications with multiple event loops, be aware that callbacks may execute in a separate 
+    event loop context from where they were defined, which can make debugging challenging.
+
 === "Synchronous"
     ```python
     def on_auth_code(redirect_uri: str) -> str:
