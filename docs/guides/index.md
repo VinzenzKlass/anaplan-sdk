@@ -16,6 +16,6 @@ respective Guides to get started with each API.
 - [__CloudWorks API__](cloud_works.md) for orchestrating and automating your Anaplan processes
 - [__ALM API__](alm.md) for managing your Anaplan assets and their lifecycle
 - [__Audit API__](audit.md) for tracking changes and maintaining compliance
-- The Auth APIs are used internally by the SDK to automatically manage authentication.
+- [__Auth APIs__](authentication.md) are used internally by the SDK to automatically manage authentication.
 
 </div>

@@ -3,3 +3,9 @@
     instance of [Client](sync_client.md). For more details, see the [Guide](../../guides/transactional.md).
 
 ::: anaplan_sdk._clients._TransactionalClient
+
+<style>
+    [data-md-component="toc"] li:first-of-type{
+        display:  none!important;
+    }
+</style>
