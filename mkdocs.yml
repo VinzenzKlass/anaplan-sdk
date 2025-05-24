@@ -1,5 +1,5 @@
 site_name: Anaplan SDK
-site_description: Provides pythonic access to the Anaplan API.
+site_description: Streamlined Python Interface for Anaplan
 site_url: https://vinzenzklass.github.io/anaplan-sdk/
 repo_name: VinzenzKlass/anaplan-sdk
 repo_url: https://github.com/VinzenzKlass/anaplan-sdk
@@ -24,6 +24,7 @@ theme:
     - content.code.copy
     - content.tabs.link
     - search.suggest
+    - navigation.instant
     - navigation.tabs
     - navigation.top
 
@@ -64,7 +65,12 @@ nav:
           - CloudWorks:
               - Client: 'api/sync/sync_cw_client.md'
               - Flows: 'api/sync/sync_flows_client.md'
-      - Models: 'api/models.md'
+      - Models:
+         - ALM: 'api/models/alm.md'
+         - Bulk: 'api/models/bulk.md'
+         - CloudWorks: 'api/models/cloud_works.md'
+         - Flows: 'api/models/flows.md'
+         - Transactional: 'api/models/transactional.md'
       - Exceptions: 'api/exceptions.md'
   - Concepts:
       - Anaplan Basics: 'anaplan_explained.md'
