@@ -1,6 +1,6 @@
 [project]
 name = "anaplan-sdk"
-version = "0.4.1"
+version = "0.4.2"
 description = "Streamlined Python Interface for Anaplan"
 license = "Apache-2.0"
 authors = [{ name = "Vinzenz Klass", email = "vinzenz.klass@valantic.com" }]
@@ -84,7 +84,7 @@ exclude = [
 
 line-length = 100
 fix = true
-target-version = "py312"
+target-version = "py313"
 
 [tool.ruff.format]
 skip-magic-trailing-comma = true

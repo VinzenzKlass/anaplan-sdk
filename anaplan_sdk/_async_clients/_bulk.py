@@ -1,12 +1,12 @@
 import logging
 from asyncio import gather, sleep
 from copy import copy
-from typing import AsyncIterator, Callable, Iterator
+from typing import AsyncIterator, Iterator
 
 import httpx
 from typing_extensions import Self
 
-from anaplan_sdk._auth import create_auth
+from anaplan_sdk._auth import AuthCodeCallback, AuthTokenRefreshCallback, create_auth
 from anaplan_sdk._base import _AsyncBaseClient, action_url
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
 from anaplan_sdk.models import (
@@ -56,8 +56,8 @@ class AsyncClient(_AsyncBaseClient):
         redirect_uri: str | None = None,
         refresh_token: str | None = None,
         oauth2_scope: str = "openid profile email offline_access",
-        on_auth_code: Callable[[str], str] | None = None,
-        on_token_refresh: Callable[[dict[str, str]], None] | None = None,
+        on_auth_code: AuthCodeCallback = None,
+        on_token_refresh: AuthTokenRefreshCallback = None,
         timeout: float | httpx.Timeout = 30,
         retry_count: int = 2,
         status_poll_delay: int = 1,
@@ -94,12 +94,25 @@ class AsyncClient(_AsyncBaseClient):
         :param oauth2_scope: The scope of the Oauth2 token, if you want to narrow it.
         :param on_auth_code: A callback that takes the redirect URI as a single argument and must
                              return the entire response URI. This will substitute the interactive
-                             authentication code step in the terminal.
+                             authentication code step in the terminal. The callback can be either
+                             a synchronous function or an async coroutine function - both will be
+                             handled appropriately regardless of the execution context (in a thread,
+                             with or without an event loop, etc.).
+                             **Note**: When using asynchronous callbacks in complex applications
+                             with multiple event loops, be aware that callbacks may execute in a
+                             separate event loop context from where they were defined, which can
+                             make debugging challenging.
         :param on_token_refresh: A callback function that is called whenever the token is refreshed.
+                                 This includes the initial token retrieval and any subsequent calls.
                                  With this you can for example securely store the token in your
                                  application or on your server for later reuse. The function
                                  must accept a single argument, which is the token dictionary
                                  returned by the Oauth2 token endpoint and does not return anything.
+                                 This can be either a synchronous function or an async coroutine
+                                 function. **Note**: When using asynchronous callbacks in complex
+                                 applications with multiple event loops, be aware that callbacks
+                                 may execute in a separate event loop context from where they were
+                                 defined, which can make debugging challenging.
         :param timeout: The timeout in seconds for the HTTP requests. Alternatively, you can pass
                         an instance of `httpx.Timeout` to set the timeout for the HTTP requests.
         :param retry_count: The number of times to retry an HTTP request if it fails. Set this to 0
