@@ -54,6 +54,7 @@ class AsyncClient(_AsyncBaseClient):
         client_id: str | None = None,
         client_secret: str | None = None,
         redirect_uri: str | None = None,
+        authorization_response: str | None = None,
         refresh_token: str | None = None,
         oauth2_scope: str = "openid profile email offline_access",
         on_auth_code: AuthCodeCallback = None,

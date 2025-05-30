@@ -72,6 +72,7 @@ nav:
          - Flows: 'api/models/flows.md'
          - Transactional: 'api/models/transactional.md'
       - Exceptions: 'api/exceptions.md'
+      - Oauth: 'api/oauth.md'
   - Concepts:
       - Anaplan Basics: 'anaplan_explained.md'
       - Bulk vs Transactional: 'guides/bulk_vs_transactional.md'
