@@ -160,7 +160,7 @@ async def profile(anaplan: Annotated[AsyncClient, Security(_validate_session)]):
     return await anaplan.audit.get_user("me")
 
 
-@app.exception_handlers(exceptions.InvalidCredentialsException)
+@app.exception_handler(exceptions.InvalidCredentialsException)
 async def invalid_credentials_exception_handler(_, __):
     raise HTTPException(
         status_code=401, detail="Invalid or expired Credentials."

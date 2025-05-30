@@ -85,7 +85,7 @@ class _BaseOauth:
         """
         auth_url = authorization_url or self._authorization_url
         state = state or self._state_generator()
-        url = self._oauth.prepare_authorization_request(
+        url, _, _ = self._oauth.prepare_authorization_request(
             auth_url, state, self._redirect_url, self._scope
         )
         return url, state
@@ -112,6 +112,7 @@ class AsyncOauth(_BaseOauth):
                 authorization_response=authorization_response,
                 token_url=self._token_url,
                 redirect_url=self._redirect_url,
+                client_secret=self._client_secret,
             )
             async with httpx.AsyncClient() as client:
                 response = await client.post(url=url, headers=headers, content=body)
@@ -165,6 +166,7 @@ class Oauth(_BaseOauth):
                 authorization_response=authorization_response,
                 token_url=self._token_url,
                 redirect_url=self._redirect_url,
+                client_secret=self._client_secret,
             )
             with httpx.Client() as client:
                 response = client.post(url=url, headers=headers, content=body)
