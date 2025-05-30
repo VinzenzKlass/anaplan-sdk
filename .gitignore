@@ -9,6 +9,7 @@ __pycache__/
 .idea
 .iml
 
+app.py
 debug.py
 # Distribution / packaging
 .Python
