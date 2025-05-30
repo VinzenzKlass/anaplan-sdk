@@ -6,7 +6,7 @@ from typing import AsyncIterator, Iterator
 import httpx
 from typing_extensions import Self
 
-from anaplan_sdk._auth import AuthCodeCallback, AuthTokenRefreshCallback, create_auth
+from anaplan_sdk._auth import AuthCodeCallback, AuthTokenRefreshCallback, _create_auth
 from anaplan_sdk._base import _AsyncBaseClient, action_url
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
 from anaplan_sdk.models import (
@@ -54,11 +54,12 @@ class AsyncClient(_AsyncBaseClient):
         client_id: str | None = None,
         client_secret: str | None = None,
         redirect_uri: str | None = None,
-        authorization_response: str | None = None,
         refresh_token: str | None = None,
         oauth2_scope: str = "openid profile email offline_access",
         on_auth_code: AuthCodeCallback = None,
         on_token_refresh: AuthTokenRefreshCallback = None,
+        oauth_token: dict[str, str] | None = None,
+        token: str | None = None,
         timeout: float | httpx.Timeout = 30,
         retry_count: int = 2,
         status_poll_delay: int = 1,
@@ -131,7 +132,9 @@ class AsyncClient(_AsyncBaseClient):
         """
         _client = httpx.AsyncClient(
             auth=(
-                create_auth(
+                _create_auth(
+                    token=token,
+                    oauth_token=oauth_token,
                     user_email=user_email,
                     password=password,
                     certificate=certificate,

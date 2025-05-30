@@ -57,6 +57,7 @@ nav:
           - CloudWorks:
               - Client: 'api/async/async_cw_client.md'
               - Flows: 'api/async/async_flows_client.md'
+          - OAuth: 'api/async/async_oauth_client.md'
       - Synchronous:
           - Bulk: 'api/sync/sync_client.md'
           - Transactional: 'api/sync/sync_transactional_client.md'
@@ -65,6 +66,7 @@ nav:
           - CloudWorks:
               - Client: 'api/sync/sync_cw_client.md'
               - Flows: 'api/sync/sync_flows_client.md'
+          - OAuth: 'api/sync/sync_oauth_client.md'
       - Models:
          - ALM: 'api/models/alm.md'
          - Bulk: 'api/models/bulk.md'
@@ -72,7 +74,6 @@ nav:
          - Flows: 'api/models/flows.md'
          - Transactional: 'api/models/transactional.md'
       - Exceptions: 'api/exceptions.md'
-      - Oauth: 'api/oauth.md'
   - Concepts:
       - Anaplan Basics: 'anaplan_explained.md'
       - Bulk vs Transactional: 'guides/bulk_vs_transactional.md'

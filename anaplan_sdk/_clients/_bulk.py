@@ -8,7 +8,7 @@ from typing import Callable, Iterator
 import httpx
 from typing_extensions import Self
 
-from anaplan_sdk._auth import create_auth
+from anaplan_sdk._auth import _create_auth
 from anaplan_sdk._base import _BaseClient, action_url
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
 from anaplan_sdk.models import (
@@ -60,6 +60,8 @@ class Client(_BaseClient):
         oauth2_scope: str = "openid profile email offline_access",
         on_auth_code: Callable[[str], str] | None = None,
         on_token_refresh: Callable[[dict[str, str]], None] | None = None,
+        oauth_token: dict[str, str] | None = None,
+        token: str | None = None,
         timeout: float | httpx.Timeout = 30,
         retry_count: int = 2,
         status_poll_delay: int = 1,
@@ -124,7 +126,9 @@ class Client(_BaseClient):
         """
         _client = httpx.Client(
             auth=(
-                create_auth(
+                _create_auth(
+                    token=token,
+                    oauth_token=oauth_token,
                     user_email=user_email,
                     password=password,
                     certificate=certificate,

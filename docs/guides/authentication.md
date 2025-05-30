@@ -87,15 +87,96 @@ Certificate Authentication is the most suitable for production use. It uses an X
     ```
 
 
-## OAuth2
 
-Anaplan has introduced Oauth2 support, but it does not support the `client_credentials` grant type. This means you will 
+## OAuth for Web Applications
+
+If you are building a Web Application and intend to have your users authenticate with Anaplan, you can use the `Oauth`
+or `AsyncOauth` classes. These classes provide the necessary utilities to handle the Oauth2 `authorization_code` grant,
+in which the authentication flow must occur outside the SDK for the user to log in.
+
+These Classes exist for convenience only, and you can use any other Library to handle the Oauth2 flow.
+
+An example for FastAPI is shown below, but you can use any other Web Framework.
+
+??? tip "Requires Extra"
+    If you want to use OAuth2 authentication, you need to install the `oauth` extra:
+    === "pip"
+        ```shell
+        pip install anaplan-sdk[oauth]
+        ```
+    ===+ "uv"
+        ```shell
+        uv add anaplan-sdk[oauth]
+        ```
+    === "Poetry"
+        ```shell
+        poetry add anaplan-sdk[oauth]
+        ```
+    This will install [OAuthLib](https://oauthlib.readthedocs.io/en/latest/index.html) to securely construct the authentication request.
+
+
+```python
+import os
+from typing import Annotated
+
+from fastapi import FastAPI, HTTPException, Request, Security
+from fastapi.responses import RedirectResponse
+
+from anaplan_sdk import AsyncClient, AsyncOauth, exceptions
+
+_oauth = AsyncOauth(
+    client_id=os.environ["OAUTH_CLIENT_ID"],
+    client_secret=os.environ["OAUTH_CLIENT_SECRET"],
+    redirect_url="https://vinzenzklass.github.io/anaplan-sdk/oauth/callback",
+)
+
+app = FastAPI()
+
+
+@app.get("/login")
+async def login():
+    # TODO: Store the state for subsequent validation.
+    url, state = _oauth.authorization_url()
+    return RedirectResponse(url, status_code=302)
+
+
+@app.get("/oauth/callback")
+async def oauth_callback(req: Request):
+    # TODO: Validate the state and handle the token.
+    token = await _oauth.fetch_token(str(req.url))
+    return RedirectResponse("/home", status_code=303)
+
+
+async def _validate_session(
+        token: Annotated[dict[str, str], Security(...)],
+) -> AsyncClient:
+    # TODO: Implement the Security scheme.
+    await _oauth.validate_token(token["access_token"])
+    return AsyncClient(oauth_token=token)
+
+
+@app.get("/profile")
+async def profile(anaplan: Annotated[AsyncClient, Security(_validate_session)]):
+    return await anaplan.audit.get_user("me")
+
+
+@app.exception_handlers(exceptions.InvalidCredentialsException)
+async def invalid_credentials_exception_handler(_, __):
+    raise HTTPException(
+        status_code=401, detail="Invalid or expired Credentials."
+    )
+```
+
+
+## OAuth for Local Applications
+
+Anaplan has introduced OAuth2 support, but it does not support the `client_credentials` grant type. This means you will 
 have to at least once manually authenticate in the interactive `authorization_code` flow. The Anaplan SDK does support 
 this flow, but it does not automatically manage the `refresh_token`. You can however securely store the `refresh_token` 
 in your app and use it to repeatedly and authenticate with Anaplan without any interaction.
 
 ??? tip "Requires Extra"
-    If you want to use Oauth2 authentication, you need to install the `oauth` extra:
+    If you want to use OAuth2 authentication, you need to install the `oauth` extra:
     === "pip"
         ```shell
         pip install anaplan-sdk[oauth]

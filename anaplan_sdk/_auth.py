@@ -50,6 +50,18 @@ class _AnaplanAuth(httpx.Auth):
         self._token: str = response.json()["tokenInfo"]["tokenValue"]
 
 
+class StaticTokenAuth(httpx.Auth):
+    def __init__(self, token: str):
+        logger.warning("Using static token authentication. Tokens will not be refreshed.")
+        self._token = token
+
+    def auth_flow(self, request):
+        request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
+        response = yield request
+        if response.status_code == 401:
+            raise InvalidCredentialsException("Your token is invalid or expired.")
+
+
 class AnaplanBasicAuth(_AnaplanAuth):
     def __init__(self, user_email: str, password: str):
         self.user_email = user_email
@@ -229,7 +241,7 @@ class AnaplanOauth2AuthCodeAuth(_AnaplanAuth):
             raise InvalidCredentialsException("Error during OAuth2 authorization flow.") from error
 
 
-def create_auth(
+def _create_auth(
     user_email: str | None = None,
     password: str | None = None,
     certificate: str | bytes | None = None,
@@ -242,7 +254,25 @@ def create_auth(
     oauth2_scope: str = "openid profile email offline_access",
     on_auth_code: AuthCodeCallback = None,
     on_token_refresh: AuthTokenRefreshCallback = None,
-) -> _AnaplanAuth:
+    token: str | None = None,
+    oauth_token: dict[str, str] | None = None,
+) -> httpx.Auth:
+    if token:
+        # TODO: If other parameters are provided that allow refreshing the token, use them to create
+        #  use them to create one of the other auth classes instead.
+        return StaticTokenAuth(token)
+    if oauth_token:
+        if not isinstance(oauth_token, dict) and all(
+            f in oauth_token for f in ("access_token", "refresh_token", "token_type", "scope")
+        ):
+            raise ValueError(
+                "oauth_token must be a dictionary with at least 'access_token', 'refresh_token', "
+                "'token_type', and 'scope' keys."
+            )
+        # TODO: If client_id, client_secret, and redirect_uri are provided, use them to create an
+        #  AnaplanOauth2AuthCodeAuth (extend to accept existing `access_token` instance. Else, use
+        #  the StaticTokenAuth directly.
+        return StaticTokenAuth(oauth_token["access_token"])
     if certificate and private_key:
         return AnaplanCertAuth(certificate, private_key, private_key_password)
     if user_email and password:
