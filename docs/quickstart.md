@@ -56,7 +56,7 @@ common practice.
     files, processes = await gather(anaplan.list_files(), anaplan.list_processes())
     ```
 ??? info "Output"
-    Models used in this Example: [File](api/models.md#anaplan_sdk.models.File), [Process](api/models.md#anaplan_sdk.models.Process).
+    Models used in this Example: [File](api/models/bulk.md#anaplan_sdk.models._bulk.File), [Process](api/models/bulk.md#anaplan_sdk.models._bulk.Process).
     ```python
     [
         File(
@@ -90,7 +90,7 @@ With these two, you're ready to run your first import.
     )
     ```
     
-This will upload the file to Anaplan, trigger the process task, wait for the completion of the task and validate the task result. You can see the details of the task by inspecting the [TaskResult](api/models.md#anaplan_sdk.models.TaskResult).
+This will upload the file to Anaplan, trigger the process task, wait for the completion of the task and validate the task result. You can see the details of the task by inspecting the [TaskResult](api/models/bulk.md#anaplan_sdk.models._bulk.TaskResult).
 
 ## Exporting Data
 
@@ -105,7 +105,7 @@ Conversely, for exporting data, we start by listing the available exports.
     exports = await anaplan.list_exports()
     ```
 ??? info "Output"
-    Models used in this Example: [Export](api/models.md#anaplan_sdk.models.Export).
+    Models used in this Example: [Export](api/models/bulk.md#anaplan_sdk.models._bulk.Export).
     ```python
     [
         Export(
