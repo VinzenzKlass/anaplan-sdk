@@ -90,6 +90,42 @@ class _BaseOauth:
         )
         return url, state
 
+    def _token_request(self, authorization_response: str) -> httpx.Request:
+        url, headers, body = self._oauth.prepare_token_request(
+            authorization_response=authorization_response,
+            token_url=self._token_url,
+            redirect_url=self._redirect_url,
+            client_secret=self._client_secret,
+        )
+        return httpx.Request(method="POST", url=url, headers=headers, content=body)
+
+    def _refresh_token_request(self, refresh_token: str) -> httpx.Request:
+        url, headers, body = self._oauth.prepare_refresh_token_request(
+            self._token_url,
+            refresh_token=refresh_token,
+            client_id=self._client_id,
+            client_secret=self._client_secret,
+        )
+        return httpx.Request(method="POST", url=url, headers=headers, content=body)
+
+    def _parse_response(self, response: httpx.Response) -> dict[str, str]:
+        if response.status_code == 401:
+            raise InvalidCredentialsException
+        if not response.is_success:
+            raise AnaplanException(
+                f"Token request for Client {self._client_id} failed: "
+                f"{response.status_code} {response.text}"
+            )
+        return response.json()
+
+
+class _OAuthRequestFactory(_BaseOauth):
+    def token_request(self, authorization_response: str) -> httpx.Request:
+        return self._token_request(authorization_response)
+
+    def refresh_token_request(self, refresh_token: str) -> httpx.Request:
+        return self._refresh_token_request(refresh_token)
+
 
 class AsyncOauth(_BaseOauth):
     """
@@ -108,19 +144,9 @@ class AsyncOauth(_BaseOauth):
         from oauthlib.oauth2 import OAuth2Error
 
         try:
-            url, headers, body = self._oauth.prepare_token_request(
-                authorization_response=authorization_response,
-                token_url=self._token_url,
-                redirect_url=self._redirect_url,
-                client_secret=self._client_secret,
-            )
             async with httpx.AsyncClient() as client:
-                response = await client.post(url=url, headers=headers, content=body)
-            if not response.is_success:
-                raise InvalidCredentialsException(
-                    f"Token request failed: {response.status_code} {response.text}"
-                )
-            return response.json()
+                response = await client.send(self._token_request(authorization_response))
+            return self._parse_response(response)
         except (httpx.HTTPError, ValueError, TypeError, OAuth2Error) as error:
             logger.error(error)
             raise AnaplanException("Error during token creation.") from error
@@ -137,12 +163,27 @@ class AsyncOauth(_BaseOauth):
                 response = await client.get(
                     url=self._validation_url, headers={"Authorization": f"AnaplanAuthToken {token}"}
                 )
-            if not response.is_success:
-                raise InvalidCredentialsException
-            return response.json()
+            return self._parse_response(response)
         except httpx.HTTPError as error:
             logger.error(error)
             raise AnaplanException("Error during token validation.") from error
+
+    async def refresh_token(self, refresh_token: str) -> dict[str, str]:
+        """
+        Refreshes the token using a refresh token.
+        :param refresh_token: The refresh token to use for refreshing the access token.
+        :return: The new token as a dictionary containing the access token, refresh token, scope,
+                 expires_in, and type.
+        """
+        from oauthlib.oauth2 import OAuth2Error
+
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.send(self._refresh_token_request(refresh_token))
+            return self._parse_response(response)
+        except (httpx.HTTPError, ValueError, TypeError, OAuth2Error) as error:
+            logger.error(error)
+            raise AnaplanException("Error during token refresh.") from error
 
 
 class Oauth(_BaseOauth):
@@ -170,12 +211,9 @@ class Oauth(_BaseOauth):
             )
             with httpx.Client() as client:
                 response = client.post(url=url, headers=headers, content=body)
-            if not response.is_success:
-                raise AnaplanException(
-                    f"Token request failed: {response.status_code} {response.text}"
-                )
-            return response.json()
+            return self._parse_response(response)
         except (httpx.HTTPError, ValueError, TypeError, OAuth2Error) as error:
+            logger.error(error)
             raise AnaplanException("Error during token creation.") from error
 
     def validate_token(self, token: str) -> dict[str, str | dict[str, str]]:
@@ -190,9 +228,30 @@ class Oauth(_BaseOauth):
                 response = client.get(
                     url=self._validation_url, headers={"Authorization": f"AnaplanAuthToken {token}"}
                 )
-            if not response.is_success:
-                raise InvalidCredentialsException
-            return response.json()
+            return self._parse_response(response)
         except httpx.HTTPError as error:
             logger.error(error)
             raise AnaplanException("Error during token validation.") from error
+
+    def refresh_token(self, refresh_token: str) -> dict[str, str]:
+        """
+        Refreshes the token using a refresh token.
+        :param refresh_token: The refresh token to use for refreshing the access token.
+        :return: The new token as a dictionary containing the access token, refresh token, scope,
+                 expires_in, and type.
+        """
+        from oauthlib.oauth2 import OAuth2Error
+
+        try:
+            url, headers, body = self._oauth.prepare_refresh_token_request(
+                self._token_url,
+                refresh_token=refresh_token,
+                client_id=self._client_id,
+                client_secret=self._client_secret,
+            )
+            with httpx.Client() as client:
+                response = client.post(url=url, headers=headers, content=body)
+            return self._parse_response(response)
+        except (httpx.HTTPError, ValueError, TypeError, OAuth2Error) as error:
+            logger.error(error)
+            raise AnaplanException("Error during token refresh.") from error

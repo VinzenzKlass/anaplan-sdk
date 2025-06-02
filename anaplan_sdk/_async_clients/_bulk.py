@@ -6,7 +6,7 @@ from typing import AsyncIterator, Iterator
 import httpx
 from typing_extensions import Self
 
-from anaplan_sdk._auth import AuthCodeCallback, AuthTokenRefreshCallback, _create_auth
+from anaplan_sdk._auth import _create_auth
 from anaplan_sdk._base import _AsyncBaseClient, action_url
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
 from anaplan_sdk.models import (
@@ -32,14 +32,8 @@ logger = logging.getLogger("anaplan_sdk")
 
 class AsyncClient(_AsyncBaseClient):
     """
-    An asynchronous Client for pythonic access to the
-    [Anaplan Integration API v2](https://anaplan.docs.apiary.io/). This Client provides high-level
-    abstractions over the API, so you can deal with python objects and simple functions rather than
-    implementation details like http, json, compression, chunking etc.
-
-
-    For more information, quick start guides and detailed instructions refer to:
-    [Anaplan SDK](https://vinzenzklass.github.io/anaplan-sdk).
+    Asynchronous Anaplan Client. For guides and examples
+    refer to https://vinzenzklass.github.io/anaplan-sdk.
     """
 
     def __init__(
@@ -51,15 +45,8 @@ class AsyncClient(_AsyncBaseClient):
         certificate: str | bytes | None = None,
         private_key: str | bytes | None = None,
         private_key_password: str | bytes | None = None,
-        client_id: str | None = None,
-        client_secret: str | None = None,
-        redirect_uri: str | None = None,
-        refresh_token: str | None = None,
-        oauth2_scope: str = "openid profile email offline_access",
-        on_auth_code: AuthCodeCallback = None,
-        on_token_refresh: AuthTokenRefreshCallback = None,
-        oauth_token: dict[str, str] | None = None,
         token: str | None = None,
+        auth: httpx.Auth | None = None,
         timeout: float | httpx.Timeout = 30,
         retry_count: int = 2,
         status_poll_delay: int = 1,
@@ -67,86 +54,55 @@ class AsyncClient(_AsyncBaseClient):
         allow_file_creation: bool = False,
     ) -> None:
         """
-        An asynchronous Client for pythonic access to the Anaplan Integration API v2:
-        https://anaplan.docs.apiary.io/. This Client provides high-level abstractions over the API,
-        so you can deal with python objects and simple functions rather than implementation details
-        like http, json, compression, chunking etc.
-
-
-        For more information, quick start guides and detailed instructions refer to:
-        https://vinzenzklass.github.io/anaplan-sdk.
+        Asynchronous Anaplan Client. For guides and examples
+        refer to https://vinzenzklass.github.io/anaplan-sdk.
 
         :param workspace_id: The Anaplan workspace Id. You can copy this from the browser URL or
-                             find them using an HTTP Client like Postman, Paw, Insomnia etc.
+               find them using an HTTP Client like Postman, Paw, Insomnia etc.
         :param model_id: The identifier of the model.
         :param user_email: A valid email registered with the Anaplan Workspace you are attempting
-                           to access. **The associated user must have Workspace Admin privileges**
-        :param password: Password for the given `user_email`. This is not suitable for production
-                         setups. If you intend to use this in production, acquire a client
-                         certificate as described under: https://help.anaplan.com/procure-ca-certificates-47842267-2cb3-4e38-90bf-13b1632bcd44
-        :param certificate: The absolute path to the client certificate file or the certificate
-                            itself.
-        :param private_key: The absolute path to the private key file or the private key itself.
-        :param private_key_password: The password to access the private key if there is one.
-        :param client_id: The client Id of the Oauth2 Anaplan Client.
-        :param client_secret: The client secret for your Oauth2 Anaplan Client.
-        :param redirect_uri: The redirect URI for your Oauth2 Anaplan Client.
-        :param refresh_token: If you have a valid refresh token, you can pass it to skip the
-                              interactive authentication code step.
-        :param oauth2_scope: The scope of the Oauth2 token, if you want to narrow it.
-        :param on_auth_code: A callback that takes the redirect URI as a single argument and must
-                             return the entire response URI. This will substitute the interactive
-                             authentication code step in the terminal. The callback can be either
-                             a synchronous function or an async coroutine function - both will be
-                             handled appropriately regardless of the execution context (in a thread,
-                             with or without an event loop, etc.).
-                             **Note**: When using asynchronous callbacks in complex applications
-                             with multiple event loops, be aware that callbacks may execute in a
-                             separate event loop context from where they were defined, which can
-                             make debugging challenging.
-        :param on_token_refresh: A callback function that is called whenever the token is refreshed.
-                                 This includes the initial token retrieval and any subsequent calls.
-                                 With this you can for example securely store the token in your
-                                 application or on your server for later reuse. The function
-                                 must accept a single argument, which is the token dictionary
-                                 returned by the Oauth2 token endpoint and does not return anything.
-                                 This can be either a synchronous function or an async coroutine
-                                 function. **Note**: When using asynchronous callbacks in complex
-                                 applications with multiple event loops, be aware that callbacks
-                                 may execute in a separate event loop context from where they were
-                                 defined, which can make debugging challenging.
+               to access.
+        :param password: Password for the given `user_email` for basic Authentication.
+        :param certificate: The certificate content or the absolute path to the certificate file.
+        :param private_key: The private key content or the absolute path to the private key file.
+        :param private_key_password: The password to access the private key file. This is only
+               considered if you provided a private key file and it password-protected.
+        :param token: An Anaplan API Token. This will be used to authenticate the client. If
+               sufficient other authentication parameters are provided, the token will be used
+               until it expires, after which a new one will be created. If you provide only this
+               parameter, the client will raise an error upon first authentication failure. For
+               short-lived instances, such as in web applications where user specific clients are
+               created, this is the recommended way to authenticate, since this has the least
+               overhead.
+        :param auth: You can provide a subclass of `httpx.Auth` to use for authentication. You can
+               provide an instance of one of the classes provided by the SDK, or an instance of
+               your own subclass of `httpx.Auth`. This will give you full control over the
+               authentication process, but you will need to implement the entire authentication
+               logic yourself.
         :param timeout: The timeout in seconds for the HTTP requests. Alternatively, you can pass
-                        an instance of `httpx.Timeout` to set the timeout for the HTTP requests.
+               an instance of `httpx.Timeout` to set the timeout for the HTTP requests.
         :param retry_count: The number of times to retry an HTTP request if it fails. Set this to 0
-                            to never retry. Defaults to 2, meaning each HTTP Operation will be
-                            tried a total number of 2 times.
+               to never retry. Defaults to 2, meaning each HTTP Operation will be tried a total
+               number of 2 times.
         :param status_poll_delay: The delay between polling the status of a task.
         :param upload_chunk_size: The size of the chunks to upload. This is the maximum size of
-                                  each chunk. Defaults to 25MB.
+               each chunk. Defaults to 25MB.
         :param allow_file_creation: Whether to allow the creation of new files. Defaults to False
-                            since this is typically unintentional and may well be unwanted
-                            behaviour in the API altogether. A file that is created this
-                            way will not be referenced by any action in anaplan until
-                            manually assigned so there is typically no value in dynamically
-                            creating new files and uploading content to them.
+               since this is typically unintentional and may well be unwanted behaviour in the API
+               altogether. A file that is created this way will not be referenced by any action in
+               anaplan until manually assigned so there is typically no value in dynamically
+               creating new files and uploading content to them.
         """
         _client = httpx.AsyncClient(
             auth=(
-                _create_auth(
+                auth
+                or _create_auth(
                     token=token,
-                    oauth_token=oauth_token,
                     user_email=user_email,
                     password=password,
                     certificate=certificate,
                     private_key=private_key,
                     private_key_password=private_key_password,
-                    client_id=client_id,
-                    client_secret=client_secret,
-                    redirect_uri=redirect_uri,
-                    refresh_token=refresh_token,
-                    oauth2_scope=oauth2_scope,
-                    on_auth_code=on_auth_code,
-                    on_token_refresh=on_token_refresh,
                 )
             ),
             timeout=timeout,
