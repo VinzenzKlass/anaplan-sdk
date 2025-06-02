@@ -151,8 +151,10 @@ async def _validate_session(
         token: Annotated[dict[str, str], Security(...)],
 ) -> AsyncClient:
     # TODO: Implement the Security scheme.
+    # TODO: Refresh the token if it is expired.
+    token = await _oauth.refresh_token(token["refresh_token"])
     await _oauth.validate_token(token["access_token"])
-    return AsyncClient(oauth_token=token)
+    return AsyncClient(token=token["access_token"])
 
 
 @app.get("/profile")
@@ -167,10 +169,40 @@ async def invalid_credentials_exception_handler(_, __):
     )
 ```
 
+Note that we're only passing the `access_token` to the `AsyncClient`. This is the recommended way to instantiate 
+short-lived instances such as in this example, since it has virtually no overhead. It will however not handle token 
+expiration or refresh, so you will need to handle that yourself. If you expect long-lived instances, you can pass an 
+instance of `AnaplanRefreshTokenAuth`. This will use the existing token to authenticate and will refresh the token
+when it expires.
+
+=== "Synchronous"
+    ```python
+    anaplan = Client(
+        auth=AnaplanRefreshTokenAuth(
+            token=token,
+            client_id=os.environ["OAUTH_CLIENT_ID"],
+            client_secret=os.environ["OAUTH_CLIENT_SECRET"],
+            redirect_url="https://vinzenzklass.github.io/anaplan-sdk",
+        )
+    )
+    ```
+=== "Asynchronous"
+    ```python
+    anaplan = AsyncClient(
+        auth=AnaplanRefreshTokenAuth(
+            token=token,
+            client_id=os.environ["OAUTH_CLIENT_ID"],
+            client_secret=os.environ["OAUTH_CLIENT_SECRET"],
+            redirect_url="https://vinzenzklass.github.io/anaplan-sdk",
+        )
+    )
+    ```
+
 
 ## OAuth for Local Applications
 
-For local applications, the `Client` or `AsyncClient` classes can be used directly to handle the OAuth2 flow.
+For local applications, you can use `AnaplanOAuthCodeAuth` Class to handle the initial Oauth2 `authorization_code` flow 
+and the subsequent token refreshes.
 
 ??? tip "Requires Extra"
     If you want to use OAuth2 authentication, you need to install the `oauth` extra:
@@ -190,32 +222,62 @@ For local applications, the `Client` or `AsyncClient` classes can be used direct
 
 === "Synchronous"
     ```python
-    import anaplan_sdk
-
-    anaplan = anaplan_sdk.Client(
-        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        model_id="11111111111111111111111111111111",
-        redirect_uri="https://vinzenzklass.github.io/anaplan-sdk",
-        client_id="my_anaplan_oauth_client_id",
-        client_secret="my_anaplan_oauth_client_secret",
+    anaplan = Client(
+        auth=AnaplanOAuthCodeAuth(
+            client_id=os.environ["OAUTH_CLIENT_ID"],
+            client_secret=os.environ["OAUTH_CLIENT_SECRET"],
+            redirect_url="https://vinzenzklass.github.io/anaplan-sdk",
+        )
     )
     ```
 === "Asynchronous"
     ```python
-    import anaplan_sdk
-    
-    anaplan = anaplan_sdk.AsyncClient(
-        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
-        model_id="11111111111111111111111111111111",
-        redirect_uri="https://vinzenzklass.github.io/anaplan-sdk",
-        client_id="my_anaplan_oauth_client_id",
-        client_secret="my_anaplan_oauth_client_secret",
+    anaplan = AsyncClient(
+        auth=AnaplanOAuthCodeAuth(
+            client_id=os.environ["OAUTH_CLIENT_ID"],
+            client_secret=os.environ["OAUTH_CLIENT_SECRET"],
+            redirect_url="https://vinzenzklass.github.io/anaplan-sdk",
+        )
     )
     ```
 
-With these parameters, the SDK will prompt you to open the login URI in your browser. After you have logged in, you 
+The SDK will prompt you to open the login URI in your browser. After you have logged in, you 
 will need to copy the entire redirect URI from your browser and paste it into the terminal.
 
-???+ info "Why do I need to copy the redirect URI?"
+???+ info "Why do I need to copy the redirect URL?"
     Unfortunately, registering localhost redirect URIs is not supported by Anaplan. This means we cannot intercept the
     redirect URI and extract the `authorization_code` automatically. This is a limitation of Anaplan's OAuth2 implementation. See [this Community Note](https://community.anaplan.com/discussion/156599/oauth-rediredt-url-port-for-desktop-apps).
+
+
+## Custom Authentication Schemes
+
+If you need more control over the authentication process, you can provide your own Subclass of `httpx.Auth` to the 
+`auth` parameter of the `Client` or `AsyncClient`. This allows you to implement any custom authentication 
+strategy you need. If you do so, the **entire** Authentication process is your responsibility. You can read more about
+the `httpx.Auth` interface in the 
+[httpx documentation](https://www.python-httpx.org/advanced/authentication/#custom-authentication-schemes).
+
+Below is an outline of the simplest variant of the `httpx.Auth` interface that will suffice for Anaplan's 
+authentication. Note the non-standard `AnaplanAuthToken` prefix in the `Authorization` header and the 
+`requires_response_body = True` class attribute.
+
+```python
+import httpx
+
+class MyCustomAuth(httpx.Auth):
+    requires_response_body = True
+
+    def __init__(self, token: str):
+        self._token: str = token
+
+    def auth_flow(self, request):
+        request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
+        response = yield request
+        if response.status_code == 401:
+            auth_res = yield httpx.Request(...) # Your implementation
+            self._token = auth_res.json()["tokenInfo"]["tokenValue"]
+            request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
+            yield request
+```
+If you believe that your custom authentication scheme may be generally useful, please consider contributing it to 
+the SDK or opening an issue to discuss it. 
