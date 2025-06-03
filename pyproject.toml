@@ -1,11 +1,22 @@
 [project]
 name = "anaplan-sdk"
-version = "0.4.0a1"
-description = "Provides pythonic access to the Anaplan API"
+version = "0.4.2"
+description = "Streamlined Python Interface for Anaplan"
 license = "Apache-2.0"
 authors = [{ name = "Vinzenz Klass", email = "vinzenz.klass@valantic.com" }]
 readme = "README.md"
-keywords = ["anaplan", "anaplan api", "anaplan bulk api", "anaplan integration", "anaplan alm api", "anaplan audit api"]
+keywords = [
+    "anaplan",
+    "anaplan api",
+    "anaplan sdk",
+    "anaplan bulk api",
+    "anaplan integration",
+    "anaplan integration api",
+    "anaplan alm api",
+    "anaplan audit api",
+    "anaplan cloudworks api",
+    "anaplan transactional api",
+]
 requires-python = ">=3.10.4"
 dependencies = [
     "pydantic>=2.7.2,<3.0.0",
@@ -13,7 +24,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-cert = ["cryptography>=42.0.7,<45.0.0"]
+cert = ["cryptography>=42.0.7,<46.0.0"]
 oauth = ["oauthlib>=3.0.0,<4.0.0"]
 
 [dependency-groups]
@@ -29,8 +40,7 @@ dev = [
     "polars>=1.29.0",
     "griffe-fieldz>=0.2.1",
     "oauthlib>=3.2.2",
-    "cryptography>=42.0.7",
-    "pykeepass>=4.1.1.post1",
+    "cryptography>=45.0.0",
 ]
 
 [project.urls]
@@ -74,10 +84,10 @@ exclude = [
 
 line-length = 100
 fix = true
-target-version = "py312"
+target-version = "py313"
 
 [tool.ruff.format]
-skip-magic-trailing-comma = false
+skip-magic-trailing-comma = true
 
 [tool.ruff.lint]
 select = ["E", "F", "B", "I"]
@@ -89,6 +99,4 @@ asyncio_default_test_loop_scope = "session"
 minversion = "8.0"
 addopts = "-ra -q"
 pythonpath = "anaplan_sdk/"
-testpaths = [
-    "tests",
-]
+testpaths = ["tests"]

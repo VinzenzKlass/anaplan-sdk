@@ -1,5 +1,6 @@
 import logging
 import string
+import sys
 from os import getenv
 from random import choices
 from typing import Any
@@ -24,6 +25,11 @@ from anaplan_sdk.models.flows import FlowInput, FlowStepInput
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
 logging.getLogger("httpx").setLevel(logging.ERROR)
 logging.getLogger("anaplan_sdk").setLevel(logging.INFO)
+
+
+@pytest.fixture(scope="session")
+def py_version():
+    return f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
 
 
 @pytest.fixture(scope="session")
@@ -241,12 +247,7 @@ def notification_dict(name):
         "integrationIds": [],
         "channels": ["in_app"],
         "notifications": {
-            "config": [
-                {
-                    "type": "full_failure",
-                    "users": ["8a868cd97f8f98a3017fe45cbdc65e25"],
-                }
-            ],
+            "config": [{"type": "full_failure", "users": ["8a868cd97f8f98a3017fe45cbdc65e25"]}]
         },
     }
 

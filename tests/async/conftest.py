@@ -1,4 +1,3 @@
-import sys
 from os import getenv
 
 import pytest
@@ -14,6 +13,7 @@ def client() -> AsyncClient:
         certificate=getenv("ANAPLAN_SDK_TEST_CERT"),
         private_key=getenv("ANAPLAN_SDK_TEST_PK"),
         retry_count=3,
+        timeout=120,
     )
 
 
@@ -29,8 +29,7 @@ def broken_client():
 
 
 @pytest.fixture(scope="session")
-def test_list():
-    py_version = sys.version.split(" ")[0]
+def test_list(py_version):
     if "3.10" in py_version:
         return 101000000309
     if "3.11" in py_version:
@@ -41,8 +40,7 @@ def test_list():
 
 
 @pytest.fixture(scope="session")
-def test_file():
-    py_version = sys.version.split(" ")[0]
+def test_file(py_version):
     if "3.10" in py_version:
         return 113000000061
     if "3.11" in py_version:
@@ -53,8 +51,7 @@ def test_file():
 
 
 @pytest.fixture(scope="session")
-def test_action():
-    py_version = sys.version.split(" ")[0]
+def test_action(py_version):
     if "3.10" in py_version:
         return 118000000028
     if "3.11" in py_version:
@@ -65,8 +62,7 @@ def test_action():
 
 
 @pytest.fixture(scope="session")
-def test_integration():
-    py_version = sys.version.split(" ")[0]
+def test_integration(py_version):
     if "3.10" in py_version:
         return "840ccd8a279a454d99577d9538f24f09"
     if "3.11" in py_version:
@@ -77,8 +73,7 @@ def test_integration():
 
 
 @pytest.fixture(scope="session")
-def test_notification():
-    py_version = sys.version.split(" ")[0]
+def test_notification(py_version):
     if "3.10" in py_version:
         return "bfe29c0ff7434bde96c94ce1ec1b8e0a"
     if "3.11" in py_version:
@@ -89,8 +84,7 @@ def test_notification():
 
 
 @pytest.fixture(scope="session")
-def test_flow():
-    py_version = sys.version.split(" ")[0]
+def test_flow(py_version):
     if "3.10" in py_version:
         return "35e19e2f0f594d589f07fd8ba98c30a8"
     if "3.11" in py_version:

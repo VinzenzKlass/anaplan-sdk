@@ -1,6 +1,4 @@
-# Bulk API Client (`AsyncClient`)
-
-::: anaplan_sdk.AsyncClient
+::: anaplan_sdk.models._transactional
 
 <style>
     [data-md-component="toc"] li:first-of-type{

@@ -12,11 +12,7 @@ from typing import Any, Callable, Coroutine, Iterator, Literal, Type, TypeVar
 import httpx
 from httpx import HTTPError, Response
 
-from .exceptions import (
-    AnaplanException,
-    AnaplanTimeoutException,
-    InvalidIdentifierException,
-)
+from .exceptions import AnaplanException, AnaplanTimeoutException, InvalidIdentifierException
 from .models import AnaplanModel
 from .models.cloud_works import (
     AmazonS3ConnectionInput,
@@ -51,8 +47,7 @@ class _BaseClient:
         return self._run_with_retry(self._client.post, url, headers=_json_header, json=json).json()
 
     def _put(self, url: str, json: dict | list) -> dict[str, Any]:
-        res = self._run_with_retry(self._client.put, url, headers=_json_header, json=json)
-        return res.json() if res.num_bytes_downloaded > 0 else {}
+        return (self._run_with_retry(self._client.put, url, headers=_json_header, json=json)).json()
 
     def _patch(self, url: str, json: dict | list) -> dict[str, Any]:
         return (
@@ -134,8 +129,9 @@ class _AsyncBaseClient:
         ).json()
 
     async def _put(self, url: str, json: dict | list) -> dict[str, Any]:
-        res = await self._run_with_retry(self._client.put, url, headers=_json_header, json=json)
-        return res.json() if res.num_bytes_downloaded > 0 else {}
+        return (
+            await self._run_with_retry(self._client.put, url, headers=_json_header, json=json)
+        ).json()
 
     async def _patch(self, url: str, json: dict | list) -> dict[str, Any]:
         return (
