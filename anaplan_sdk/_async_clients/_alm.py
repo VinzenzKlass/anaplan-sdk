@@ -8,7 +8,7 @@ from anaplan_sdk.models import ModelRevision, Revision, SyncTask
 
 class _AsyncAlmClient(_AsyncBaseClient):
     def __init__(self, client: httpx.AsyncClient, model_id: str, retry_count: int) -> None:
-        self._url = f"https://api.anaplan.com/2/0/models/{model_id}/alm"
+        self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
         super().__init__(retry_count, client)
 
     async def change_model_status(self, status: Literal["online", "offline"]) -> None:
