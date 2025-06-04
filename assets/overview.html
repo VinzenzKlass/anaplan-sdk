@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<!--suppress HtmlRequiredTitleElement -->
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.13.0/dist/gsap.min.js"></script>
+    <style>
+        html, body {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            border-radius: 10px;
+            margin: 0;
+            padding: 0;
+            font-family: Roboto, apple-system, BlinkMacSystemFont, Helvetica, Arial, sans-serif;
+        }
+
+        .container {
+            height: 100%;
+            padding: 1rem;
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 1rem;
+        }
+
+        .grid {
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.2rem;
+        }
+
+        .box {
+            height: 6rem;
+            width: 6rem;
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid black;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .box-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.3s ease, color 0.3s ease;
+        }
+
+        .box-content p {
+            font-size: 1rem;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .box:hover .box-content {
+            transform: scale(1.1) translateY(4px);
+        }
+    </style>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+            svg.setAttribute('width', '100%')
+            svg.setAttribute('height', '100%')
+            svg.style.position = 'absolute'
+            svg.style.top = '0'
+            svg.style.left = '0'
+            svg.style.pointerEvents = 'none'
+            svg.style.zIndex = '1'
+            document.body.prepend(svg)
+
+            const step = document.querySelector('#step')
+            const clientBox = document.querySelector('#client')
+            const filesBox = document.querySelector('#files')
+            const listsBox = document.querySelector('#lists')
+            const actionsBox = document.querySelector('#actions')
+            const modulesBox = document.querySelector('#modules')
+
+            const connections = [
+                {
+                    step: '1. Upload File',
+                    paths: [{ from: clientBox, to: filesBox, type: 'horizontal', color: '#0B344D' }],
+                },
+                {
+                    step: '2. Invoke Action',
+                    paths: [{ from: clientBox, to: actionsBox, type: 'horizontal', color: '#FF6100' }],
+                },
+                {
+                    step: '3. Import into List',
+                    paths: [
+                        { from: filesBox, to: actionsBox, type: 'vertical', color: '#0B344D' },
+                        { from: actionsBox, to: listsBox, type: 'horizontal', color: '#0B344D' },
+                    ],
+                },
+                {
+                    step: '4. Import into Module',
+                    paths: [
+                        { from: filesBox, to: actionsBox, type: 'vertical', color: '#0B344D' },
+                        { from: actionsBox, to: modulesBox, type: 'horizontal', color: '#0B344D' },
+                    ],
+                },
+            ]
+
+            function createAnimationSequence() {
+                const mainTimeline = gsap.timeline()
+                for (const conn of connections) {
+                    mainTimeline.set(step, { innerText: conn.step })
+                    const pathElements = conn.paths.map(path => {
+                        const fromRect = path.from.getBoundingClientRect()
+                        const toRect = path.to.getBoundingClientRect()
+                        let start, end
+
+                        if (path.type === 'horizontal') {
+                            start = { x: fromRect.right, y: fromRect.top + fromRect.height / 2 }
+                            end = { x: toRect.left, y: toRect.top + toRect.height / 2 }
+                        } else {
+                            start = { x: fromRect.left + fromRect.width / 2, y: fromRect.bottom }
+                            end = { x: toRect.left + toRect.width / 2, y: toRect.top }
+                        }
+
+                        const pathElem = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+                        const midX = (start.x + end.x) / 2
+                        const d = `M${start.x},${start.y} C${midX},${start.y} ${midX},${end.y} ${end.x},${end.y}`
+
+                        pathElem.setAttribute('d', d)
+                        pathElem.setAttribute('stroke', path.color)
+                        pathElem.setAttribute('stroke-width', '2')
+                        pathElem.setAttribute('fill', 'none')
+                        svg.appendChild(pathElem)
+
+                        const pathLength = pathElem.getTotalLength()
+                        gsap.set(pathElem, {
+                            strokeDasharray: pathLength,
+                            strokeDashoffset: pathLength,
+                            opacity: 1,
+                        })
+
+                        return { path: pathElem, pathLength }
+                    })
+
+                    const subTimeline = gsap.timeline()
+                    pathElements.forEach(p => {
+                        subTimeline.to(p.path, {
+                            strokeDashoffset: 0,
+                            duration: 0.8,
+                            ease: 'power2.out',
+                        }, 0)
+                    })
+
+                    pathElements.forEach(p => {
+                        subTimeline.to(p.path, {
+                            strokeDasharray: '10 15',
+                            duration: 0.5,
+                        }, 0.8)
+                    })
+
+                    pathElements.forEach(p => {
+                        subTimeline.to(p.path, {
+                            strokeDashoffset: -200,
+                            duration: 2,
+                            ease: 'linear',
+                        }, 1.3)
+                    })
+
+                    pathElements.forEach(p => {
+                        subTimeline.to(p.path, {
+                            opacity: 0,
+                            duration: 0.3,
+                        }, 3.3)
+                    })
+
+                    mainTimeline.add(subTimeline)
+                    mainTimeline.to({}, { duration: 0.5 })
+                }
+
+                mainTimeline.to({}, { duration: 1 })
+                mainTimeline.eventCallback('onComplete', () => {
+                    createAnimationSequence()
+                })
+            }
+
+            createAnimationSequence()
+        })
+    </script>
+</head>
+<body>
+<div class="container">
+    <div style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+        <h3 id="step" style="margin-top: 0"></h3>
+        <div class="box" id="client">
+            <div class="box-content">
+                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                     class="lucide lucide-upload-icon lucide-upload">
+                    <path d="M12 3v12" />
+                    <path d="m17 8-5-5-5 5" />
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                </svg>
+                <p>Client</p>
+            </div>
+        </div>
+        <div>
+        </div>
+    </div>
+    <div style="height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+        <div style="display: flex; justify-content: end; color: #0075ff;">
+            <h3 style="margin: 0 2px 5px 0">Anaplan</h3>
+        </div>
+        <div style="height: 100%; padding: 1rem; border: 2px solid #0075ff; border-radius: 12px;">
+            <div class="grid">
+                <div class="box" id="files">
+                    <div class="box-content">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                             class="lucide lucide-file-stack-icon lucide-file-stack">
+                            <path d="M21 7h-3a2 2 0 0 1-2-2V2" />
+                            <path d="M21 6v6.5c0 .8-.7 1.5-1.5 1.5h-7c-.8 0-1.5-.7-1.5-1.5v-9c0-.8.7-1.5 1.5-1.5H17Z" />
+                            <path d="M7 8v8.8c0 .3.2.6.4.8.2.2.5.4.8.4H15" />
+                            <path d="M3 12v8.8c0 .3.2.6.4.8.2.2.5.4.8.4H11" />
+                        </svg>
+                        <p>Files</p>
+                    </div>
+                </div>
+                <div style="width: 100%; display: flex; justify-content: end;">
+                    <div class="box" id="lists">
+                        <div class="box-content">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                 class="lucide lucide-list-icon lucide-list">
+                                <path d="M3 12h.01" />
+                                <path d="M3 18h.01" />
+                                <path d="M3 6h.01" />
+                                <path d="M8 12h13" />
+                                <path d="M8 18h13" />
+                                <path d="M8 6h13" />
+                            </svg>
+                            <p>Lists</p>
+                        </div>
+                    </div>
+                </div>
+                <div style="width: 100%; display: flex; flex-direction: column;justify-content: end;">
+                    <div class="box" id="actions">
+                        <div class="box-content">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24"
+                                 fill="none"
+                                 stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                                 class="lucide lucide-circle-play-icon lucide-circle-play">
+                                <circle cx="12" cy="12" r="10" />
+                                <polygon points="10 8 16 12 10 16 10 8" />
+                            </svg>
+                            <p>Actions</p>
+                        </div>
+                    </div>
+                </div>
+                <div style="width: 100%; display: flex; flex-direction: column;justify-content: end;">
+                    <div style="width: 100%; display: flex; justify-content: end;">
+                        <div class="box" id="modules">
+                            <div class="box-content">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 24 24"
+                                     fill="none"
+                                     stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                                     stroke-linejoin="round"
+                                     class="lucide lucide-table2-icon lucide-table-2">
+                                    <path
+                                        d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2V9M9 21H5a2 2 0 0 1-2-2V9m0 0h18" />
+                                </svg>
+                                <p>Modules</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
