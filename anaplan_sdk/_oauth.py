@@ -133,7 +133,7 @@ class AsyncOauth(_BaseOauth):
     Applications.
     """
 
-    async def fetch_token(self, authorization_response: str) -> dict[str, str]:
+    async def fetch_token(self, authorization_response: str) -> dict[str, str | int]:
         """
         Fetches the token using the authorization response from the OAuth 2.0 flow.
         :param authorization_response: The full URL that the user was redirected to after
@@ -151,7 +151,7 @@ class AsyncOauth(_BaseOauth):
             logger.error(error)
             raise AnaplanException("Error during token creation.") from error
 
-    async def validate_token(self, token: str) -> dict[str, str | dict[str, str]]:
+    async def validate_token(self, token: str) -> dict[str, str | dict[str, str | int]]:
         """
         Validates the provided token by checking its validity with the Anaplan Authentication API.
         If the token is not valid, an `InvalidCredentialsException` is raised.
@@ -168,7 +168,7 @@ class AsyncOauth(_BaseOauth):
             logger.error(error)
             raise AnaplanException("Error during token validation.") from error
 
-    async def refresh_token(self, refresh_token: str) -> dict[str, str]:
+    async def refresh_token(self, refresh_token: str) -> dict[str, str | int]:
         """
         Refreshes the token using a refresh token.
         :param refresh_token: The refresh token to use for refreshing the access token.
@@ -192,7 +192,7 @@ class Oauth(_BaseOauth):
     Applications.
     """
 
-    def fetch_token(self, authorization_response: str) -> dict[str, str]:
+    def fetch_token(self, authorization_response: str) -> dict[str, str | int]:
         """
         Fetches the token using the authorization response from the OAuth 2.0 flow.
         :param authorization_response: The full URL that the user was redirected to after
@@ -216,7 +216,7 @@ class Oauth(_BaseOauth):
             logger.error(error)
             raise AnaplanException("Error during token creation.") from error
 
-    def validate_token(self, token: str) -> dict[str, str | dict[str, str]]:
+    def validate_token(self, token: str) -> dict[str, str | dict[str, str | int]]:
         """
         Validates the provided token by checking its validity with the Anaplan Authentication API.
         If the token is not valid, an `InvalidCredentialsException` is raised.
@@ -233,7 +233,7 @@ class Oauth(_BaseOauth):
             logger.error(error)
             raise AnaplanException("Error during token validation.") from error
 
-    def refresh_token(self, refresh_token: str) -> dict[str, str]:
+    def refresh_token(self, refresh_token: str) -> dict[str, str | int]:
         """
         Refreshes the token using a refresh token.
         :param refresh_token: The refresh token to use for refreshing the access token.
