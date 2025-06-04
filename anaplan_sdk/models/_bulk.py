@@ -145,10 +145,10 @@ class TaskSummary(AnaplanModel):
 
 
 class TaskResultDetail(AnaplanModel):
-    local_message_text: str = Field(description="Error message text.")
+    local_message_text: str | None = Field(None, description="Error message text.")
     occurrences: int = Field(0, description="The number of occurrences of this error.")
     type: str = Field(description="The type of this error.")
-    values: list[str] = Field([], description="Further error information if available.")
+    values: list[str | None] = Field([], description="Further error information if available.")
 
 
 class TaskResult(AnaplanModel):
