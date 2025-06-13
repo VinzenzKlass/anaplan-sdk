@@ -245,11 +245,14 @@ class AnaplanRefreshTokenAuth(_AnaplanAuth):
         This class is a utility class for long-lived `Client` or `AsyncClient` instances that use
         OAuth. It expects that you have a valid OAuth token with a refresh token, which will be used
         to refresh the access token when it expires.
+
         :param client_id: The client ID of your Anaplan Oauth 2.0 application. This Application
                must be an Authorization Code Grant application.
         :param client_secret: The client secret of your Anaplan Oauth 2.0 application.
         :param redirect_url: The URL to which the user will be redirected after authorizing the
                application.
+        :param token: The OAuth token dictionary containing at least the `access_token` and
+               `refresh_token`.
         :param token_url: The URL to post the refresh token request to in order to fetch the access
                token.
         """
@@ -260,7 +263,7 @@ class AnaplanRefreshTokenAuth(_AnaplanAuth):
             redirect_url=redirect_url,
             token_url=token_url,
         )
-        super().__init__(self._token)
+        super().__init__(self._oauth_token["access_token"])
 
     def _build_auth_request(self) -> httpx.Request:
         return self._oauth.refresh_token_request(self._oauth_token["refresh_token"])
