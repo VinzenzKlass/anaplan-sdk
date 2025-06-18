@@ -114,7 +114,6 @@ An example for FastAPI is shown below, but you can use any other Web Framework.
         ```
     This will install [OAuthLib](https://oauthlib.readthedocs.io/en/latest/index.html) to securely construct the authentication request.
 
-
 ```python
 import os
 from typing import Annotated
@@ -127,7 +126,7 @@ from anaplan_sdk import AsyncClient, AsyncOauth, exceptions
 _oauth = AsyncOauth(
     client_id=os.environ["OAUTH_CLIENT_ID"],
     client_secret=os.environ["OAUTH_CLIENT_SECRET"],
-    redirect_url="https://vinzenzklass.github.io/anaplan-sdk/oauth/callback",
+    redirect_uri="https://vinzenzklass.github.io/anaplan-sdk/oauth/callback",
 )
 
 app = FastAPI()
@@ -182,7 +181,7 @@ when it expires.
             token=token,
             client_id=os.environ["OAUTH_CLIENT_ID"],
             client_secret=os.environ["OAUTH_CLIENT_SECRET"],
-            redirect_url="https://vinzenzklass.github.io/anaplan-sdk",
+            redirect_uri="https://vinzenzklass.github.io/anaplan-sdk",
         )
     )
     ```
@@ -193,7 +192,7 @@ when it expires.
             token=token,
             client_id=os.environ["OAUTH_CLIENT_ID"],
             client_secret=os.environ["OAUTH_CLIENT_SECRET"],
-            redirect_url="https://vinzenzklass.github.io/anaplan-sdk",
+            redirect_uri="https://vinzenzklass.github.io/anaplan-sdk",
         )
     )
     ```
@@ -226,7 +225,7 @@ and the subsequent token refreshes.
         auth=AnaplanOAuthCodeAuth(
             client_id=os.environ["OAUTH_CLIENT_ID"],
             client_secret=os.environ["OAUTH_CLIENT_SECRET"],
-            redirect_url="https://vinzenzklass.github.io/anaplan-sdk",
+            redirect_uri="https://vinzenzklass.github.io/anaplan-sdk",
         )
     )
     ```
@@ -236,7 +235,7 @@ and the subsequent token refreshes.
         auth=AnaplanOAuthCodeAuth(
             client_id=os.environ["OAUTH_CLIENT_ID"],
             client_secret=os.environ["OAUTH_CLIENT_SECRET"],
-            redirect_url="https://vinzenzklass.github.io/anaplan-sdk",
+            redirect_uri="https://vinzenzklass.github.io/anaplan-sdk",
         )
     )
     ```

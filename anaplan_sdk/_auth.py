@@ -159,7 +159,7 @@ class AnaplanOAuthCodeAuth(_AnaplanAuth):
         self,
         client_id: str,
         client_secret: str,
-        redirect_url: str,
+        redirect_uri: str,
         token: dict[str, str] | None = None,
         authorization_url: str = "https://us1a.app.anaplan.com/auth/prelogin",
         token_url: str = "https://us1a.app.anaplan.com/oauth/token",
@@ -175,7 +175,7 @@ class AnaplanOAuthCodeAuth(_AnaplanAuth):
         :param client_id: The client ID of your Anaplan Oauth 2.0 application. This Application
                must be an Authorization Code Grant application.
         :param client_secret: The client secret of your Anaplan Oauth 2.0 application.
-        :param redirect_url: The URL to which the user will be redirected after authorizing the
+        :param redirect_uri: The URL to which the user will be redirected after authorizing the
                application.
         :param authorization_url: The URL to which the user will be redirected to authorize the
                application. Defaults to the Anaplan Prelogin Page, where the user can select the
@@ -193,7 +193,7 @@ class AnaplanOAuthCodeAuth(_AnaplanAuth):
         self._oauth = _OAuthRequestFactory(
             client_id=client_id,
             client_secret=client_secret,
-            redirect_url=redirect_url,
+            redirect_uri=redirect_uri,
             scope=scope,
             authorization_url=authorization_url,
             token_url=token_url,
@@ -237,7 +237,7 @@ class AnaplanRefreshTokenAuth(_AnaplanAuth):
         self,
         client_id: str,
         client_secret: str,
-        redirect_url: str,
+        redirect_uri: str,
         token: dict[str, str],
         token_url: str = "https://us1a.app.anaplan.com/oauth/token",
     ):
@@ -249,7 +249,7 @@ class AnaplanRefreshTokenAuth(_AnaplanAuth):
         :param client_id: The client ID of your Anaplan Oauth 2.0 application. This Application
                must be an Authorization Code Grant application.
         :param client_secret: The client secret of your Anaplan Oauth 2.0 application.
-        :param redirect_url: The URL to which the user will be redirected after authorizing the
+        :param redirect_uri: The URL to which the user will be redirected after authorizing the
                application.
         :param token: The OAuth token dictionary containing at least the `access_token` and
                `refresh_token`.
@@ -260,7 +260,7 @@ class AnaplanRefreshTokenAuth(_AnaplanAuth):
         self._oauth = _OAuthRequestFactory(
             client_id=client_id,
             client_secret=client_secret,
-            redirect_url=redirect_url,
+            redirect_uri=redirect_uri,
             token_url=token_url,
         )
         super().__init__(self._oauth_token["access_token"])

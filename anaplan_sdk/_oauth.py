@@ -13,7 +13,7 @@ class _BaseOauth:
         self,
         client_id: str,
         client_secret: str,
-        redirect_url: str,
+        redirect_uri: str,
         authorization_url: str = "https://us1a.app.anaplan.com/auth/prelogin",
         token_url: str = "https://us1a.app.anaplan.com/oauth/token",
         validation_url: str = "https://auth.anaplan.com/token/validate",
@@ -38,7 +38,7 @@ class _BaseOauth:
         :param client_id: The client ID of your Anaplan Oauth 2.0 application. This Application
                must be an Authorization Code Grant application.
         :param client_secret: The client secret of your Anaplan Oauth 2.0 application.
-        :param redirect_url: The URL to which the user will be redirected after authorizing the
+        :param redirect_uri: The URL to which the user will be redirected after authorizing the
                application.
         :param authorization_url: The URL to which the user will be redirected to authorize the
                application. Defaults to the Anaplan Prelogin Page, where the user can select the
@@ -53,7 +53,7 @@ class _BaseOauth:
         """
         self._client_id = client_id
         self._client_secret = client_secret
-        self._redirect_url = redirect_url
+        self._redirect_uri = redirect_uri
         self._authorization_url = authorization_url
         self._token_url = token_url
         self._validation_url = validation_url
@@ -86,7 +86,7 @@ class _BaseOauth:
         auth_url = authorization_url or self._authorization_url
         state = state or self._state_generator()
         url, _, _ = self._oauth.prepare_authorization_request(
-            auth_url, state, self._redirect_url, self._scope
+            auth_url, state, self._redirect_uri, self._scope
         )
         return url, state
 
@@ -94,7 +94,7 @@ class _BaseOauth:
         url, headers, body = self._oauth.prepare_token_request(
             authorization_response=authorization_response,
             token_url=self._token_url,
-            redirect_url=self._redirect_url,
+            redirect_url=self._redirect_uri,
             client_secret=self._client_secret,
         )
         return httpx.Request(method="POST", url=url, headers=headers, content=body)
@@ -206,7 +206,7 @@ class Oauth(_BaseOauth):
             url, headers, body = self._oauth.prepare_token_request(
                 authorization_response=authorization_response,
                 token_url=self._token_url,
-                redirect_url=self._redirect_url,
+                redirect_url=self._redirect_uri,
                 client_secret=self._client_secret,
             )
             with httpx.Client() as client:
