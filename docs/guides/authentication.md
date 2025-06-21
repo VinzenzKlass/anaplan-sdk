@@ -248,6 +248,78 @@ will need to copy the entire redirect URI from your browser and paste it into th
     Unfortunately, registering localhost redirect URIs is not supported by Anaplan. This means we cannot intercept the
     redirect URI and extract the `authorization_code` automatically. This is a limitation of Anaplan's OAuth2 implementation. See [this Community Note](https://community.anaplan.com/discussion/156599/oauth-rediredt-url-port-for-desktop-apps).
 
+## Persisting OAuth Tokens
+
+The SDK provides the ability to persist OAuth refresh tokens between sessions using the system's secure keyring for 
+local applications. This allows you to avoid having to re-authenticate every time you run your application while using 
+OAuth2. 
+
+???+ tip "Requires Extras"
+    If you want to use persisting Tokens, you need to additionally install the `keyring` extra:
+    === "pip"
+        ```shell
+        pip install anaplan-sdk[oauth,keyring]
+        ```
+    ===+ "uv"
+        ```shell
+        uv add anaplan-sdk[oauth,keyring]
+        ```
+    === "Poetry"
+        ```shell
+        poetry add anaplan-sdk[oauth,keyring]
+        ```
+
+    This will install [Keyring](https://github.com/jaraco/keyring) to securely store refresh tokens.
+
+To enable token persistence, set the `persist_token=True` parameter when creating an `AnaplanLocalOAuth` instance:
+
+=== "Synchronous"
+    ```python
+    anaplan = Client(
+        auth=AnaplanLocalOAuth(
+            client_id=os.environ["OAUTH_CLIENT_ID"],
+            client_secret=os.environ["OAUTH_CLIENT_SECRET"],
+            redirect_uri="https://vinzenzklass.github.io/anaplan-sdk",
+            persist_token=True,
+        )
+    )
+    ```
+=== "Asynchronous"
+    ```python
+    anaplan = AsyncClient(
+        auth=AnaplanLocalOAuth(
+            client_id=os.environ["OAUTH_CLIENT_ID"],
+            client_secret=os.environ["OAUTH_CLIENT_SECRET"],
+            redirect_uri="https://vinzenzklass.github.io/anaplan-sdk",
+            persist_token=True,
+        )
+    )
+    ```
+When `persist_token` is set to True, the SDK will:
+
+- Look for a stored refresh token in the system's keyring
+- If found, use it to obtain a new access token. If also given, this will overwrite the passed `token` parameter.
+- If not found or if the token is invalid, prompt the user for authentication
+- After authentication, store the new refresh token in the keyring
+
+??? note "Keyring Configuration"
+    The keyring library may require additional configuration depending on your environment:
+
+    - In headless environments, you may need to explicitely configure a different keyring backend
+    - Some Linux distributions may require additional packages or configuration
+    
+    Configuring the keyring backend is your responsibility as it depends on your specific environment. 
+    
+    For example, to use the libsecret file backend:
+    
+    ```python
+    import keyring
+    from keyring.backends import libsecret
+    
+    keyring.set_keyring(libsecret.Keyring())
+    ```
+    
+    For more information, refer to the [keyring documentation](https://github.com/jaraco/keyring).
 
 ## OAuth Token Ownership
 

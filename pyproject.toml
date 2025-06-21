@@ -1,6 +1,6 @@
 [project]
 name = "anaplan-sdk"
-version = "0.4.4a3"
+version = "0.4.4a4"
 description = "Streamlined Python Interface for Anaplan"
 license = "Apache-2.0"
 authors = [{ name = "Vinzenz Klass", email = "vinzenz.klass@valantic.com" }]
@@ -26,6 +26,7 @@ dependencies = [
 [project.optional-dependencies]
 cert = ["cryptography>=42.0.7,<46.0.0"]
 oauth = ["oauthlib>=3.0.0,<4.0.0"]
+keyring = ["keyring>=25.6.0,<26.0.0"]
 
 [dependency-groups]
 dev = [
@@ -40,6 +41,7 @@ dev = [
     "griffe-fieldz>=0.2.1",
     "oauthlib>=3.2.2",
     "cryptography>=45.0.0",
+    "keyring>=25.6.0",
 ]
 
 [project.urls]
