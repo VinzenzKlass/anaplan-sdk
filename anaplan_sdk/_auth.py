@@ -1,7 +1,7 @@
 import logging
 import os
 from base64 import b64encode
-from typing import Awaitable, Callable
+from typing import Callable
 
 import httpx
 
@@ -9,11 +9,6 @@ from ._oauth import _OAuthRequestFactory
 from .exceptions import AnaplanException, InvalidCredentialsException, InvalidPrivateKeyException
 
 logger = logging.getLogger("anaplan_sdk")
-
-AuthCodeCallback = (Callable[[str], str] | Callable[[str], Awaitable[str]]) | None
-AuthTokenRefreshCallback = (
-    Callable[[dict[str, str]], None] | Callable[[dict[str, str]], Awaitable[None]]
-) | None
 
 
 class _AnaplanAuth(httpx.Auth):
@@ -154,7 +149,7 @@ class _AnaplanCertAuth(_AnaplanAuth):
             raise InvalidPrivateKeyException from error
 
 
-class AnaplanOAuthCodeAuth(_AnaplanAuth):
+class AnaplanLocalOAuth(_AnaplanAuth):
     def __init__(
         self,
         client_id: str,
@@ -168,7 +163,7 @@ class AnaplanOAuthCodeAuth(_AnaplanAuth):
         state_generator: Callable[[], str] | None = None,
     ):
         """
-        Initializes the AnaplanOAuthCodeAuth class for OAuth2 authentication using the
+        Initializes the AnaplanLocalOAuth class for OAuth2 authentication using the
         Authorization Code Flow. This is a utility class for local development and requires user
         interaction. For Web Applications and other scenarios, refer to `Oauth` or `AsyncOauth`.
         This class will refresh the access token automatically when it expires.
@@ -203,6 +198,16 @@ class AnaplanOAuthCodeAuth(_AnaplanAuth):
         if not token:
             self.__auth_code_flow()
         super().__init__(self._token)
+
+    @property
+    def token(self) -> dict[str, str]:
+        """
+        Returns the current token dictionary. You can safely use the `access_token`, but if you
+        must not use the `refresh_token` outside of this class, if you expect to use this instance
+        further. If you do use the `refresh_token` outside of this class, this will error on the
+        next attempt to refresh the token, as the `refresh_token` can only be used once.
+        """
+        return self._oauth_token
 
     def _build_auth_request(self) -> httpx.Request:
         return self._oauth.refresh_token_request(self._oauth_token["refresh_token"])
@@ -243,8 +248,20 @@ class AnaplanRefreshTokenAuth(_AnaplanAuth):
     ):
         """
         This class is a utility class for long-lived `Client` or `AsyncClient` instances that use
-        OAuth. It expects that you have a valid OAuth token with a refresh token, which will be used
-        to refresh the access token when it expires.
+        OAuth. This class will use the `access_token` until the first request fails with a 401
+        Unauthorized error, at which point it will attempt to refresh the `access_token` using the
+        `refresh_token`. If the refresh fails, it will raise an `InvalidCredentialsException`. The
+        `expires_in` field in the token dictionary is not considered. Manipulating any of the
+        fields in the token dictionary is not recommended and will likely have no effect.
+
+        **For its entire lifetime, you are ceding control of the token to this class.**
+        You must not use the same token simultaneously in multiple instances of this class or
+        outside of it, as this may lead to unexpected behavior when e.g. the refresh token is
+        used, which can only happen once and will lead to errors when attempting to use the same
+        refresh token again elsewhere.
+
+        If you need the token back before this instance is destroyed, you can use the `token`
+        method.
 
         :param client_id: The client ID of your Anaplan Oauth 2.0 application. This Application
                must be an Authorization Code Grant application.
@@ -256,6 +273,12 @@ class AnaplanRefreshTokenAuth(_AnaplanAuth):
         :param token_url: The URL to post the refresh token request to in order to fetch the access
                token.
         """
+        if not isinstance(token, dict) and all(
+            key in token for key in ("access_token", "refresh_token")
+        ):
+            raise ValueError(
+                "The token must at least contain 'access_token' and 'refresh_token' keys."
+            )
         self._oauth_token = token
         self._oauth = _OAuthRequestFactory(
             client_id=client_id,
@@ -264,6 +287,16 @@ class AnaplanRefreshTokenAuth(_AnaplanAuth):
             token_url=token_url,
         )
         super().__init__(self._oauth_token["access_token"])
+
+    @property
+    def token(self) -> dict[str, str]:
+        """
+        Returns the current token dictionary. You can safely use the `access_token`, but if you
+        must not use the `refresh_token` outside of this class, if you expect to use this instance
+        further. If you do use the `refresh_token` outside of this class, this will error on the
+        next attempt to refresh the token, as the `refresh_token` can only be used once.
+        """
+        return self._oauth_token
 
     def _build_auth_request(self) -> httpx.Request:
         return self._oauth.refresh_token_request(self._oauth_token["refresh_token"])

@@ -7,9 +7,9 @@ There are three main ways to authenticate with Anaplan.
 - OAuth2
 
 Anaplan SDK supports all of them, though Basic Authentication is strictly not recommended for production use.
-Certificate
-Authentication is currently the most suitable for production use, since the Anaplan OAuth 2.0 implementation does not
-support the `client_credentials` grant type. This means you will have to manually manage the Refresh Token.
+Certificate Authentication is currently the most suitable for production use, since the Anaplan OAuth 2.0 
+implementation does not support the `client_credentials` grant type. This means you will have to manually manage the 
+refresh Token if you choose to use OAuth2.
 
 ## Basic Authentication
 
@@ -45,7 +45,7 @@ maintain and error-prone.
 
 Certificate Authentication is the most suitable for production use. It uses an X.509 S/MIME Certificate (aka. Client Certificate or HTTPS-Certificate) and Private Key. The Process of acquiring such a certificate is well [documented](https://help.anaplan.com/procure-ca-certificates-47842267-2cb3-4e38-90bf-13b1632bcd44). Anaplan does not support self-signed certificates, so you will need to procure a certificate from a trusted Certificate Authority (CA).
 
-??? tip "Requires Extra"
+???+ tip "Requires Extra"
     If you want to use certificate authentication, you need to install the `cert` extra:
     === "pip"
         ```shell
@@ -96,7 +96,8 @@ in which the authentication flow must occur outside the SDK for the user to log 
 
 These Classes exist for convenience only, and you can use any other Library to handle the Oauth2 flow.
 
-An example for FastAPI is shown below, but you can use any other Web Framework.
+A minimal, illustrative example for FastAPI is shown below, but you can use any other Web Framework. This will not run
+until you implement the TODOs in a suitable way for your purpose.
 
 ??? tip "Requires Extra"
     If you want to use OAuth2 authentication, you need to install the `oauth` extra:
@@ -200,10 +201,10 @@ when it expires.
 
 ## OAuth for Local Applications
 
-For local applications, you can use `AnaplanOAuthCodeAuth` Class to handle the initial Oauth2 `authorization_code` flow 
+For local applications, you can use `AnaplanLocalOAuth` Class to handle the initial Oauth2 `authorization_code` flow 
 and the subsequent token refreshes.
 
-??? tip "Requires Extra"
+???+ tip "Requires Extra"
     If you want to use OAuth2 authentication, you need to install the `oauth` extra:
     === "pip"
         ```shell
@@ -222,7 +223,7 @@ and the subsequent token refreshes.
 === "Synchronous"
     ```python
     anaplan = Client(
-        auth=AnaplanOAuthCodeAuth(
+        auth=AnaplanLocalOAuth(
             client_id=os.environ["OAUTH_CLIENT_ID"],
             client_secret=os.environ["OAUTH_CLIENT_SECRET"],
             redirect_uri="https://vinzenzklass.github.io/anaplan-sdk",
@@ -232,7 +233,7 @@ and the subsequent token refreshes.
 === "Asynchronous"
     ```python
     anaplan = AsyncClient(
-        auth=AnaplanOAuthCodeAuth(
+        auth=AnaplanLocalOAuth(
             client_id=os.environ["OAUTH_CLIENT_ID"],
             client_secret=os.environ["OAUTH_CLIENT_SECRET"],
             redirect_uri="https://vinzenzklass.github.io/anaplan-sdk",
@@ -246,6 +247,17 @@ will need to copy the entire redirect URI from your browser and paste it into th
 ???+ info "Why do I need to copy the redirect URL?"
     Unfortunately, registering localhost redirect URIs is not supported by Anaplan. This means we cannot intercept the
     redirect URI and extract the `authorization_code` automatically. This is a limitation of Anaplan's OAuth2 implementation. See [this Community Note](https://community.anaplan.com/discussion/156599/oauth-rediredt-url-port-for-desktop-apps).
+
+
+## OAuth Token Ownership
+
+Instances of both `AnaplanLocalOAuth` and `AnaplanRefreshTokenAuth` assert ownership of the token you pass to them 
+for their entire lifetime. This means that you should not use the token outside of these classes, as it may lead to 
+errors when attempting to use the same refresh token in multiple places. You can access the current token by using the
+`token` property, but you should not use anything other than the `access_token`. You can use this property to 
+reassert control of the OAuth token when the instance is nor longer needed. If you do need to use the token in several
+places simultaneously, you should use a [custom scheme](#custom-authentication-schemes) to do so and handle all 
+potential conflicts appropriately.
 
 
 ## Custom Authentication Schemes
