@@ -38,7 +38,8 @@ abstractions over all Anaplan APIs, allowing you to focus on business requiremen
 
 ## Getting Started
 
-Head over to the [Quick Start](quickstart.md) for basic usage instructions and examples.
+Head over to the [Quick Start](https://vinzenzklass.github.io/anaplan-sdk/quickstart/) for basic usage instructions and
+examples.
 
 ## Contributing
 
