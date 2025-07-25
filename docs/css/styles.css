@@ -35,7 +35,7 @@
     color: #D55FDE
 }
 
-.hljs-addition, .hljs-attribute, .hljs-meta .hljs-string, .hljs-regexp, .hljs-string {
+.hljs-addition, .hljs-attribute, .hljs-string, .hljs-regexp, .hljs-string {
     color: #2fb170
 }
 
@@ -43,7 +43,7 @@
     color: #abb2bf
 }
 
-.hljs-type {
+.hljs-type, .hljs-meta {
     color: #E4B962;
 }
 
@@ -51,7 +51,7 @@
     color: #d0864a
 }
 
-.hljs-bullet, .hljs-link, .hljs-meta, .hljs-selector-id, .hljs-symbol, .hljs-title, .hljs-class .hljs-title, .hljs-title.class_ {
+.hljs-bullet, .hljs-link, .hljs-selector-id, .hljs-symbol, .hljs-title, .hljs-class .hljs-title, .hljs-title.class_ {
     color: #5488e8
 }
 
