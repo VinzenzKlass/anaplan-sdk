@@ -4,7 +4,6 @@ from base64 import b64encode
 from typing import Callable
 
 import httpx
-import keyring
 
 from ._oauth import _OAuthRequestFactory
 from .exceptions import AnaplanException, InvalidCredentialsException, InvalidPrivateKeyException
@@ -205,7 +204,7 @@ class AnaplanLocalOAuth(_AnaplanAuth):
                 if stored:
                     logger.info("Using persisted OAuth refresh token.")
                     self._oauth_token = {"refresh_token": stored}
-                    self._token = None  # Set to None to trigger the super().__init__ auth request.
+                    self._token = ""  # Set to blank to trigger the super().__init__ auth request.
             except ImportError as e:
                 raise AnaplanException(
                     "keyring is not available. Please install anaplan-sdk with the keyring extra "
@@ -246,6 +245,8 @@ class AnaplanLocalOAuth(_AnaplanAuth):
             raise AnaplanException(f"Authentication failed: {response.status_code} {response.text}")
         self._oauth_token = response.json()
         if self._persist_token:
+            import keyring
+
             keyring.set_password(
                 self._service_name, self._service_name, self._oauth_token["refresh_token"]
             )
@@ -304,7 +305,7 @@ class AnaplanRefreshTokenAuth(_AnaplanAuth):
         :param token_url: The URL to post the refresh token request to in order to fetch the access
                token.
         """
-        if not isinstance(token, dict) and all(
+        if not isinstance(token, dict) or not all(
             key in token for key in ("access_token", "refresh_token")
         ):
             raise ValueError(
@@ -322,7 +323,7 @@ class AnaplanRefreshTokenAuth(_AnaplanAuth):
     @property
     def token(self) -> dict[str, str]:
         """
-        Returns the current token dictionary. You can safely use the `access_token`, but if you
+        Returns the current OAuth token. You can safely use the `access_token`, but you
         must not use the `refresh_token` outside of this class, if you expect to use this instance
         further. If you do use the `refresh_token` outside of this class, this will error on the
         next attempt to refresh the token, as the `refresh_token` can only be used once.
