@@ -19,6 +19,7 @@ from ._bulk import (
 )
 from ._transactional import (
     CurrentPeriod,
+    Dimension,
     Failure,
     FiscalYear,
     InsertionResult,
@@ -28,6 +29,8 @@ from ._transactional import (
     Module,
     MonthsQuartersYearsCalendar,
     User,
+    View,
+    ViewInfo,
     WeeksGeneralCalendar,
     WeeksGroupingCalendar,
     WeeksPeriodsCalendar,
@@ -66,4 +69,7 @@ __all__ = [
     "WeeksGeneralCalendar",
     "WeeksGroupingCalendar",
     "WeeksPeriodsCalendar",
+    "Dimension",
+    "View",
+    "ViewInfo",
 ]

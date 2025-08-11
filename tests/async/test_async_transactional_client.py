@@ -2,7 +2,15 @@ from calendar import monthrange
 from datetime import date
 
 from anaplan_sdk import AsyncClient
-from anaplan_sdk.models import CurrentPeriod, FiscalYear, InsertionResult, ListMetadata, ModelStatus
+from anaplan_sdk.models import (
+    CurrentPeriod,
+    FiscalYear,
+    InsertionResult,
+    ListMetadata,
+    ModelStatus,
+    View,
+    ViewInfo,
+)
 
 
 async def test_list_modules(client: AsyncClient):
@@ -67,6 +75,18 @@ async def test_short_list_deletion(client: AsyncClient, test_list, list_items_sh
 
 async def test_reset_list_index(client: AsyncClient, test_list):
     await client.transactional.reset_list_index(test_list)
+
+
+async def test_list_views(client: AsyncClient):
+    views = await client.transactional.list_views()
+    assert isinstance(views, list)
+    assert len(views) > 0
+    assert all(isinstance(view, View) for view in views)
+
+
+async def test_get_view_info(client: AsyncClient):
+    info = await client.transactional.get_view_info(102000000015)
+    assert isinstance(info, ViewInfo)
 
 
 async def test_get_current_period(client: AsyncClient):

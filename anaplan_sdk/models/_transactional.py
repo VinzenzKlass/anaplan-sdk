@@ -36,6 +36,29 @@ class Module(AnaplanModel):
     name: str = Field(description="The name of this module.")
 
 
+class Dimension(AnaplanModel):
+    id: int = Field(description="The unique identifier of this dimension.")
+    name: str = Field(description="The name of this dimension.")
+
+
+class View(AnaplanModel):
+    code: str = Field(description="The code of this view.")
+    id: int = Field(description="The unique identifier of this view.")
+    name: str = Field(description="The name of this views.")
+    moduleId: int = Field(description="The unique identifier of the module this view belongs to.")
+
+
+class ViewInfo(AnaplanModel):
+    view_id: int = Field(description="The unique identifier of this view.")
+    view_name: str = Field(description="The name of this view.")
+    rows: list[Dimension] = Field(
+        [], description="The list of dimensions in the rows of this view."
+    )
+    pages: list[Dimension] = Field(
+        [], description="The list of dimensions in the pages of this view."
+    )
+
+
 class LineItem(AnaplanModel):
     id: int = Field(description="The unique identifier of this line item.")
     name: str = Field(description="The name of this line item.")

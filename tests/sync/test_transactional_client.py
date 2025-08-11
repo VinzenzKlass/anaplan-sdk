@@ -1,5 +1,5 @@
 from anaplan_sdk import Client
-from anaplan_sdk.models import InsertionResult, ListMetadata, ModelStatus
+from anaplan_sdk.models import InsertionResult, ListMetadata, ModelStatus, View, ViewInfo
 
 
 def test_list_modules(client: Client):
@@ -64,3 +64,15 @@ def test_short_list_deletion(client: Client, test_list, list_items_short):
 
 def test_reset_list_index(client: Client, test_list):
     client.transactional.reset_list_index(test_list)
+
+
+def test_list_views(client: Client):
+    views = client.transactional.list_views()
+    assert isinstance(views, list)
+    assert len(views) > 0
+    assert all(isinstance(view, View) for view in views)
+
+
+def test_get_view_info(client: Client):
+    info = client.transactional.get_view_info(102000000015)
+    assert isinstance(info, ViewInfo)
