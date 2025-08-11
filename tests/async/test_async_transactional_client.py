@@ -1,5 +1,8 @@
+from calendar import monthrange
+from datetime import date
+
 from anaplan_sdk import AsyncClient
-from anaplan_sdk.models import InsertionResult, ListMetadata, ModelStatus
+from anaplan_sdk.models import CurrentPeriod, FiscalYear, InsertionResult, ListMetadata, ModelStatus
 
 
 async def test_list_modules(client: AsyncClient):
@@ -64,3 +67,23 @@ async def test_short_list_deletion(client: AsyncClient, test_list, list_items_sh
 
 async def test_reset_list_index(client: AsyncClient, test_list):
     await client.transactional.reset_list_index(test_list)
+
+
+async def test_get_current_period(client: AsyncClient):
+    period = await client.transactional.get_current_period()
+    assert isinstance(period, CurrentPeriod)
+
+
+async def test_set_current_period(client: AsyncClient):
+    today = date.today()
+    last_day_of_month = date(today.year, today.month, monthrange(today.year, today.month)[1])
+    period = await client.transactional.set_current_period(today.strftime("%Y-%m-%d"))
+    assert isinstance(period, CurrentPeriod)
+    assert period.last_day == last_day_of_month.strftime("%Y-%m-%d")
+
+
+async def test_set_current_fiscal_year(client: AsyncClient):
+    year = "FY25"
+    fiscal_year = await client.transactional.set_current_fiscal_year(year)
+    assert isinstance(fiscal_year, FiscalYear)
+    assert fiscal_year.year == year

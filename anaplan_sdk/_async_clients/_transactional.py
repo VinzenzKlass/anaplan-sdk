@@ -5,7 +5,10 @@ from typing import Any
 import httpx
 
 from anaplan_sdk._base import _AsyncBaseClient
+from anaplan_sdk.exceptions import AnaplanException
 from anaplan_sdk.models import (
+    CurrentPeriod,
+    FiscalYear,
     InsertionResult,
     LineItem,
     List,
@@ -13,6 +16,10 @@ from anaplan_sdk.models import (
     ListMetadata,
     ModelStatus,
     Module,
+    MonthsQuartersYearsCalendar,
+    WeeksGeneralCalendar,
+    WeeksGroupingCalendar,
+    WeeksPeriodsCalendar,
 )
 
 
@@ -188,3 +195,57 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         """
         res = await self._post(f"{self._url}/modules/{module_id}/data", json=data)
         return res if "failures" in res else res["numberOfCellsChanged"]
+
+    async def get_current_period(self) -> CurrentPeriod:
+        """
+        Gets the current period of the model.
+        :return: The current period of the model.
+        """
+        res = await self._get(f"{self._url}/currentPeriod")
+        return CurrentPeriod.model_validate(res["currentPeriod"])
+
+    async def set_current_period(self, date: str) -> CurrentPeriod:
+        """
+        Sets the current period of the model to the given date.
+        :param date: The date to set the current period to, in the format 'YYYY-MM-DD'.
+        :return: The updated current period of the model.
+        """
+        res = await self._put(f"{self._url}/currentPeriod", {"date": date})
+        return CurrentPeriod.model_validate(res["currentPeriod"])
+
+    async def set_current_fiscal_year(self, year: str) -> FiscalYear:
+        """
+        Sets the current fiscal year of the model.
+        :param year: The fiscal year to set, in the format specified in the model, e.g. FY24.
+        :return: The updated fiscal year of the model.
+        """
+        res = await self._put(f"{self._url}/modelCalendar/fiscalYear", {"year": year})
+        return FiscalYear.model_validate(res["modelCalendar"]["fiscalYear"])
+
+    async def get_model_calendar(
+        self,
+    ) -> (
+        MonthsQuartersYearsCalendar
+        | WeeksGeneralCalendar
+        | WeeksGroupingCalendar
+        | WeeksPeriodsCalendar
+    ):
+        """
+        Get the calendar settings of the model.
+        :return: The calendar settings of the model. The Model is selected based on the calendar
+                 type.
+        """
+        cal = (await self._get(f"{self._url}/modelCalendar"))["modelCalendar"]
+        cal_type = cal.get("calendarType")
+        if cal_type == "Calendar Months/Quarters/Years":
+            return MonthsQuartersYearsCalendar.model_validate(cal)
+        if cal_type == "Weeks: 4-4-5, 4-5-4 or 5-4-4":
+            return WeeksGroupingCalendar.model_validate(cal)
+        if cal_type == "Weeks: General":
+            return WeeksGeneralCalendar.model_validate(cal)
+        if cal_type == "Weeks: 13 4-week Periods":
+            return WeeksPeriodsCalendar.model_validate(cal)
+        raise AnaplanException(
+            "Unknown calendar type encountered. Please report this issue: "
+            "https://github.com/VinzenzKlass/anaplan-sdk/issues/new"
+        )

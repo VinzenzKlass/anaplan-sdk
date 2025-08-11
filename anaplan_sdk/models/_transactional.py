@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import Field
 
 from ._base import AnaplanModel
@@ -92,3 +94,77 @@ class InsertionResult(AnaplanModel):
     ignored: int = Field(description="The number of items ignored, or items that failed.")
     total: int = Field(description="The total number of items.")
     failures: list[Failure] = Field([], description="The list of failures.")
+
+
+class PartialCurrentPeriod(AnaplanModel):
+    period_text: str = Field(description="The text representation of the current period.")
+    last_day: str = Field(description="The last day of the current period in YYYY-MM-DD format.")
+
+
+class CurrentPeriod(PartialCurrentPeriod):
+    calendar_type: str = Field(description="The type of calendar used for the current period.")
+
+
+class FiscalYear(AnaplanModel):
+    year: str = Field(description="The fiscal year in the format set in the model, e.g. FY24.")
+    start_date: str = Field(description="The start date of the fiscal year in YYYY-MM-DD format.")
+    end_date: str = Field(description="The end date of the fiscal year in YYYY-MM-DD format.")
+
+
+class TotalsSelection(AnaplanModel):
+    quarter_totals: bool = Field(description="Whether quarter totals are enabled.")
+    half_year_totals: bool = Field(description="Whether half year totals are enabled.")
+    year_to_date_summary: bool = Field(description="Whether year to date summary is enabled.")
+    year_to_go_summary: bool = Field(description="Whether year to go summary is enabled.")
+    total_of_all_periods: bool = Field(description="Whether total of all periods is enabled.")
+
+
+class TotalsSelectionWithQuarter(TotalsSelection):
+    extra_month_quarter: Literal[1, 2, 3, 4] = Field(
+        description="The quarter in which the extra month is included."
+    )
+
+
+class BaseCalendar(AnaplanModel):
+    calendar_type: Literal[
+        "Calendar Months/Quarters/Years",
+        "Weeks: 4-4-5, 4-5-4 or 5-4-4",
+        "Weeks: General",
+        "Weeks: 13 4-week Periods",
+    ] = Field(description="The type of calendar used.")
+    current_period: PartialCurrentPeriod = Field(description="The current period configuration.")
+
+
+class MonthsQuartersYearsCalendar(BaseCalendar):
+    past_years_count: int = Field(description="The number of past years included.")
+    fiscal_year: FiscalYear = Field(description="The fiscal year configuration.")
+    totals_selection: TotalsSelection = Field(
+        description="The totals selection configuration for the calendar."
+    )
+
+
+class WeeksGeneralCalendar(BaseCalendar):
+    start_date: str = Field(description="The start date of the calendar in YYYY-MM-DD format.")
+    weeks_count: int = Field(description="The number of weeks in the calendar.")
+
+
+class WeeksPeriodsCalendar(BaseCalendar):
+    fiscal_year: FiscalYear = Field(description="The fiscal year configuration.")
+    past_years_count: int = Field(description="The number of past years included.")
+    future_years_count: int = Field(description="The number of future years included.")
+    extra_week_month: int = Field(description="The month in which the extra week is included.")
+    week_format: Literal["Numbered", "Week Commencing", "Week Ending"] = Field(
+        description="The format of the week."
+    )
+    totals_selection: TotalsSelectionWithQuarter = Field(
+        description="The totals selection configuration for the calendar."
+    )
+
+
+class WeeksGroupingCalendar(WeeksPeriodsCalendar):
+    week_grouping: str = Field(
+        description="The week grouping configuration, e.g. '4-4-5', '4-5-4', or '5-4-4'."
+    )
+    totals_selection: TotalsSelection = Field(
+        description="The totals selection configuration for the calendar."
+    )
