@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Literal, TypeAlias, Union
 
 from pydantic import Field
 
@@ -193,9 +193,6 @@ class WeeksGroupingCalendar(WeeksPeriodsCalendar):
     )
 
 
-ModelCalendar = (
-    MonthsQuartersYearsCalendar
-    | WeeksGeneralCalendar
-    | WeeksGroupingCalendar
-    | WeeksPeriodsCalendar
-)
+ModelCalendar: TypeAlias = Union[
+    MonthsQuartersYearsCalendar, WeeksGeneralCalendar, WeeksGroupingCalendar, WeeksPeriodsCalendar
+]
