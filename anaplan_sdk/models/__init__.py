@@ -17,7 +17,18 @@ from ._bulk import (
     TaskSummary,
     Workspace,
 )
-from ._transactional import Failure, InsertionResult, LineItem, ListItem, ModelStatus, Module, User
+from ._transactional import (
+    Dimension,
+    Failure,
+    InsertionResult,
+    LineItem,
+    ListItem,
+    ModelStatus,
+    Module,
+    User,
+    View,
+    ViewInfo,
+)
 
 __all__ = [
     "AnaplanModel",
@@ -36,6 +47,9 @@ __all__ = [
     "Export",
     "Process",
     "Module",
+    "View",
+    "ViewInfo",
+    "Dimension",
     "LineItem",
     "TaskSummary",
     "TaskResult",
