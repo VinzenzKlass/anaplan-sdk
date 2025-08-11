@@ -8,6 +8,7 @@ from anaplan_sdk.models import (
     InsertionResult,
     ListMetadata,
     ModelStatus,
+    MonthsQuartersYearsCalendar,
     View,
     ViewInfo,
 )
@@ -107,3 +108,8 @@ async def test_set_current_fiscal_year(client: AsyncClient):
     fiscal_year = await client.transactional.set_current_fiscal_year(year)
     assert isinstance(fiscal_year, FiscalYear)
     assert fiscal_year.year == year
+
+
+async def test_get_model_calendar(client: AsyncClient):
+    calendar = await client.transactional.get_model_calendar()
+    assert isinstance(calendar, MonthsQuartersYearsCalendar)

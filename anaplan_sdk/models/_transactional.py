@@ -191,3 +191,11 @@ class WeeksGroupingCalendar(WeeksPeriodsCalendar):
     totals_selection: TotalsSelection = Field(
         description="The totals selection configuration for the calendar."
     )
+
+
+ModelCalendar = (
+    MonthsQuartersYearsCalendar
+    | WeeksGeneralCalendar
+    | WeeksGroupingCalendar
+    | WeeksPeriodsCalendar
+)

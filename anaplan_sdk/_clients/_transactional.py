@@ -4,8 +4,10 @@ from typing import Any
 
 import httpx
 
-from anaplan_sdk._base import _BaseClient
+from anaplan_sdk._base import _BaseClient, parse_calendar_response
 from anaplan_sdk.models import (
+    CurrentPeriod,
+    FiscalYear,
     InsertionResult,
     LineItem,
     List,
@@ -16,6 +18,7 @@ from anaplan_sdk.models import (
     View,
     ViewInfo,
 )
+from anaplan_sdk.models._transactional import ModelCalendar
 
 
 class _TransactionalClient(_BaseClient):
@@ -203,3 +206,36 @@ class _TransactionalClient(_BaseClient):
         """
         res = self._post(f"{self._url}/modules/{module_id}/data", json=data)
         return res if "failures" in res else res["numberOfCellsChanged"]
+
+    def get_current_period(self) -> CurrentPeriod:
+        """
+        Gets the current period of the model.
+        :return: The current period of the model.
+        """
+        res = self._get(f"{self._url}/currentPeriod")
+        return CurrentPeriod.model_validate(res["currentPeriod"])
+
+    def set_current_period(self, date: str) -> CurrentPeriod:
+        """
+        Sets the current period of the model to the given date.
+        :param date: The date to set the current period to, in the format 'YYYY-MM-DD'.
+        :return: The updated current period of the model.
+        """
+        res = self._put(f"{self._url}/currentPeriod", {"date": date})
+        return CurrentPeriod.model_validate(res["currentPeriod"])
+
+    def set_current_fiscal_year(self, year: str) -> FiscalYear:
+        """
+        Sets the current fiscal year of the model.
+        :param year: The fiscal year to set, in the format specified in the model, e.g. FY24.
+        :return: The updated fiscal year of the model.
+        """
+        res = self._put(f"{self._url}/modelCalendar/fiscalYear", {"year": year})
+        return FiscalYear.model_validate(res["modelCalendar"]["fiscalYear"])
+
+    def get_model_calendar(self) -> ModelCalendar:
+        """
+        Get the calendar settings of the model.
+        :return: The calendar settings of the model.
+        """
+        return parse_calendar_response(self._get(f"{self._url}/modelCalendar"))

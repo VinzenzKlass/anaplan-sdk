@@ -4,8 +4,7 @@ from typing import Any
 
 import httpx
 
-from anaplan_sdk._base import _AsyncBaseClient
-from anaplan_sdk.exceptions import AnaplanException
+from anaplan_sdk._base import _AsyncBaseClient, parse_calendar_response
 from anaplan_sdk.models import (
     CurrentPeriod,
     FiscalYear,
@@ -16,13 +15,10 @@ from anaplan_sdk.models import (
     ListMetadata,
     ModelStatus,
     Module,
-    MonthsQuartersYearsCalendar,
     View,
     ViewInfo,
-    WeeksGeneralCalendar,
-    WeeksGroupingCalendar,
-    WeeksPeriodsCalendar,
 )
+from anaplan_sdk.models._transactional import ModelCalendar
 
 
 class _AsyncTransactionalClient(_AsyncBaseClient):
@@ -242,30 +238,9 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         res = await self._put(f"{self._url}/modelCalendar/fiscalYear", {"year": year})
         return FiscalYear.model_validate(res["modelCalendar"]["fiscalYear"])
 
-    async def get_model_calendar(
-        self,
-    ) -> (
-        MonthsQuartersYearsCalendar
-        | WeeksGeneralCalendar
-        | WeeksGroupingCalendar
-        | WeeksPeriodsCalendar
-    ):
+    async def get_model_calendar(self) -> ModelCalendar:
         """
         Get the calendar settings of the model.
-        :return: The calendar settings of the model. The Model is selected based on the calendar
-                 type.
+        :return: The calendar settings of the model.
         """
-        cal = (await self._get(f"{self._url}/modelCalendar"))["modelCalendar"]
-        cal_type = cal.get("calendarType")
-        if cal_type == "Calendar Months/Quarters/Years":
-            return MonthsQuartersYearsCalendar.model_validate(cal)
-        if cal_type == "Weeks: 4-4-5, 4-5-4 or 5-4-4":
-            return WeeksGroupingCalendar.model_validate(cal)
-        if cal_type == "Weeks: General":
-            return WeeksGeneralCalendar.model_validate(cal)
-        if cal_type == "Weeks: 13 4-week Periods":
-            return WeeksPeriodsCalendar.model_validate(cal)
-        raise AnaplanException(
-            "Unknown calendar type encountered. Please report this issue: "
-            "https://github.com/VinzenzKlass/anaplan-sdk/issues/new"
-        )
+        return parse_calendar_response(await self._get(f"{self._url}/modelCalendar"))
