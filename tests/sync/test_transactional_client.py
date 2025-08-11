@@ -1,5 +1,17 @@
+from _pydatetime import date
+from calendar import monthrange
+
 from anaplan_sdk import Client
-from anaplan_sdk.models import InsertionResult, ListMetadata, ModelStatus, View, ViewInfo
+from anaplan_sdk.models import (
+    CurrentPeriod,
+    FiscalYear,
+    InsertionResult,
+    ListMetadata,
+    ModelStatus,
+    MonthsQuartersYearsCalendar,
+    View,
+    ViewInfo,
+)
 
 
 def test_list_modules(client: Client):
@@ -76,3 +88,28 @@ def test_list_views(client: Client):
 def test_get_view_info(client: Client):
     info = client.transactional.get_view_info(102000000015)
     assert isinstance(info, ViewInfo)
+
+
+def test_get_current_period(client: Client):
+    period = client.transactional.get_current_period()
+    assert isinstance(period, CurrentPeriod)
+
+
+def test_set_current_period(client: Client):
+    today = date.today()
+    last_day_of_month = date(today.year, today.month, monthrange(today.year, today.month)[1])
+    period = client.transactional.set_current_period(today.strftime("%Y-%m-%d"))
+    assert isinstance(period, CurrentPeriod)
+    assert period.last_day == last_day_of_month.strftime("%Y-%m-%d")
+
+
+def test_set_current_fiscal_year(client: Client):
+    year = "FY25"
+    fiscal_year = client.transactional.set_current_fiscal_year(year)
+    assert isinstance(fiscal_year, FiscalYear)
+    assert fiscal_year.year == year
+
+
+def test_get_model_calendar(client: Client):
+    calendar = client.transactional.get_model_calendar()
+    assert isinstance(calendar, MonthsQuartersYearsCalendar)

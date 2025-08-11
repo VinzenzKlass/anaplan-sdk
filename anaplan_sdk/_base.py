@@ -13,7 +13,14 @@ import httpx
 from httpx import HTTPError, Response
 
 from .exceptions import AnaplanException, AnaplanTimeoutException, InvalidIdentifierException
-from .models import AnaplanModel
+from .models import (
+    AnaplanModel,
+    ModelCalendar,
+    MonthsQuartersYearsCalendar,
+    WeeksGeneralCalendar,
+    WeeksGroupingCalendar,
+    WeeksPeriodsCalendar,
+)
 from .models.cloud_works import (
     AmazonS3ConnectionInput,
     AzureBlobConnectionInput,
@@ -295,3 +302,25 @@ def raise_error(error: HTTPError) -> None:
 
     logger.error(f"Error: {error}")
     raise AnaplanException from error
+
+
+def parse_calendar_response(data: dict) -> ModelCalendar:
+    """
+    Parse calendar response and return appropriate calendar model.
+    :param data: The calendar data from the API response.
+    :return: The calendar settings of the model based on calendar type.
+    """
+    calendar_data = data["modelCalendar"]
+    cal_type = calendar_data["calendarType"]
+    if cal_type == "Calendar Months/Quarters/Years":
+        return MonthsQuartersYearsCalendar.model_validate(calendar_data)
+    if cal_type == "Weeks: 4-4-5, 4-5-4 or 5-4-4":
+        return WeeksGroupingCalendar.model_validate(calendar_data)
+    if cal_type == "Weeks: General":
+        return WeeksGeneralCalendar.model_validate(calendar_data)
+    if cal_type == "Weeks: 13 4-week Periods":
+        return WeeksPeriodsCalendar.model_validate(calendar_data)
+    raise AnaplanException(
+        "Unknown calendar type encountered. Please report this issue: "
+        "https://github.com/VinzenzKlass/anaplan-sdk/issues/new"
+    )

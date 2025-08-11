@@ -18,16 +18,23 @@ from ._bulk import (
     Workspace,
 )
 from ._transactional import (
+    CurrentPeriod,
     Dimension,
     Failure,
+    FiscalYear,
     InsertionResult,
     LineItem,
     ListItem,
+    ModelCalendar,
     ModelStatus,
     Module,
+    MonthsQuartersYearsCalendar,
     User,
     View,
     ViewInfo,
+    WeeksGeneralCalendar,
+    WeeksGroupingCalendar,
+    WeeksPeriodsCalendar,
 )
 
 __all__ = [
@@ -47,9 +54,6 @@ __all__ = [
     "Export",
     "Process",
     "Module",
-    "View",
-    "ViewInfo",
-    "Dimension",
     "LineItem",
     "TaskSummary",
     "TaskResult",
@@ -60,4 +64,14 @@ __all__ = [
     "Failure",
     "InsertionResult",
     "Revision",
+    "CurrentPeriod",
+    "FiscalYear",
+    "MonthsQuartersYearsCalendar",
+    "WeeksGeneralCalendar",
+    "WeeksGroupingCalendar",
+    "WeeksPeriodsCalendar",
+    "Dimension",
+    "View",
+    "ViewInfo",
+    "ModelCalendar",
 ]
