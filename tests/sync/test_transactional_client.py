@@ -1,5 +1,5 @@
-from _pydatetime import date
 from calendar import monthrange
+from datetime import date
 
 from anaplan_sdk import Client
 from anaplan_sdk.models import (
