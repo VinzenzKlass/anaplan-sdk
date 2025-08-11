@@ -13,6 +13,8 @@ from anaplan_sdk.models import (
     ListMetadata,
     ModelStatus,
     Module,
+    View,
+    ViewInfo,
 )
 
 
@@ -30,6 +32,24 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
             Module.model_validate(e)
             for e in await self._get_paginated(f"{self._url}/modules", "modules")
         ]
+
+    async def list_views(self) -> list[View]:
+        """
+        Lists all the Views in the Model. This will include all Modules and potentially other saved
+        views.
+        :return: The List of Views.
+        """
+        return [
+            View.model_validate(e) for e in await self._get_paginated(f"{self._url}/views", "views")
+        ]
+
+    async def get_view_info(self, view_id: int) -> ViewInfo:
+        """
+        Gets the detailed information about a View.
+        :param view_id: The ID of the View.
+        :return: The information about the View.
+        """
+        return ViewInfo.model_validate((await self._get(f"{self._url}/views/{view_id}")))
 
     async def get_model_status(self) -> ModelStatus:
         """
