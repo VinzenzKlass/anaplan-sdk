@@ -13,12 +13,12 @@ from anaplan_sdk.models import (
     List,
     ListItem,
     ListMetadata,
+    ModelCalendar,
     ModelStatus,
     Module,
     View,
     ViewInfo,
 )
-from anaplan_sdk.models._transactional import ModelCalendar
 
 
 class _AsyncTransactionalClient(_AsyncBaseClient):

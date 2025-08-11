@@ -15,12 +15,12 @@ from httpx import HTTPError, Response
 from .exceptions import AnaplanException, AnaplanTimeoutException, InvalidIdentifierException
 from .models import (
     AnaplanModel,
+    ModelCalendar,
     MonthsQuartersYearsCalendar,
     WeeksGeneralCalendar,
     WeeksGroupingCalendar,
     WeeksPeriodsCalendar,
 )
-from .models._transactional import ModelCalendar
 from .models.cloud_works import (
     AmazonS3ConnectionInput,
     AzureBlobConnectionInput,

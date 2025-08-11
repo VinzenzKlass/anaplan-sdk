@@ -25,6 +25,7 @@ from ._transactional import (
     InsertionResult,
     LineItem,
     ListItem,
+    ModelCalendar,
     ModelStatus,
     Module,
     MonthsQuartersYearsCalendar,
@@ -72,4 +73,5 @@ __all__ = [
     "Dimension",
     "View",
     "ViewInfo",
+    "ModelCalendar",
 ]
