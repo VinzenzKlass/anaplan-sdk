@@ -1,3 +1,5 @@
+from typing import Literal
+
 from pydantic import Field
 
 from ._base import AnaplanModel
@@ -49,7 +51,20 @@ class ModelRevision(AnaplanModel):
     )
 
 
-class SyncTask(AnaplanModel):
+class SyncTaskSummary(AnaplanModel):
     id: str = Field(validation_alias="taskId", description="The unique identifier of this task.")
-    task_state: str = Field(description="The state of this task.")
+    task_state: Literal["NOT_STARTED", "IN_PROGRESS", "COMPLETE"] = Field(
+        description="The state of this task."
+    )
     creation_time: int = Field(description="The creation time of this task.")
+
+
+class SyncTaskResult(AnaplanModel):
+    source_revision_id: str = Field("The ID of the source revision.")
+    target_revision_id: str = Field("The ID of the target revision.")
+    successful: bool = Field(description="Whether the sync task was successful or not.")
+
+
+class SyncTask(SyncTaskSummary):
+    current_step: str = Field(description="The current step of the sync task.")
+    result: SyncTaskResult = Field(description="The result of the sync task.")

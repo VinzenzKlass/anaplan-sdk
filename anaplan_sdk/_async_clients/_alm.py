@@ -3,7 +3,7 @@ from typing import Literal
 import httpx
 
 from anaplan_sdk._base import _AsyncBaseClient
-from anaplan_sdk.models import ModelRevision, Revision, SyncTask
+from anaplan_sdk.models import ModelRevision, Revision, SyncTask, SyncTaskSummary
 
 
 class _AsyncAlmClient(_AsyncBaseClient):
@@ -18,17 +18,12 @@ class _AsyncAlmClient(_AsyncBaseClient):
         """
         await self._put(f"{self._url}/onlineStatus", json={"status": status})
 
-    async def list_syncable_revisions(self, source_model_id: str) -> list[Revision]:
+    async def list_revisions(self) -> list[Revision]:
         """
-        Use this call to return the list of revisions from your source model that can be
-        synchronized to your target model.
-
-        The returned list displays in descending order, by creation date and time. This is
-        consistent with how revisions are displayed in the user interface (UI).
-        :param source_model_id: The ID of the source model.
-        :return: A list of revisions that can be synchronized to the target model.
+        Use this call to return a list of revisions for a specific model.
+        :return: A list of revisions for a specific model.
         """
-        res = await self._get(f"{self._url}/alm/syncableRevisions?sourceModelId={source_model_id}")
+        res = await self._get(f"{self._url}/alm/revisions")
         return [Revision.model_validate(e) for e in res.get("revisions", [])]
 
     async def get_latest_revision(self) -> Revision | None:
@@ -43,41 +38,48 @@ class _AsyncAlmClient(_AsyncBaseClient):
         res = (await self._get(f"{self._url}/alm/latestRevision")).get("revisions")
         return Revision.model_validate(res[0]) if res else None
 
+    async def list_syncable_revisions(self, source_model_id: str) -> list[Revision]:
+        """
+        Use this call to return the list of revisions from your source model that can be
+        synchronized to your target model.
+
+        The returned list displays in descending order, by creation date and time. This is
+        consistent with how revisions are displayed in the user interface (UI).
+        :param source_model_id: The ID of the source model.
+        :return: A list of revisions that can be synchronized to the target model.
+        """
+        res = await self._get(f"{self._url}/alm/syncableRevisions?sourceModelId={source_model_id}")
+        return [Revision.model_validate(e) for e in res.get("revisions", [])]
+
     async def create_revision(self, name: str, description: str) -> Revision:
         res = await self._post(
             f"{self._url}/alm/revisions", json={"name": name, "description": description}
         )
         return Revision.model_validate(res["revision"])
 
+    async def list_sync_tasks(self) -> list[SyncTaskSummary]:
+        """
+        List the sync tasks for a target mode. The returned the tasks are either in progress, or
+        they completed within the last 48 hours.
+        :return: A list of sync tasks in descending order of creation time.
+        """
+        res = await self._get(f"{self._url}/alm/syncTasks")
+        return [SyncTaskSummary.model_validate(e) for e in res.get("tasks", [])]
+
+    async def get_sync_task(self, task_id: str) -> SyncTask:
+        res = await self._get(f"{self._url}/alm/syncTasks/{task_id}")
+        return SyncTask.model_validate(res["task"])
+
     async def create_sync_task(
         self, source_revision_id: str, source_model_id: str, target_revision_id: str
-    ) -> SyncTask:
+    ) -> SyncTaskSummary:
         payload = {
             "sourceRevisionId": source_revision_id,
             "sourceModelId": source_model_id,
             "targetRevisionId": target_revision_id,
         }
         res = await self._post(f"{self._url}/alm/syncTasks", json=payload)
-        return SyncTask.model_validate(res["task"])
-
-    async def list_sync_tasks(self) -> list[SyncTask]:
-        """
-        Use this endpoint to return a list of sync tasks for a target model, where the tasks are
-        either in progress, or they were completed within the last 48 hours.
-
-        The list is in descending order of when the tasks were created.
-        :return: A list of sync tasks for a target model.
-        """
-        res = await self._get(f"{self._url}/alm/syncTasks")
-        return [SyncTask.model_validate(e) for e in res.get("tasks", [])]
-
-    async def list_revisions(self) -> list[Revision]:
-        """
-        Use this call to return a list of revisions for a specific model.
-        :return: A list of revisions for a specific model.
-        """
-        res = await self._get(f"{self._url}/alm/revisions")
-        return [Revision.model_validate(e) for e in res.get("revisions", [])]
+        return SyncTaskSummary.model_validate(res["task"])
 
     async def list_models_for_revision(self, revision_id: str) -> list[ModelRevision]:
         """

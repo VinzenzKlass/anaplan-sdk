@@ -1,7 +1,7 @@
 import httpx
 
 from anaplan_sdk._base import _BaseClient
-from anaplan_sdk.models import ModelRevision, Revision, SyncTask
+from anaplan_sdk.models import ModelRevision, Revision, SyncTaskSummary
 
 
 class _AlmClient(_BaseClient):
@@ -40,7 +40,7 @@ class _AlmClient(_BaseClient):
             for e in self._get(f"{self._url}/latestRevision").get("revisions", [])
         ]
 
-    def get_sync_tasks(self) -> list[SyncTask]:
+    def get_sync_tasks(self) -> list[SyncTaskSummary]:
         """
         Use this endpoint to return a list of sync tasks for a target model, where the tasks are
         either in progress, or they were completed within the last 48 hours.
@@ -49,7 +49,8 @@ class _AlmClient(_BaseClient):
         :return: A list of sync tasks for a target model.
         """
         return [
-            SyncTask.model_validate(e) for e in self._get(f"{self._url}/syncTasks").get("tasks", [])
+            SyncTaskSummary.model_validate(e)
+            for e in self._get(f"{self._url}/syncTasks").get("tasks", [])
         ]
 
     def get_revisions(self) -> list[Revision]:
