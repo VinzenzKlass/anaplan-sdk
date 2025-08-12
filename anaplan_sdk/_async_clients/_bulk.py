@@ -451,6 +451,17 @@ class AsyncClient(_AsyncBaseClient):
             ).get("task")
         )
 
+    async def get_optimizer_log(self, action_id: int, task_id: str) -> bytes:
+        """
+        Retrieves the solution logs of the specified optimization action task.
+        :param action_id: The identifier of the optimization action that was invoked.
+        :param task_id: The Task identifier, sometimes also referred to as the Correlation Id.
+        :return: The content of the solution logs.
+        """
+        return await self._get_binary(
+            f"{self._url}/optimizeActions/{action_id}/tasks/{task_id}/solutionLogs"
+        )
+
     async def invoke_action(self, action_id: int) -> str:
         """
         You may want to consider using `run_action()` instead.
