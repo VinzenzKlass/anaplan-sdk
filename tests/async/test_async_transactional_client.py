@@ -21,9 +21,7 @@ async def test_wake_model(client: AsyncClient):
 
 
 async def test_close_model(client: AsyncClient):
-    other = AsyncClient.from_existing(
-        client, getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"), "C87EBE934BD442B1A798540E0CA5A877"
-    )
+    other = AsyncClient.from_existing(client, model_id="C87EBE934BD442B1A798540E0CA5A877")
     await other.transactional.close_model()
 
 
