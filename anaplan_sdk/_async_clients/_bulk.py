@@ -220,9 +220,9 @@ class AsyncClient(_AsyncBaseClient):
         """
         Lists all the Models the authenticated user has access to.
         :param search_pattern: Optionally filter for specific models. When provided,
-               case-insensitive matches models names containing this string.
+               case-insensitive matches model names containing this string.
                You can use the wildcards `%` for 0-n characters, and `_` for exactly 1 character.
-               When None (default), returns all users.
+               When None (default), returns all models.
         :return: The List of Models.
         """
         params = {"modelDetails": "true"}

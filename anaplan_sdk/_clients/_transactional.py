@@ -13,6 +13,7 @@ from anaplan_sdk.models import (
     List,
     ListItem,
     ListMetadata,
+    Model,
     ModelCalendar,
     ModelStatus,
     Module,
@@ -25,6 +26,28 @@ class _TransactionalClient(_BaseClient):
     def __init__(self, client: httpx.Client, model_id: str, retry_count: int) -> None:
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
         super().__init__(retry_count, client)
+
+    def get_model_details(self) -> Model:
+        """
+        Retrieves the Model details for the current Model.
+        :return: The Model details.
+        """
+        return Model.model_validate(self._get(self._url, params={"modelDetails": "true"})["model"])
+
+    def get_model_status(self) -> ModelStatus:
+        """
+        Gets the current status of the Model.
+        :return: The current status of the Mode.
+        """
+        return ModelStatus.model_validate(self._get(f"{self._url}/status").get("requestStatus"))
+
+    def wake_model(self) -> None:
+        """Wake up the current model."""
+        self._post_empty(f"{self._url}/open", headers={"Content-Type": "application/text"})
+
+    def close_model(self) -> None:
+        """Close the current model without."""
+        self._post_empty(f"{self._url}/close", headers={"Content-Type": "application/text"})
 
     def list_modules(self) -> list[Module]:
         """
@@ -50,13 +73,6 @@ class _TransactionalClient(_BaseClient):
         :return: The information about the View.
         """
         return ViewInfo.model_validate(self._get(f"{self._url}/views/{view_id}"))
-
-    def get_model_status(self) -> ModelStatus:
-        """
-        Gets the current status of the Model.
-        :return: The current status of the Mode.
-        """
-        return ModelStatus.model_validate(self._get(f"{self._url}/status").get("requestStatus"))
 
     def list_line_items(self, only_module_id: int | None = None) -> list[LineItem]:
         """

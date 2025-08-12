@@ -13,6 +13,7 @@ from anaplan_sdk.models import (
     List,
     ListItem,
     ListMetadata,
+    Model,
     ModelCalendar,
     ModelStatus,
     Module,
@@ -25,6 +26,30 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
     def __init__(self, client: httpx.AsyncClient, model_id: str, retry_count: int) -> None:
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
         super().__init__(retry_count, client)
+
+    async def get_model_details(self) -> Model:
+        """
+        Retrieves the Model details for the current Model.
+        :return: The Model details.
+        """
+        res = await self._get(self._url, params={"modelDetails": "true"})
+        return Model.model_validate(res["model"])
+
+    async def get_model_status(self) -> ModelStatus:
+        """
+        Gets the current status of the Model.
+        :return: The current status of the Model.
+        """
+        res = await self._get(f"{self._url}/status")
+        return ModelStatus.model_validate(res["requestStatus"])
+
+    async def wake_model(self) -> None:
+        """Wake up the current model."""
+        await self._post_empty(f"{self._url}/open", headers={"Content-Type": "application/text"})
+
+    async def close_model(self) -> None:
+        """Close the current model without."""
+        await self._post_empty(f"{self._url}/close", headers={"Content-Type": "application/text"})
 
     async def list_modules(self) -> list[Module]:
         """
@@ -53,15 +78,6 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :return: The information about the View.
         """
         return ViewInfo.model_validate((await self._get(f"{self._url}/views/{view_id}")))
-
-    async def get_model_status(self) -> ModelStatus:
-        """
-        Gets the current status of the Model.
-        :return: The current status of the Model.
-        """
-        return ModelStatus.model_validate(
-            (await self._get(f"{self._url}/status")).get("requestStatus")
-        )
 
     async def list_line_items(self, only_module_id: int | None = None) -> list[LineItem]:
         """
