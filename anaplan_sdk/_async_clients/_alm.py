@@ -43,6 +43,12 @@ class _AsyncAlmClient(_AsyncBaseClient):
         res = (await self._get(f"{self._url}/alm/latestRevision")).get("revisions")
         return Revision.model_validate(res[0]) if res else None
 
+    async def create_revision(self, name: str, description: str) -> Revision:
+        res = await self._post(
+            f"{self._url}/alm/revisions", json={"name": name, "description": description}
+        )
+        return Revision.model_validate(res["revision"])
+
     async def create_sync_task(
         self, source_revision_id: str, source_model_id: str, target_revision_id: str
     ) -> SyncTask:
