@@ -6,7 +6,7 @@ from anaplan_sdk.exceptions import (
     InvalidCredentialsException,
     InvalidIdentifierException,
 )
-from anaplan_sdk.models import Model, TaskStatus, Workspace
+from anaplan_sdk.models import Model, TaskStatus, TaskSummary, Workspace
 
 
 def test_list_workspaces(client):
@@ -27,6 +27,21 @@ def test_broken_list_files_raises_invalid_identifier_error(broken_client):
 def unauthenticated_client_raises_exception():
     with pytest.raises(InvalidCredentialsException):
         _ = Client(user_email="invalid_email", password="pass")
+
+
+def test_broken_client_alm_raises(broken_client: Client):
+    with pytest.raises(ValueError):
+        _ = broken_client.alm
+
+
+def test_broken_client_transactional_raises(broken_client: Client):
+    with pytest.raises(ValueError):
+        _ = broken_client.transactional
+
+
+def test_file_creation_raises_exception(client: Client):
+    with pytest.raises(InvalidIdentifierException):
+        client.upload_file(115000000000, b"")
 
 
 def test_list_models(client):
@@ -88,6 +103,13 @@ def test_upload_and_download_file(client: Client, test_file):
 
 def test_run_process(client: Client, test_action):
     client.run_action(test_action)
+
+
+def test_list_task_statuses(client: Client, test_action):
+    task_statuses = client.list_task_status(test_action)
+    assert isinstance(task_statuses, list)
+    assert all(isinstance(status, TaskSummary) for status in task_statuses)
+    assert len(task_statuses) > 0
 
 
 def test_invoke_action(client: Client, test_action):

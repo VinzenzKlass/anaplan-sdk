@@ -1,5 +1,6 @@
 from calendar import monthrange
 from datetime import date
+from os import getenv
 
 from anaplan_sdk import Client
 from anaplan_sdk.models import (
@@ -7,11 +8,30 @@ from anaplan_sdk.models import (
     FiscalYear,
     InsertionResult,
     ListMetadata,
+    Model,
     ModelStatus,
     MonthsQuartersYearsCalendar,
     View,
     ViewInfo,
 )
+
+
+def test_wake_model(client: Client):
+    client.transactional.wake_model()
+
+
+def test_close_model(client: Client):
+    other = Client.from_existing(
+        client, getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"), "C87EBE934BD442B1A798540E0CA5A877"
+    )
+    other.transactional.close_model()
+
+
+def test_get_model(client: Client):
+    model_id = getenv("ANAPLAN_SDK_TEST_MODEL_ID")
+    model = client.transactional.get_model_details()
+    assert isinstance(model, Model)
+    assert model.id == model_id
 
 
 def test_list_modules(client: Client):
