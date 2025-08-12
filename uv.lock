@@ -24,6 +24,8 @@ oauth = [
 [package.dev-dependencies]
 dev = [
     { name = "cryptography" },
+    { name = "fieldz" },
+    { name = "griffe" },
     { name = "griffe-fieldz" },
     { name = "keyring" },
     { name = "mkdocs" },
@@ -50,6 +52,8 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "cryptography", specifier = ">=45.0.0" },
+    { name = "fieldz", specifier = ">=0.1.2" },
+    { name = "griffe", specifier = ">=1.7.3" },
     { name = "griffe-fieldz", specifier = ">=0.3.0" },
     { name = "keyring", specifier = ">=25.6.0" },
     { name = "mkdocs", specifier = ">=1.6.1" },
