@@ -28,10 +28,8 @@ class _AsyncAlmClient(_AsyncBaseClient):
         :param source_model_id: The ID of the source model.
         :return: A list of revisions that can be synchronized to the target model.
         """
-        revs = (
-            await self._get(f"{self._url}/alm/syncableRevisions?sourceModelId={source_model_id}")
-        ).get("revisions", [])
-        return [Revision.model_validate(e) for e in revs] if revs else []
+        res = await self._get(f"{self._url}/alm/syncableRevisions?sourceModelId={source_model_id}")
+        return [Revision.model_validate(e) for e in res.get("revisions", [])]
 
     async def get_latest_revision(self) -> Revision | None:
         """
@@ -48,16 +46,13 @@ class _AsyncAlmClient(_AsyncBaseClient):
     async def create_sync_task(
         self, source_revision_id: str, source_model_id: str, target_revision_id: str
     ) -> SyncTask:
-        return SyncTask.model_validate(
-            await self._post(
-                f"{self._url}/alm/syncTasks",
-                json={
-                    "sourceRevisionId": source_revision_id,
-                    "sourceModelId": source_model_id,
-                    "targetRevisionId": target_revision_id,
-                },
-            )
-        )
+        payload = {
+            "sourceRevisionId": source_revision_id,
+            "sourceModelId": source_model_id,
+            "targetRevisionId": target_revision_id,
+        }
+        res = await self._post(f"{self._url}/alm/syncTasks", json=payload)
+        return SyncTask.model_validate(res["task"])
 
     async def list_sync_tasks(self) -> list[SyncTask]:
         """
@@ -67,20 +62,16 @@ class _AsyncAlmClient(_AsyncBaseClient):
         The list is in descending order of when the tasks were created.
         :return: A list of sync tasks for a target model.
         """
-        return [
-            SyncTask.model_validate(e)
-            for e in (await self._get(f"{self._url}/alm/syncTasks")).get("tasks", [])
-        ]
+        res = await self._get(f"{self._url}/alm/syncTasks")
+        return [SyncTask.model_validate(e) for e in res.get("tasks", [])]
 
     async def list_revisions(self) -> list[Revision]:
         """
         Use this call to return a list of revisions for a specific model.
         :return: A list of revisions for a specific model.
         """
-        return [
-            Revision.model_validate(e)
-            for e in (await self._get(f"{self._url}/alm/revisions")).get("revisions", [])
-        ]
+        res = await self._get(f"{self._url}/alm/revisions")
+        return [Revision.model_validate(e) for e in res.get("revisions", [])]
 
     async def list_models_for_revision(self, revision_id: str) -> list[ModelRevision]:
         """
@@ -89,9 +80,5 @@ class _AsyncAlmClient(_AsyncBaseClient):
         :param revision_id: The ID of the revision.
         :return: A list of models that had a specific revision applied to them.
         """
-        return [
-            ModelRevision.model_validate(e)
-            for e in (
-                await self._get(f"{self._url}/alm/revisions/{revision_id}/appliedToModels")
-            ).get("appliedToModels", [])
-        ]
+        res = await self._get(f"{self._url}/alm/revisions/{revision_id}/appliedToModels")
+        return [ModelRevision.model_validate(e) for e in res.get("appliedToModels", [])]
