@@ -4,15 +4,21 @@ from typing import Any
 
 import httpx
 
-from anaplan_sdk._base import _AsyncBaseClient
+from anaplan_sdk._base import _AsyncBaseClient, parse_calendar_response
 from anaplan_sdk.models import (
+    CurrentPeriod,
+    FiscalYear,
     InsertionResult,
     LineItem,
     List,
     ListItem,
     ListMetadata,
+    Model,
+    ModelCalendar,
     ModelStatus,
     Module,
+    View,
+    ViewInfo,
 )
 
 
@@ -20,6 +26,30 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
     def __init__(self, client: httpx.AsyncClient, model_id: str, retry_count: int) -> None:
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
         super().__init__(retry_count, client)
+
+    async def get_model_details(self) -> Model:
+        """
+        Retrieves the Model details for the current Model.
+        :return: The Model details.
+        """
+        res = await self._get(self._url, params={"modelDetails": "true"})
+        return Model.model_validate(res["model"])
+
+    async def get_model_status(self) -> ModelStatus:
+        """
+        Gets the current status of the Model.
+        :return: The current status of the Model.
+        """
+        res = await self._get(f"{self._url}/status")
+        return ModelStatus.model_validate(res["requestStatus"])
+
+    async def wake_model(self) -> None:
+        """Wake up the current model."""
+        await self._post_empty(f"{self._url}/open", headers={"Content-Type": "application/text"})
+
+    async def close_model(self) -> None:
+        """Close the current model without."""
+        await self._post_empty(f"{self._url}/close", headers={"Content-Type": "application/text"})
 
     async def list_modules(self) -> list[Module]:
         """
@@ -31,14 +61,23 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
             for e in await self._get_paginated(f"{self._url}/modules", "modules")
         ]
 
-    async def get_model_status(self) -> ModelStatus:
+    async def list_views(self) -> list[View]:
         """
-        Gets the current status of the Model.
-        :return: The current status of the Model.
+        Lists all the Views in the Model. This will include all Modules and potentially other saved
+        views.
+        :return: The List of Views.
         """
-        return ModelStatus.model_validate(
-            (await self._get(f"{self._url}/status")).get("requestStatus")
-        )
+        return [
+            View.model_validate(e) for e in await self._get_paginated(f"{self._url}/views", "views")
+        ]
+
+    async def get_view_info(self, view_id: int) -> ViewInfo:
+        """
+        Gets the detailed information about a View.
+        :param view_id: The ID of the View.
+        :return: The information about the View.
+        """
+        return ViewInfo.model_validate((await self._get(f"{self._url}/views/{view_id}")))
 
     async def list_line_items(self, only_module_id: int | None = None) -> list[LineItem]:
         """
@@ -188,3 +227,36 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         """
         res = await self._post(f"{self._url}/modules/{module_id}/data", json=data)
         return res if "failures" in res else res["numberOfCellsChanged"]
+
+    async def get_current_period(self) -> CurrentPeriod:
+        """
+        Gets the current period of the model.
+        :return: The current period of the model.
+        """
+        res = await self._get(f"{self._url}/currentPeriod")
+        return CurrentPeriod.model_validate(res["currentPeriod"])
+
+    async def set_current_period(self, date: str) -> CurrentPeriod:
+        """
+        Sets the current period of the model to the given date.
+        :param date: The date to set the current period to, in the format 'YYYY-MM-DD'.
+        :return: The updated current period of the model.
+        """
+        res = await self._put(f"{self._url}/currentPeriod", {"date": date})
+        return CurrentPeriod.model_validate(res["currentPeriod"])
+
+    async def set_current_fiscal_year(self, year: str) -> FiscalYear:
+        """
+        Sets the current fiscal year of the model.
+        :param year: The fiscal year to set, in the format specified in the model, e.g. FY24.
+        :return: The updated fiscal year of the model.
+        """
+        res = await self._put(f"{self._url}/modelCalendar/fiscalYear", {"year": year})
+        return FiscalYear.model_validate(res["modelCalendar"]["fiscalYear"])
+
+    async def get_model_calendar(self) -> ModelCalendar:
+        """
+        Get the calendar settings of the model.
+        :return: The calendar settings of the model.
+        """
+        return parse_calendar_response(await self._get(f"{self._url}/modelCalendar"))

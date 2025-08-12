@@ -4,15 +4,21 @@ from typing import Any
 
 import httpx
 
-from anaplan_sdk._base import _BaseClient
+from anaplan_sdk._base import _BaseClient, parse_calendar_response
 from anaplan_sdk.models import (
+    CurrentPeriod,
+    FiscalYear,
     InsertionResult,
     LineItem,
     List,
     ListItem,
     ListMetadata,
+    Model,
+    ModelCalendar,
     ModelStatus,
     Module,
+    View,
+    ViewInfo,
 )
 
 
@@ -20,6 +26,28 @@ class _TransactionalClient(_BaseClient):
     def __init__(self, client: httpx.Client, model_id: str, retry_count: int) -> None:
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
         super().__init__(retry_count, client)
+
+    def get_model_details(self) -> Model:
+        """
+        Retrieves the Model details for the current Model.
+        :return: The Model details.
+        """
+        return Model.model_validate(self._get(self._url, params={"modelDetails": "true"})["model"])
+
+    def get_model_status(self) -> ModelStatus:
+        """
+        Gets the current status of the Model.
+        :return: The current status of the Mode.
+        """
+        return ModelStatus.model_validate(self._get(f"{self._url}/status").get("requestStatus"))
+
+    def wake_model(self) -> None:
+        """Wake up the current model."""
+        self._post_empty(f"{self._url}/open", headers={"Content-Type": "application/text"})
+
+    def close_model(self) -> None:
+        """Close the current model without."""
+        self._post_empty(f"{self._url}/close", headers={"Content-Type": "application/text"})
 
     def list_modules(self) -> list[Module]:
         """
@@ -30,12 +58,21 @@ class _TransactionalClient(_BaseClient):
             Module.model_validate(e) for e in self._get_paginated(f"{self._url}/modules", "modules")
         ]
 
-    def get_model_status(self) -> ModelStatus:
+    def list_views(self) -> list[View]:
         """
-        Gets the current status of the Model.
-        :return: The current status of the Mode.
+        Lists all the Views in the Model. This will include all Modules and potentially other saved
+        views.
+        :return: The List of Views.
         """
-        return ModelStatus.model_validate(self._get(f"{self._url}/status").get("requestStatus"))
+        return [View.model_validate(e) for e in self._get_paginated(f"{self._url}/views", "views")]
+
+    def get_view_info(self, view_id: int) -> ViewInfo:
+        """
+        Gets the detailed information about a View.
+        :param view_id: The ID of the View.
+        :return: The information about the View.
+        """
+        return ViewInfo.model_validate(self._get(f"{self._url}/views/{view_id}"))
 
     def list_line_items(self, only_module_id: int | None = None) -> list[LineItem]:
         """
@@ -185,3 +222,36 @@ class _TransactionalClient(_BaseClient):
         """
         res = self._post(f"{self._url}/modules/{module_id}/data", json=data)
         return res if "failures" in res else res["numberOfCellsChanged"]
+
+    def get_current_period(self) -> CurrentPeriod:
+        """
+        Gets the current period of the model.
+        :return: The current period of the model.
+        """
+        res = self._get(f"{self._url}/currentPeriod")
+        return CurrentPeriod.model_validate(res["currentPeriod"])
+
+    def set_current_period(self, date: str) -> CurrentPeriod:
+        """
+        Sets the current period of the model to the given date.
+        :param date: The date to set the current period to, in the format 'YYYY-MM-DD'.
+        :return: The updated current period of the model.
+        """
+        res = self._put(f"{self._url}/currentPeriod", {"date": date})
+        return CurrentPeriod.model_validate(res["currentPeriod"])
+
+    def set_current_fiscal_year(self, year: str) -> FiscalYear:
+        """
+        Sets the current fiscal year of the model.
+        :param year: The fiscal year to set, in the format specified in the model, e.g. FY24.
+        :return: The updated fiscal year of the model.
+        """
+        res = self._put(f"{self._url}/modelCalendar/fiscalYear", {"year": year})
+        return FiscalYear.model_validate(res["modelCalendar"]["fiscalYear"])
+
+    def get_model_calendar(self) -> ModelCalendar:
+        """
+        Get the calendar settings of the model.
+        :return: The calendar settings of the model.
+        """
+        return parse_calendar_response(self._get(f"{self._url}/modelCalendar"))

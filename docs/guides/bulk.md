@@ -120,6 +120,24 @@ provide the workspace and model IDs.
     await anaplan.run_action(116000000000)
     ...
     content = await anaplan.get_file(116000000000)
+
+
+### Optimizer Logs
+
+You can download the Optimizer Logs from Anaplan. This will give you the Solution Logs produced by Gurobi, which can be
+very useful for debugging and understanding the performance of your Optimizer models.
+
+=== "Synchronous"
+    ```python
+    log = anaplan.get_optimizer_log(
+        117000000000, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    )
+    ```
+=== "Asynchronous"
+    ```python
+    log = await anaplan.get_optimizer_log(
+        117000000000, "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+    )
     ```
 
 ## Applications

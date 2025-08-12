@@ -17,7 +17,25 @@ from ._bulk import (
     TaskSummary,
     Workspace,
 )
-from ._transactional import Failure, InsertionResult, LineItem, ListItem, ModelStatus, Module, User
+from ._transactional import (
+    CurrentPeriod,
+    Dimension,
+    Failure,
+    FiscalYear,
+    InsertionResult,
+    LineItem,
+    ListItem,
+    ModelCalendar,
+    ModelStatus,
+    Module,
+    MonthsQuartersYearsCalendar,
+    User,
+    View,
+    ViewInfo,
+    WeeksGeneralCalendar,
+    WeeksGroupingCalendar,
+    WeeksPeriodsCalendar,
+)
 
 __all__ = [
     "AnaplanModel",
@@ -46,4 +64,14 @@ __all__ = [
     "Failure",
     "InsertionResult",
     "Revision",
+    "CurrentPeriod",
+    "FiscalYear",
+    "MonthsQuartersYearsCalendar",
+    "WeeksGeneralCalendar",
+    "WeeksGroupingCalendar",
+    "WeeksPeriodsCalendar",
+    "Dimension",
+    "View",
+    "ViewInfo",
+    "ModelCalendar",
 ]

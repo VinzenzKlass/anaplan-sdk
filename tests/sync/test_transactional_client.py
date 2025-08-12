@@ -1,5 +1,37 @@
+from calendar import monthrange
+from datetime import date
+from os import getenv
+
 from anaplan_sdk import Client
-from anaplan_sdk.models import InsertionResult, ListMetadata, ModelStatus
+from anaplan_sdk.models import (
+    CurrentPeriod,
+    FiscalYear,
+    InsertionResult,
+    ListMetadata,
+    Model,
+    ModelStatus,
+    MonthsQuartersYearsCalendar,
+    View,
+    ViewInfo,
+)
+
+
+def test_wake_model(client: Client):
+    client.transactional.wake_model()
+
+
+def test_close_model(client: Client):
+    other = Client.from_existing(
+        client, getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"), "C87EBE934BD442B1A798540E0CA5A877"
+    )
+    other.transactional.close_model()
+
+
+def test_get_model(client: Client):
+    model_id = getenv("ANAPLAN_SDK_TEST_MODEL_ID")
+    model = client.transactional.get_model_details()
+    assert isinstance(model, Model)
+    assert model.id == model_id
 
 
 def test_list_modules(client: Client):
@@ -64,3 +96,40 @@ def test_short_list_deletion(client: Client, test_list, list_items_short):
 
 def test_reset_list_index(client: Client, test_list):
     client.transactional.reset_list_index(test_list)
+
+
+def test_list_views(client: Client):
+    views = client.transactional.list_views()
+    assert isinstance(views, list)
+    assert len(views) > 0
+    assert all(isinstance(view, View) for view in views)
+
+
+def test_get_view_info(client: Client):
+    info = client.transactional.get_view_info(102000000015)
+    assert isinstance(info, ViewInfo)
+
+
+def test_get_current_period(client: Client):
+    period = client.transactional.get_current_period()
+    assert isinstance(period, CurrentPeriod)
+
+
+def test_set_current_period(client: Client):
+    today = date.today()
+    last_day_of_month = date(today.year, today.month, monthrange(today.year, today.month)[1])
+    period = client.transactional.set_current_period(today.strftime("%Y-%m-%d"))
+    assert isinstance(period, CurrentPeriod)
+    assert period.last_day == last_day_of_month.strftime("%Y-%m-%d")
+
+
+def test_set_current_fiscal_year(client: Client):
+    year = "FY25"
+    fiscal_year = client.transactional.set_current_fiscal_year(year)
+    assert isinstance(fiscal_year, FiscalYear)
+    assert fiscal_year.year == year
+
+
+def test_get_model_calendar(client: Client):
+    calendar = client.transactional.get_model_calendar()
+    assert isinstance(calendar, MonthsQuartersYearsCalendar)

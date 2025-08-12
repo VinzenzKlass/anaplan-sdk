@@ -175,7 +175,7 @@ Warning. To automate this tedious task without losing any data, we can perform f
     )
     anaplan.transactional.reset_list_index(101000000000)
     result = anaplan.transactional.insert_list_items(
-        101000000008, [e.model_dump() for e in items] # Reimport all fields.
+        101000000000, [e.model_dump() for e in items] # Reimport all fields.
     )
     ```
 === "Asynchronous"
@@ -186,6 +186,6 @@ Warning. To automate this tedious task without losing any data, we can perform f
     )
     await anaplan.transactional.reset_list_index(101000000000)
     result = await anaplan.transactional.insert_list_items(
-        101000000008, [e.model_dump() for e in items] # Reimport all fields. 
+        101000000000, [e.model_dump() for e in items] # Reimport all fields. 
     )
     ```
