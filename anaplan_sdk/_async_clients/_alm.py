@@ -3,7 +3,7 @@ from typing import Literal
 import httpx
 
 from anaplan_sdk._base import _AsyncBaseClient
-from anaplan_sdk.models import ModelRevision, Revision, SyncTask, SyncTaskSummary
+from anaplan_sdk.models import ModelRevision, ReportTask, Revision, SyncTask, TaskSummary
 
 
 class _AsyncAlmClient(_AsyncBaseClient):
@@ -57,14 +57,14 @@ class _AsyncAlmClient(_AsyncBaseClient):
         )
         return Revision.model_validate(res["revision"])
 
-    async def list_sync_tasks(self) -> list[SyncTaskSummary]:
+    async def list_sync_tasks(self) -> list[TaskSummary]:
         """
         List the sync tasks for a target mode. The returned the tasks are either in progress, or
         they completed within the last 48 hours.
         :return: A list of sync tasks in descending order of creation time.
         """
         res = await self._get(f"{self._url}/alm/syncTasks")
-        return [SyncTaskSummary.model_validate(e) for e in res.get("tasks", [])]
+        return [TaskSummary.model_validate(e) for e in res.get("tasks", [])]
 
     async def get_sync_task(self, task_id: str) -> SyncTask:
         res = await self._get(f"{self._url}/alm/syncTasks/{task_id}")
@@ -72,14 +72,14 @@ class _AsyncAlmClient(_AsyncBaseClient):
 
     async def create_sync_task(
         self, source_revision_id: str, source_model_id: str, target_revision_id: str
-    ) -> SyncTaskSummary:
+    ) -> TaskSummary:
         payload = {
             "sourceRevisionId": source_revision_id,
             "sourceModelId": source_model_id,
             "targetRevisionId": target_revision_id,
         }
         res = await self._post(f"{self._url}/alm/syncTasks", json=payload)
-        return SyncTaskSummary.model_validate(res["task"])
+        return TaskSummary.model_validate(res["task"])
 
     async def list_models_for_revision(self, revision_id: str) -> list[ModelRevision]:
         """
@@ -90,3 +90,42 @@ class _AsyncAlmClient(_AsyncBaseClient):
         """
         res = await self._get(f"{self._url}/alm/revisions/{revision_id}/appliedToModels")
         return [ModelRevision.model_validate(e) for e in res.get("appliedToModels", [])]
+
+    async def create_comparison_report(
+        self, source_revision_id: str, source_model_id: str, target_revision_id: str
+    ) -> TaskSummary:
+        """
+        Generate a full comparison report between two revisions. This will list all the changes made
+        to the source revision compared to the target revision.
+        :param source_revision_id: The ID of the source revision.
+        :param source_model_id: The ID of the source model.
+        :param target_revision_id: The ID of the target revision.
+        :return: The created report task summary.
+        """
+        payload = {
+            "sourceRevisionId": source_revision_id,
+            "sourceModelId": source_model_id,
+            "targetRevisionId": target_revision_id,
+        }
+        res = await self._post(f"{self._url}/alm/comparisonReportTasks", json=payload)
+        return TaskSummary.model_validate(res["task"])
+
+    async def get_comparison_report_task_info(self, task_id: str) -> ReportTask:
+        """
+        Get the task information for a comparison report task.
+        :param task_id: The ID of the comparison report task.
+        :return: The report task information.
+        """
+        res = await self._get(f"{self._url}/alm/comparisonReportTasks/{task_id}")
+        return ReportTask.model_validate(res["task"])
+
+    async def get_comparison_report(self, task: ReportTask) -> bytes:
+        """
+        Get the report for a specific task.
+        :param task: The report task object containing the task ID.
+        :return: The binary content of the comparison report.
+        """
+        return await self._get_binary(
+            f"{self._url}/alm/comparisonReports/"
+            f"{task.result.target_revision_id}/{task.result.source_revision_id}"
+        )

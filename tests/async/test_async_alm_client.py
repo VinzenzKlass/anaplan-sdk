@@ -1,5 +1,5 @@
 from anaplan_sdk import AsyncClient
-from anaplan_sdk.models import ModelRevision, Revision, SyncTaskSummary
+from anaplan_sdk.models import ModelRevision, Revision, TaskSummary
 
 
 async def test_set_model_status(client: AsyncClient):
@@ -32,4 +32,4 @@ async def test_list_models_for_revision(client: AsyncClient):
 async def test_list_sync_tasks(client: AsyncClient):
     tasks = await client.alm.list_sync_tasks()
     assert isinstance(tasks, list)
-    assert all(isinstance(task, SyncTaskSummary) for task in tasks)
+    assert all(isinstance(task, TaskSummary) for task in tasks)
