@@ -112,6 +112,8 @@ class Client(_BaseClient):
             timeout=timeout,
         )
         self._retry_count = retry_count
+        self._workspace_id = workspace_id
+        self._model_id = model_id
         self._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
         self._transactional_client = (
             _TransactionalClient(_client, model_id, self._retry_count) if model_id else None
@@ -127,23 +129,31 @@ class Client(_BaseClient):
         super().__init__(self._retry_count, _client)
 
     @classmethod
-    def from_existing(cls, existing: Self, workspace_id: str, model_id: str) -> Self:
+    def from_existing(
+        cls, existing: Self, *, workspace_id: str | None = None, model_id: str | None = None
+    ) -> Self:
         """
         Create a new instance of the Client from an existing instance. This is useful if you want
         to interact with multiple models or workspaces in the same script but share the same
         authentication and configuration. This creates a shallow copy of the existing client and
-        update the relevant attributes to the new workspace and model.
+        optionally updates the relevant attributes to the new workspace and model. You can provide
+        either a new workspace Id or a new model Id, or both. If you do not provide one of them,
+        the existing value will be used. If you omit both, the new instance will be an identical
+        copy of the existing instance.
+
         :param existing: The existing instance to copy.
-        :param workspace_id: The workspace Id to use.
-        :param model_id: The model Id to use.
+        :param workspace_id: The workspace Id to use or None to use the existing workspace Id.
+        :param model_id: The model Id to use or None to use the existing model Id.
         :return: A new instance of the Client.
         """
         client = copy(existing)
-        client._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
+        new_ws_id = workspace_id or existing._workspace_id
+        new_model_id = model_id or existing._model_id
+        client._url = f"https://api.anaplan.com/2/0/workspaces/{new_ws_id}/models/{new_model_id}"
         client._transactional_client = _TransactionalClient(
             existing._client, model_id, existing._retry_count
         )
-        client._alm_client = _AlmClient(existing._client, model_id, existing._retry_count)
+        client._alm_client = _AlmClient(existing._client, new_model_id, existing._retry_count)
         return client
 
     @property
