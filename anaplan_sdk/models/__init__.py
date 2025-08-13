@@ -1,4 +1,12 @@
-from ._alm import ModelRevision, ReportTask, ReportTaskResult, Revision, SyncTask, SyncTaskResult
+from ._alm import (
+    ModelRevision,
+    ReportTask,
+    ReportTaskResult,
+    Revision,
+    SummaryReport,
+    SyncTask,
+    SyncTaskResult,
+)
 from ._base import AnaplanModel
 from ._bulk import (
     Action,
@@ -63,6 +71,7 @@ __all__ = [
     "SyncTaskResult",
     "ReportTask",
     "ReportTaskResult",
+    "SummaryReport",
     "SyncTask",
     "User",
     "Failure",

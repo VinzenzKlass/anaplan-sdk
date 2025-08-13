@@ -18,7 +18,7 @@ def client() -> AsyncClient:
 
 
 @pytest.fixture(scope="session")
-def src_client(client: AsyncClient, alm_src_model_id) -> AsyncClient:
+def alm_src_client(client: AsyncClient, alm_src_model_id) -> AsyncClient:
     return AsyncClient.from_existing(client, model_id=alm_src_model_id)
 
 

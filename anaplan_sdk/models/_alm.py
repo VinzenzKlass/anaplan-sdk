@@ -81,3 +81,33 @@ class ReportTask(SyncTask):
     result: ReportTaskResult | ReportTaskFailureResult | None = Field(
         None, description="The result of the comparison report task, including the report file URL."
     )
+
+
+class SummaryTotals(AnaplanModel):
+    modified: int = Field(0, description="The number of modified items.")
+    deleted: int = Field(0, description="The number of deleted items.")
+    created: int = Field(0, description="The number of created items.")
+
+
+class SummaryDifferences(AnaplanModel):
+    line_items: SummaryTotals = Field(
+        SummaryTotals(modified=0, deleted=0, created=0), description="Changes in line items."
+    )
+    roles_contents: SummaryTotals = Field(
+        SummaryTotals(modified=0, deleted=0, created=0), description="Changes in roles contents."
+    )
+    lists: SummaryTotals = Field(
+        SummaryTotals(modified=0, deleted=0, created=0), description="Changes in lists."
+    )
+    modules: SummaryTotals = Field(
+        SummaryTotals(modified=0, deleted=0, created=0), description="Changes in modules."
+    )
+
+
+class SummaryReport(AnaplanModel):
+    target_revision_id: str = Field(description="The ID of the target revision.")
+    source_revision_id: str = Field(description="The ID of the source revision.")
+    totals: SummaryTotals = Field(description="The total counts of changes.")
+    differences: SummaryDifferences = Field(
+        description="The detailed breakdown of changes by category."
+    )

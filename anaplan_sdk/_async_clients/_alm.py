@@ -5,6 +5,7 @@ import httpx
 
 from anaplan_sdk._base import _AsyncBaseClient
 from anaplan_sdk.models import ModelRevision, ReportTask, Revision, SyncTask, TaskSummary
+from anaplan_sdk.models._alm import SummaryReport
 
 
 class _AsyncAlmClient(_AsyncBaseClient):
@@ -175,3 +176,53 @@ class _AsyncAlmClient(_AsyncBaseClient):
             f"{self._url}/alm/comparisonReports/"
             f"{task.result.target_revision_id}/{task.result.source_revision_id}"
         )
+
+    async def create_comparison_summary(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: bool = True,
+    ) -> ReportTask:
+        """
+        Generate a comparison summary between two revisions.
+        :param source_revision_id: The ID of the source revision.
+        :param source_model_id: The ID of the source model.
+        :param target_revision_id: The ID of the target revision.
+        :param wait_for_completion: If True, the method will poll the task status and not return
+               until the task is complete. If False, it will spawn the task and return immediately.
+        :return: The created summary task.
+        """
+        payload = {
+            "sourceRevisionId": source_revision_id,
+            "sourceModelId": source_model_id,
+            "targetRevisionId": target_revision_id,
+        }
+        res = await self._post(f"{self._url}/alm/summaryReportTasks", json=payload)
+        task = await self.get_comparison_summary_task(res["task"]["taskId"])
+        if not wait_for_completion:
+            return task
+        while (task := await self.get_comparison_summary_task(task.id)).task_state != "COMPLETE":
+            await sleep(self.status_poll_delay)
+        return task
+
+    async def get_comparison_summary_task(self, task_id: str) -> ReportTask:
+        """
+        Get the task information for a comparison summary task.
+        :param task_id: The ID of the comparison summary task.
+        :return: The report task information.
+        """
+        res = await self._get(f"{self._url}/alm/summaryReportTasks/{task_id}")
+        return ReportTask.model_validate(res["task"])
+
+    async def get_comparison_summary(self, task: ReportTask) -> SummaryReport:
+        """
+        Get the comparison summary for a specific task.
+        :param task: The summary task object containing the task ID.
+        :return: The binary content of the comparison summary.
+        """
+        res = await self._get(
+            f"{self._url}/alm/summaryReports/"
+            f"{task.result.target_revision_id}/{task.result.source_revision_id}"
+        )
+        return SummaryReport.model_validate(res["summaryReport"])
