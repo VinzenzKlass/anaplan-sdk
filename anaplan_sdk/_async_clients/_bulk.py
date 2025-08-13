@@ -115,7 +115,9 @@ class AsyncClient(_AsyncBaseClient):
             _AsyncTransactionalClient(_client, model_id, retry_count) if model_id else None
         )
         self._alm_client = (
-            _AsyncAlmClient(_client, model_id, self._retry_count) if model_id else None
+            _AsyncAlmClient(_client, model_id, self._retry_count, status_poll_delay)
+            if model_id
+            else None
         )
         self._audit = _AsyncAuditClient(_client, self._retry_count)
         self._cloud_works = _AsyncCloudWorksClient(_client, self._retry_count)

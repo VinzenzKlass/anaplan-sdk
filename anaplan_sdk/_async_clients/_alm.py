@@ -1,3 +1,4 @@
+from asyncio import sleep
 from typing import Literal
 
 import httpx
@@ -7,7 +8,10 @@ from anaplan_sdk.models import ModelRevision, ReportTask, Revision, SyncTask, Ta
 
 
 class _AsyncAlmClient(_AsyncBaseClient):
-    def __init__(self, client: httpx.AsyncClient, model_id: str, retry_count: int) -> None:
+    def __init__(
+        self, client: httpx.AsyncClient, model_id: str, retry_count: int, status_poll_delay: int
+    ) -> None:
+        self.status_poll_delay = status_poll_delay
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
         super().__init__(retry_count, client)
 
@@ -52,6 +56,12 @@ class _AsyncAlmClient(_AsyncBaseClient):
         return [Revision.model_validate(e) for e in res.get("revisions", [])]
 
     async def create_revision(self, name: str, description: str) -> Revision:
+        """
+        Create a new revision for the model.
+        :param name: The name (title) of the revision.
+        :param description: The description of the revision.
+        :return: The created Revision Info.
+        """
         res = await self._post(
             f"{self._url}/alm/revisions", json={"name": name, "description": description}
         )
@@ -67,19 +77,44 @@ class _AsyncAlmClient(_AsyncBaseClient):
         return [TaskSummary.model_validate(e) for e in res.get("tasks", [])]
 
     async def get_sync_task(self, task_id: str) -> SyncTask:
+        """
+        Get the information for a specific sync task.
+        :param task_id: The ID of the sync task.
+        :return: The sync task information.
+        """
         res = await self._get(f"{self._url}/alm/syncTasks/{task_id}")
         return SyncTask.model_validate(res["task"])
 
-    async def create_sync_task(
-        self, source_revision_id: str, source_model_id: str, target_revision_id: str
-    ) -> TaskSummary:
+    async def sync_models(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: bool = True,
+    ) -> SyncTask:
+        """
+        Create a synchronization task between two revisions. This will synchronize the
+        source revision of the source model to the target revision of the target model. This will
+        fail if the source revision is incompatible with the target revision.
+        :param source_revision_id: The ID of the source revision.
+        :param source_model_id: The ID of the source model.
+        :param target_revision_id: The ID of the target revision.
+        :param wait_for_completion: If True, the method will poll the task status and not return
+               until the task is complete. If False, it will spawn the task and return immediately.
+        :return: The created sync task.
+        """
         payload = {
             "sourceRevisionId": source_revision_id,
             "sourceModelId": source_model_id,
             "targetRevisionId": target_revision_id,
         }
         res = await self._post(f"{self._url}/alm/syncTasks", json=payload)
-        return TaskSummary.model_validate(res["task"])
+        sync_task = await self.get_sync_task(res["task"]["taskId"])
+        if not wait_for_completion:
+            return sync_task
+        while (sync_task := await self.get_sync_task(sync_task.id)).task_state != "COMPLETE":
+            await sleep(self.status_poll_delay)
+        return sync_task
 
     async def list_models_for_revision(self, revision_id: str) -> list[ModelRevision]:
         """
@@ -92,14 +127,20 @@ class _AsyncAlmClient(_AsyncBaseClient):
         return [ModelRevision.model_validate(e) for e in res.get("appliedToModels", [])]
 
     async def create_comparison_report(
-        self, source_revision_id: str, source_model_id: str, target_revision_id: str
-    ) -> TaskSummary:
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: bool = True,
+    ) -> ReportTask:
         """
         Generate a full comparison report between two revisions. This will list all the changes made
         to the source revision compared to the target revision.
         :param source_revision_id: The ID of the source revision.
         :param source_model_id: The ID of the source model.
         :param target_revision_id: The ID of the target revision.
+        :param wait_for_completion: If True, the method will poll the task status and not return
+               until the task is complete. If False, it will spawn the task and return immediately.
         :return: The created report task summary.
         """
         payload = {
@@ -108,9 +149,14 @@ class _AsyncAlmClient(_AsyncBaseClient):
             "targetRevisionId": target_revision_id,
         }
         res = await self._post(f"{self._url}/alm/comparisonReportTasks", json=payload)
-        return TaskSummary.model_validate(res["task"])
+        task = await self.get_comparison_report_task(res["task"]["taskId"])
+        if not wait_for_completion:
+            return task
+        while (task := await self.get_comparison_report_task(task.id)).task_state != "COMPLETE":
+            await sleep(self.status_poll_delay)
+        return task
 
-    async def get_comparison_report_task_info(self, task_id: str) -> ReportTask:
+    async def get_comparison_report_task(self, task_id: str) -> ReportTask:
         """
         Get the task information for a comparison report task.
         :param task_id: The ID of the comparison report task.
