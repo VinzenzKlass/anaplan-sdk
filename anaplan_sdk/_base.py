@@ -54,7 +54,8 @@ class _BaseClient:
         return self._run_with_retry(self._client.post, url, headers=_json_header, json=json).json()
 
     def _put(self, url: str, json: dict | list) -> dict[str, Any]:
-        return (self._run_with_retry(self._client.put, url, headers=_json_header, json=json)).json()
+        res = self._run_with_retry(self._client.put, url, headers=_json_header, json=json)
+        return res.json() if res.num_bytes_downloaded > 0 else {}
 
     def _patch(self, url: str, json: dict | list) -> dict[str, Any]:
         return (
@@ -136,9 +137,8 @@ class _AsyncBaseClient:
         ).json()
 
     async def _put(self, url: str, json: dict | list) -> dict[str, Any]:
-        return (
-            await self._run_with_retry(self._client.put, url, headers=_json_header, json=json)
-        ).json()
+        res = await self._run_with_retry(self._client.put, url, headers=_json_header, json=json)
+        return res.json() if res.num_bytes_downloaded > 0 else {}
 
     async def _patch(self, url: str, json: dict | list) -> dict[str, Any]:
         return (

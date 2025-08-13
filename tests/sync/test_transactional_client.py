@@ -50,8 +50,8 @@ def test_list_line_items(client: Client):
     assert len(items) > 0
 
 
-def test_get_list_meta(client: Client):
-    meta = client.transactional.get_list_metadata(101000000009)
+def test_get_list_meta(client: Client, test_list):
+    meta = client.transactional.get_list_metadata(test_list)
     assert isinstance(meta, ListMetadata)
 
 

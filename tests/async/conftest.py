@@ -18,6 +18,16 @@ def client() -> AsyncClient:
 
 
 @pytest.fixture(scope="session")
+def alm_src_client(client: AsyncClient, alm_src_model_id) -> AsyncClient:
+    return AsyncClient.from_existing(client, model_id=alm_src_model_id)
+
+
+@pytest.fixture(scope="session")
+def alm_client(client: AsyncClient, alm_model_id) -> AsyncClient:
+    return AsyncClient.from_existing(client, model_id=alm_model_id)
+
+
+@pytest.fixture(scope="session")
 def broken_client():
     return AsyncClient(
         workspace_id="",
@@ -59,6 +69,28 @@ def test_action(py_version):
     if "3.12" in py_version:
         return 118000000026
     return 118000000025
+
+
+@pytest.fixture(scope="session")
+def alm_src_model_id(py_version):
+    if "3.10" in py_version:
+        return "C852660C6AF547258FB6B97D4942AB27"
+    if "3.11" in py_version:
+        return "C042E6A3F0334DEC9C826E1E12947789"
+    if "3.12" in py_version:
+        return "E130519009E54304A54D8D9F1C6D2725"
+    return "12A4D6B9A816481F83F795F857407049"
+
+
+@pytest.fixture(scope="session")
+def alm_model_id(py_version):
+    if "3.10" in py_version:
+        return "174F0F20D5A84FF09C812E95B8E50997"
+    if "3.11" in py_version:
+        return "FFBB7D26E61040EBB5CACD80F7F8A01B"
+    if "3.12" in py_version:
+        return "FDB11C592E9445D78337F01BABC89880"
+    return "0CBB17195E5D445A9A3692F481D66CBE"
 
 
 @pytest.fixture(scope="session")

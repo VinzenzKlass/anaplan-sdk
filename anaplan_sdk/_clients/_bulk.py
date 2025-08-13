@@ -118,7 +118,11 @@ class Client(_BaseClient):
         self._transactional_client = (
             _TransactionalClient(_client, model_id, self._retry_count) if model_id else None
         )
-        self._alm_client = _AlmClient(_client, model_id, self._retry_count) if model_id else None
+        self._alm_client = (
+            _AlmClient(_client, model_id, self._retry_count, status_poll_delay)
+            if model_id
+            else None
+        )
         self._cloud_works = _CloudWorksClient(_client, self._retry_count)
         self._thread_count = multiprocessing.cpu_count()
         self._audit = _AuditClient(_client, self._retry_count, self._thread_count)
@@ -153,7 +157,9 @@ class Client(_BaseClient):
         client._transactional_client = _TransactionalClient(
             existing._client, model_id, existing._retry_count
         )
-        client._alm_client = _AlmClient(existing._client, new_model_id, existing._retry_count)
+        client._alm_client = _AlmClient(
+            existing._client, new_model_id, existing._retry_count, existing.status_poll_delay
+        )
         return client
 
     @property
