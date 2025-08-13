@@ -35,8 +35,8 @@ class ModelRevision(AnaplanModel):
             "workspace."
         ),
     )
-    workspace_id: str = Field(
-        description="The unique identifier of the workspace this revision belongs to."
+    workspace_id: str | None = Field(
+        None, description="The unique identifier of the workspace this revision belongs to."
     )
     applied_by: str = Field(
         description="The unique identifier of the user who applied this revision."
@@ -58,7 +58,7 @@ class SyncTaskResult(AnaplanModel):
 
 class SyncTask(TaskSummary):
     current_step: str = Field(description="The current step of the sync task.")
-    result: SyncTaskResult = Field(description="The result of the sync task.")
+    result: SyncTaskResult | None = Field(None, description="The result of the sync task.")
 
 
 class ReportTaskResult(SyncTaskResult):
@@ -78,6 +78,6 @@ class ReportTaskFailureResult(AnaplanModel):
 
 
 class ReportTask(SyncTask):
-    result: ReportTaskResult | ReportTaskFailureResult = Field(
-        description="The result of the comparison report task, including the report file URL."
+    result: ReportTaskResult | ReportTaskFailureResult | None = Field(
+        None, description="The result of the comparison report task, including the report file URL."
     )

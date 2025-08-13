@@ -151,7 +151,9 @@ class AsyncClient(_AsyncBaseClient):
         client._transactional_client = _AsyncTransactionalClient(
             existing._client, model_id, existing._retry_count
         )
-        client._alm_client = _AsyncAlmClient(existing._client, new_model_id, existing._retry_count)
+        client._alm_client = _AsyncAlmClient(
+            existing._client, new_model_id, existing._retry_count, existing.status_poll_delay
+        )
         return client
 
     @property
