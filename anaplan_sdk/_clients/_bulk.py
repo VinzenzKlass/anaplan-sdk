@@ -1,8 +1,8 @@
 import logging
 import multiprocessing
-import time
 from concurrent.futures import ThreadPoolExecutor
 from copy import copy
+from time import sleep
 from typing import Iterator
 
 import httpx
@@ -28,7 +28,6 @@ from ._audit import _AuditClient
 from ._cloud_works import _CloudWorksClient
 from ._transactional import _TransactionalClient
 
-logging.getLogger("httpx").setLevel(logging.CRITICAL)
 logger = logging.getLogger("anaplan_sdk")
 
 
@@ -300,33 +299,34 @@ class Client(_BaseClient):
             Export.model_validate(e) for e in (self._get(f"{self._url}/exports")).get("exports", [])
         ]
 
-    def run_action(self, action_id: int) -> TaskStatus:
+    def run_action(self, action_id: int, wait_for_completion: bool = True) -> TaskStatus:
         """
-        Runs the specified Anaplan Action and validates the spawned task. If the Action fails or
-        completes with errors, will raise an :py:class:`AnaplanActionError`. Failed Tasks are
-        usually not something you can recover from at runtime and often require manual changes in
-        Anaplan, i.e. updating the mapping of an Import or similar. So, for convenience, this will
-        raise an Exception to handle - if you for e.g. think that one of the uploaded chunks may
-        have been dropped and simply retrying with new data may help - and not return the task
-        status information that needs to be handled by the caller.
-
-        If you need more information or control, you can use `invoke_action()` and
-        `get_task_status()`.
+        Runs the Action and validates the spawned task. If the Action fails or completes with
+        errors, this will raise an AnaplanActionError. Failed Tasks are often not something you
+        can recover from at runtime and often require manual changes in Anaplan, i.e. updating the
+        mapping of an Import or similar.
         :param action_id: The identifier of the Action to run. Can be any Anaplan Invokable;
-                          Processes, Imports, Exports, Other Actions.
+               Processes, Imports, Exports, Other Actions.
+        :param wait_for_completion: If True, the method will poll the task status and not return
+               until the task is complete. If False, it will spawn the task and return immediately.
         """
-        task_id = self.invoke_action(action_id)
-        task_status = self.get_task_status(action_id, task_id)
+        body = {"localeName": "en_US"}
+        res = self._post(f"{self._url}/{action_url(action_id)}/{action_id}/tasks", json=body)
+        task_id = res["task"]["taskId"]
+        logger.info(f"Invoked Action '{action_id}', spawned Task: '{task_id}'.")
 
-        while task_status.task_state != "COMPLETE":
-            time.sleep(self.status_poll_delay)
-            task_status = self.get_task_status(action_id, task_id)
+        if not wait_for_completion:
+            return TaskStatus.model_validate(self.get_task_status(action_id, task_id))
 
-        if task_status.task_state == "COMPLETE" and not task_status.result.successful:
+        while (status := self.get_task_status(action_id, task_id)).task_state != "COMPLETE":
+            sleep(self.status_poll_delay)
+
+        if status.task_state == "COMPLETE" and not status.result.successful:
+            logger.error(f"Task '{task_id}' completed with errors: {status.result.error_message}")
             raise AnaplanActionError(f"Task '{task_id}' completed with errors.")
 
-        logger.info(f"Task '{task_id}' completed successfully.")
-        return task_status
+        logger.info(f"Task '{task_id}' of Action '{action_id}' completed successfully.")
+        return status
 
     def get_file(self, file_id: int) -> bytes:
         """
@@ -335,13 +335,13 @@ class Client(_BaseClient):
         :return: The content of the file.
         """
         chunk_count = self._file_pre_check(file_id)
+        logger.info(f"File {file_id} has {chunk_count} chunks.")
         if chunk_count <= 1:
             return self._get_binary(f"{self._url}/files/{file_id}")
-        logger.info(f"File {file_id} has {chunk_count} chunks.")
         with ThreadPoolExecutor(max_workers=self._thread_count) as executor:
             chunks = executor.map(
                 self._get_binary,
-                [f"{self._url}/files/{file_id}/chunks/{i}" for i in range(chunk_count)],
+                (f"{self._url}/files/{file_id}/chunks/{i}" for i in range(chunk_count)),
             )
             return b"".join(chunks)
 
@@ -354,24 +354,21 @@ class Client(_BaseClient):
         :return: A generator yielding the chunks of the file.
         """
         chunk_count = self._file_pre_check(file_id)
+        logger.info(f"File {file_id} has {chunk_count} chunks.")
         if chunk_count <= 1:
             yield self._get_binary(f"{self._url}/files/{file_id}")
             return
-        logger.info(f"File {file_id} has {chunk_count} chunks.")
         for i in range(chunk_count):
             yield self._get_binary(f"{self._url}/files/{file_id}/chunks/{i}")
 
     def upload_file(self, file_id: int, content: str | bytes) -> None:
         """
-        Uploads the content to the specified file. If `upload_parallel` is set to True on the
-        instance you are invoking this from, will attempt to upload the chunks in parallel for
-        better performance. If you are network bound or are experiencing rate limiting issues, set
-        `upload_parallel` to False.
+        Uploads the content to the specified file. If there are several chunks, upload of
+        individual chunks are uploaded concurrently.
 
         :param file_id: The identifier of the file to upload to.
         :param content: The content to upload. **This Content will be compressed before uploading.
-                        If you are passing the Input as bytes, pass it uncompressed to avoid
-                        redundant work.**
+               If you are passing the Input as bytes, pass it uncompressed.**
         """
         if isinstance(content, str):
             content = content.encode()
@@ -466,23 +463,6 @@ class Client(_BaseClient):
         return self._get_binary(
             f"{self._url}/optimizeActions/{action_id}/tasks/{task_id}/solutionLogs"
         )
-
-    def invoke_action(self, action_id: int) -> str:
-        """
-        You may want to consider using `run_action()` instead.
-
-        Invokes the specified Anaplan Action and returns the spawned Task identifier. This is
-        useful if you want to handle the Task status yourself or if you want to run multiple
-        Actions in parallel.
-        :param action_id: The identifier of the Action to run. Can be any Anaplan Invokable.
-        :return: The identifier of the spawned Task.
-        """
-        response = self._post(
-            f"{self._url}/{action_url(action_id)}/{action_id}/tasks", json={"localeName": "en_US"}
-        )
-        task_id = response.get("task").get("taskId")
-        logger.info(f"Invoked Action '{action_id}', spawned Task: '{task_id}'.")
-        return task_id
 
     def _file_pre_check(self, file_id: int) -> int:
         file = next(filter(lambda f: f.id == file_id, self.list_files()), None)
