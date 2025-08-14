@@ -174,3 +174,17 @@ class TaskStatus(AnaplanModel):
     progress: float = Field(description="The progress of this task as a float between 0 and 1.")
     current_step: str | None = Field(None, description="The current step of this task.")
     result: TaskResult | None = Field(None)
+
+
+class DeletionFailure(AnaplanModel):
+    model_id: str = Field(description="The unique identifier of the model that failed to delete.")
+    message: str = Field(description="The error message explaining why the deletion failed.")
+
+
+class DeletionResult(AnaplanModel):
+    models_deleted: int = Field(description="The number of models that were successfully deleted.")
+    failures: list[DeletionFailure] = Field(
+        [],
+        validation_alias="bulkDeleteModelsFailures",
+        description="List of models that failed to delete with their error messages.",
+    )
