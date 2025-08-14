@@ -51,8 +51,8 @@ class ModelRevision(AnaplanModel):
 
 
 class SyncTaskResult(AnaplanModel):
-    source_revision_id: str = Field("The ID of the source revision.")
-    target_revision_id: str = Field("The ID of the target revision.")
+    source_revision_id: str = Field(description="The ID of the source revision.")
+    target_revision_id: str = Field(description="The ID of the target revision.")
     successful: bool = Field(description="Whether the sync task was successful or not.")
 
 
