@@ -11,6 +11,7 @@ from anaplan_sdk._base import _AsyncBaseClient, action_url
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
 from anaplan_sdk.models import (
     Action,
+    DeletionResult,
     Export,
     File,
     Import,
@@ -152,7 +153,7 @@ class AsyncClient(_AsyncBaseClient):
         )
         client._url = f"https://api.anaplan.com/2/0/workspaces/{new_ws_id}/models/{new_model_id}"
         client._transactional_client = _AsyncTransactionalClient(
-            existing._client, model_id, existing._retry_count
+            existing._client, new_model_id, existing._retry_count
         )
         client._alm_client = _AsyncAlmClient(
             existing._client, new_model_id, existing._retry_count, existing.status_poll_delay
@@ -251,6 +252,20 @@ class AsyncClient(_AsyncBaseClient):
                 "https://api.anaplan.com/2/0/models", "models", params=params
             )
         ]
+
+    async def delete_models(self, model_ids: list[str]) -> DeletionResult:
+        """
+        Delete the given Models. Models need to be closed before they can be deleted. If one of the
+        deletions fails, the other deletions will still be attempted and may complete.
+        :param model_ids: The list of Model identifiers to delete.
+        :return:
+        """
+        logger.info(f"Deleting Models: {', '.join(model_ids)}.")
+        res = await self._post(
+            f"https://api.anaplan.com/2/0/workspaces/{self._workspace_id}/bulkDeleteModels",
+            json={"modelIdsToDelete": model_ids},
+        )
+        return DeletionResult.model_validate(res)
 
     async def list_files(self) -> list[File]:
         """

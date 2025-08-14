@@ -52,7 +52,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         logger.info(f"Woke up model '{self._model_id}'.")
 
     async def close_model(self) -> None:
-        """Close the current model without."""
+        """Close the current model."""
         await self._post_empty(f"{self._url}/close", headers={"Content-Type": "application/text"})
         logger.info(f"Closed model '{self._model_id}'.")
 

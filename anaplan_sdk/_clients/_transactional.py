@@ -50,7 +50,7 @@ class _TransactionalClient(_BaseClient):
         logger.info(f"Woke up model '{self._model_id}'.")
 
     def close_model(self) -> None:
-        """Close the current model without."""
+        """Close the current model."""
         self._post_empty(f"{self._url}/close", headers={"Content-Type": "application/text"})
         logger.info(f"Closed model '{self._model_id}'.")
 
