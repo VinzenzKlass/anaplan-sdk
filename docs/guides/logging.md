@@ -1,5 +1,5 @@
 If you need visibility of the internal behaviour of `anaplan_sdk`, you can use the built-in logging
-module. `anaplan_sdk` will log network requests, retries, as well as information about internal functionalities.
+module. `anaplan_sdk` will log network errors, retries, as well as information about internal functionalities.
 
 Consider this example:
 
@@ -29,4 +29,10 @@ underlying [httpx](https://www.python-httpx.org/) library:
 
 ```python
 logging.getLogger("httpx").setLevel(logging.INFO)
+```
+
+To get a more detailed view on the internal workings of `anaplan_sdk`, you can set the log level to `DEBUG`:
+
+```python
+logging.getLogger("anaplan_sdk").setLevel(logging.DEBUG)
 ```
