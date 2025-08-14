@@ -1,5 +1,5 @@
 from asyncio import sleep
-from typing import Literal
+from typing import Literal, overload
 
 import httpx
 
@@ -177,13 +177,31 @@ class _AsyncAlmClient(_AsyncBaseClient):
             f"{task.result.target_revision_id}/{task.result.source_revision_id}"
         )
 
+    @overload
+    async def create_comparison_summary(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: Literal[True] = True,
+    ) -> SummaryReport: ...
+
+    @overload
+    async def create_comparison_summary(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: Literal[False],
+    ) -> ReportTask: ...
+
     async def create_comparison_summary(
         self,
         source_revision_id: str,
         source_model_id: str,
         target_revision_id: str,
         wait_for_completion: bool = True,
-    ) -> ReportTask:
+    ) -> ReportTask | SummaryReport:
         """
         Generate a comparison summary between two revisions.
         :param source_revision_id: The ID of the source revision.
@@ -191,7 +209,7 @@ class _AsyncAlmClient(_AsyncBaseClient):
         :param target_revision_id: The ID of the target revision.
         :param wait_for_completion: If True, the method will poll the task status and not return
                until the task is complete. If False, it will spawn the task and return immediately.
-        :return: The created summary task.
+        :return: The created summary task or the summary report, if `wait_for_completion` is True.
         """
         payload = {
             "sourceRevisionId": source_revision_id,
@@ -204,7 +222,7 @@ class _AsyncAlmClient(_AsyncBaseClient):
             return task
         while (task := await self.get_comparison_summary_task(task.id)).task_state != "COMPLETE":
             await sleep(self.status_poll_delay)
-        return task
+        return await self.get_comparison_summary(task)
 
     async def get_comparison_summary_task(self, task_id: str) -> ReportTask:
         """

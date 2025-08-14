@@ -59,7 +59,7 @@ def test_create_comparison_report(
     assert report is not None
 
 
-def test_create_comparison_summary(
+def test_create_comparison_summary_task(
     alm_client: Client, alm_src_client: Client, alm_src_model_id: str
 ):
     src_rev, latest_rev = (
@@ -67,11 +67,23 @@ def test_create_comparison_summary(
         alm_client.alm.get_latest_revision(),
     )
     report_task = alm_client.alm.create_comparison_summary(
-        src_rev.id, alm_src_model_id, latest_rev.id
+        src_rev.id, alm_src_model_id, latest_rev.id, False
     )
     assert isinstance(report_task, ReportTask)
-    report = alm_client.alm.get_comparison_summary(report_task)
+    assert report_task.result.source_revision_id == src_rev.id
+    assert report_task.result.target_revision_id == latest_rev.id
+
+
+def test_create_comparison_summary(
+    alm_client: Client, alm_src_client: Client, alm_src_model_id: str
+):
+    src_rev, latest_rev = (
+        alm_src_client.alm.get_latest_revision(),
+        alm_client.alm.get_latest_revision(),
+    )
+    report = alm_client.alm.create_comparison_summary(src_rev.id, alm_src_model_id, latest_rev.id)
     assert isinstance(report, SummaryReport)
+    assert sum((report.totals.created, report.totals.modified, report.totals.deleted)) > 0
 
 
 def test_sync_models(alm_client: Client, alm_src_client: Client, alm_src_model_id: str):
