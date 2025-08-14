@@ -2,12 +2,18 @@ from datetime import datetime
 from uuid import uuid4
 
 from anaplan_sdk import Client
-from anaplan_sdk.models import ModelRevision, ReportTask, Revision, SyncTask, TaskSummary
-from anaplan_sdk.models._alm import SummaryReport
+from anaplan_sdk.models import (
+    ModelRevision,
+    ReportTask,
+    Revision,
+    SummaryReport,
+    SyncTask,
+    TaskSummary,
+)
 
 
 def test_change_model_status(alm_client: Client):
-    alm_client.alm.change_model_status("online")
+    alm_client.alm.change_model_status("offline")
 
 
 def test_list_revisions(alm_client: Client):
@@ -58,7 +64,7 @@ def test_create_comparison_summary(
 ):
     src_rev, latest_rev = (
         alm_src_client.alm.get_latest_revision(),
-        alm_src_client.alm.get_latest_revision(),
+        alm_client.alm.get_latest_revision(),
     )
     report_task = alm_client.alm.create_comparison_summary(
         src_rev.id, alm_src_model_id, latest_rev.id
