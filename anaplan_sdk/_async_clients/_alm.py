@@ -124,18 +124,21 @@ class _AsyncAlmClient(_AsyncBaseClient):
             "targetRevisionId": target_revision_id,
         }
         res = await self._post(f"{self._url}/alm/syncTasks", json=payload)
-        sync_task = await self.get_sync_task(res["task"]["taskId"])
+        task = await self.get_sync_task(res["task"]["taskId"])
         logger.info(
-            f"Started sync task '{sync_task.id}' from Model '{source_model_id}' "
+            f"Started sync task '{task.id}' from Model '{source_model_id}' "
             f"(Revision '{source_revision_id}') to Model '{self._model_id}'."
         )
         if not wait_for_completion:
-            return sync_task
-        while (sync_task := await self.get_sync_task(sync_task.id)).task_state != "COMPLETE":
+            return task
+        while (task := await self.get_sync_task(task.id)).task_state != "COMPLETE":
             await sleep(self.status_poll_delay)
-        result = "successfully" if sync_task.result.success else "with errors"
-        logger.info(f"Sync task {sync_task.id} completed {result}.")
-        return sync_task
+        if not task.result.successful:
+            msg = f"Sync task {task.id} completed with errors: {task.result.error}."
+            logger.error(msg)
+            raise AnaplanActionError(msg)
+        logger.info(f"Sync task {task.id} completed successfully.")
+        return task
 
     async def list_models_for_revision(self, revision_id: str) -> list[ModelRevision]:
         """
