@@ -7,6 +7,7 @@ import httpx
 from anaplan_sdk._base import _AsyncBaseClient, parse_calendar_response, parse_insertion_response
 from anaplan_sdk.models import (
     CurrentPeriod,
+    Dimension,
     FiscalYear,
     InsertionResult,
     LineItem,
@@ -72,8 +73,10 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         views.
         :return: The List of Views.
         """
+        params = {"includesubsidiaryviews": True}
         return [
-            View.model_validate(e) for e in await self._get_paginated(f"{self._url}/views", "views")
+            View.model_validate(e)
+            for e in await self._get_paginated(f"{self._url}/views", "views", params=params)
         ]
 
     async def get_view_info(self, view_id: int) -> ViewInfo:
@@ -269,3 +272,44 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :return: The calendar settings of the model.
         """
         return parse_calendar_response(await self._get(f"{self._url}/modelCalendar"))
+
+    async def list_dimension_items(self, dimension_id: int) -> list[Dimension]:
+        """
+        Lists all items in a dimension. This will fail if the dimensions holds more than 1_000_000
+        items. Valid Dimensions are:
+
+        - Lists (101xxxxxxxxx)
+        - List Subsets (109xxxxxxxxx)
+        - Line Item Subsets (114xxxxxxxxx)
+        - Users (101999999999)
+        For lists and users, you should prefer using the `get_list_items` and `list_users` methods,
+        respectively, instead.
+        :param dimension_id: The ID of the dimension to list items for.
+        :return: A list of Dimension items.
+        """
+        res = await self._get(f"{self._url}/dimensions/{dimension_id}/items")
+        return [Dimension.model_validate(e) for e in res.get("items", [])]
+
+    async def lookup_dimension_items(
+        self, dimension_id: int, codes: list[str] = None, names: list[str] = None
+    ) -> list[Dimension]:
+        """
+        Looks up items in a dimension by their codes or names. If both are provided, both will be
+        searched for. You must provide at least one of `codes` or `names`. Valid Dimensions to
+        lookup are:
+
+        - Lists (101xxxxxxxxx)
+        - Time (20000000003)
+        - Version (20000000020)
+        - Users (101999999999)
+        :param dimension_id: The ID of the dimension to lookup items for.
+        :param codes: A list of codes to lookup in the dimension.
+        :param names: A list of names to lookup in the dimension.
+        :return: A list of Dimension items that match the provided codes or names.
+        """
+        if not codes and not names:
+            raise ValueError("At least one of 'codes' or 'names' must be provided.")
+        res = await self._post(
+            f"{self._url}/dimensions/{dimension_id}/items", json={"codes": codes, "names": names}
+        )
+        return [Dimension.model_validate(e) for e in res.get("items", [])]

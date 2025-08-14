@@ -89,4 +89,5 @@ __all__ = [
     "ViewInfo",
     "ModelCalendar",
     "DeletionResult",
+    "Dimension",
 ]
