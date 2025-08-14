@@ -1,10 +1,10 @@
+import logging
 from asyncio import gather
-from itertools import chain
 from typing import Any
 
 import httpx
 
-from anaplan_sdk._base import _AsyncBaseClient, parse_calendar_response
+from anaplan_sdk._base import _AsyncBaseClient, parse_calendar_response, parse_insertion_response
 from anaplan_sdk.models import (
     CurrentPeriod,
     FiscalYear,
@@ -21,10 +21,13 @@ from anaplan_sdk.models import (
     ViewInfo,
 )
 
+logger = logging.getLogger("anaplan_sdk")
+
 
 class _AsyncTransactionalClient(_AsyncBaseClient):
     def __init__(self, client: httpx.AsyncClient, model_id: str, retry_count: int) -> None:
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
+        self._model_id = model_id
         super().__init__(retry_count, client)
 
     async def get_model_details(self) -> Model:
@@ -46,10 +49,12 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
     async def wake_model(self) -> None:
         """Wake up the current model."""
         await self._post_empty(f"{self._url}/open", headers={"Content-Type": "application/text"})
+        logger.info(f"Woke up model '{self._model_id}'.")
 
     async def close_model(self) -> None:
         """Close the current model without."""
         await self._post_empty(f"{self._url}/close", headers={"Content-Type": "application/text"})
+        logger.info(f"Closed model '{self._model_id}'.")
 
     async def list_modules(self) -> list[Module]:
         """
@@ -146,27 +151,22 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
                  ignored or failed.
         """
         if len(items) <= 100_000:
-            return InsertionResult.model_validate(
+            result = InsertionResult.model_validate(
                 await self._post(
                     f"{self._url}/lists/{list_id}/items?action=add", json={"items": items}
                 )
             )
+            logger.info(f"Inserted {result.added} items into list '{list_id}'.")
+            return result
         responses = await gather(
             *(
                 self._post(f"{self._url}/lists/{list_id}/items?action=add", json={"items": chunk})
                 for chunk in (items[i : i + 100_000] for i in range(0, len(items), 100_000))
             )
         )
-        failures, added, ignored, total = [], 0, 0, 0
-        for res in responses:
-            failures.append(res.get("failures", []))
-            added += res.get("added", 0)
-            total += res.get("total", 0)
-            ignored += res.get("ignored", 0)
-
-        return InsertionResult(
-            added=added, ignored=ignored, total=total, failures=list(chain.from_iterable(failures))
-        )
+        result = parse_insertion_response(responses)
+        logger.info(f"Inserted {result.added} items into list '{list_id}'.")
+        return result
 
     async def delete_list_items(self, list_id: int, items: list[dict[str, str | int]]) -> int:
         """
@@ -185,11 +185,13 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
                       as the keys to identify the records to delete.
         """
         if len(items) <= 100_000:
-            return (
+            deleted_count = (
                 await self._post(
                     f"{self._url}/lists/{list_id}/items?action=delete", json={"items": items}
                 )
             ).get("deleted", 0)
+            logger.info(f"Deleted {deleted_count} items from list '{list_id}'.")
+            return deleted_count
 
         responses = await gather(
             *(
@@ -199,7 +201,9 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
                 for chunk in (items[i : i + 100_000] for i in range(0, len(items), 100_000))
             )
         )
-        return sum(res.get("deleted", 0) for res in responses)
+        deleted_count = sum(res.get("deleted", 0) for res in responses)
+        logger.info(f"Deleted {deleted_count} items from list '{list_id}'.")
+        return deleted_count
 
     async def reset_list_index(self, list_id: int) -> None:
         """
@@ -207,6 +211,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :param list_id: The ID of the List.
         """
         await self._post_empty(f"{self._url}/lists/{list_id}/resetIndex")
+        logger.info(f"Reset index for list '{list_id}'.")
 
     async def update_module_data(
         self, module_id: int, data: list[dict[str, Any]]
@@ -226,6 +231,8 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :return: The number of cells changed or the response with the according error details.
         """
         res = await self._post(f"{self._url}/modules/{module_id}/data", json=data)
+        if "failures" not in res:
+            logger.info(f"Updated {res['numberOfCellsChanged']} cells in module '{module_id}'.")
         return res if "failures" in res else res["numberOfCellsChanged"]
 
     async def get_current_period(self) -> CurrentPeriod:
@@ -243,6 +250,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :return: The updated current period of the model.
         """
         res = await self._put(f"{self._url}/currentPeriod", {"date": date})
+        logger.info(f"Set current period to '{date}'.")
         return CurrentPeriod.model_validate(res["currentPeriod"])
 
     async def set_current_fiscal_year(self, year: str) -> FiscalYear:
@@ -252,6 +260,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :return: The updated fiscal year of the model.
         """
         res = await self._put(f"{self._url}/modelCalendar/fiscalYear", {"year": year})
+        logger.info(f"Set current fiscal year to '{year}'.")
         return FiscalYear.model_validate(res["modelCalendar"]["fiscalYear"])
 
     async def get_model_calendar(self) -> ModelCalendar:

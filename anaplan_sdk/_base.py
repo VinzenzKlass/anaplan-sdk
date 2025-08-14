@@ -15,6 +15,7 @@ from httpx import HTTPError, Response
 from .exceptions import AnaplanException, AnaplanTimeoutException, InvalidIdentifierException
 from .models import (
     AnaplanModel,
+    InsertionResult,
     ModelCalendar,
     MonthsQuartersYearsCalendar,
     WeeksGeneralCalendar,
@@ -340,4 +341,16 @@ def parse_calendar_response(data: dict) -> ModelCalendar:
     raise AnaplanException(
         "Unknown calendar type encountered. Please report this issue: "
         "https://github.com/VinzenzKlass/anaplan-sdk/issues/new"
+    )
+
+
+def parse_insertion_response(data: list[dict]) -> InsertionResult:
+    failures, added, ignored, total = [], 0, 0, 0
+    for res in data:
+        failures.append(res.get("failures", []))
+        added += res.get("added", 0)
+        total += res.get("total", 0)
+        ignored += res.get("ignored", 0)
+    return InsertionResult(
+        added=added, ignored=ignored, total=total, failures=list(chain.from_iterable(failures))
     )
