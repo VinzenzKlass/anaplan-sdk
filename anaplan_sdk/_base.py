@@ -182,7 +182,7 @@ class _AsyncBaseClient:
         kwargs["params"] = kwargs.get("params") or {} | {"limit": limit}
         res = await self._get(url, **kwargs)
         total_items, first_page = res["meta"]["paging"]["totalSize"], res.get(result_key, [])
-        logger.debug(f"Found {total_items} total items, retrieved {len(first_page)} in first page")
+        logger.debug(f"Found {total_items} total items, retrieved {len(first_page)} in first page.")
         return first_page, total_items
 
     async def _get_paginated(
