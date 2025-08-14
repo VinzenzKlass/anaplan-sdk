@@ -112,14 +112,8 @@ def test_list_task_statuses(client: Client, test_action):
     assert len(task_statuses) > 0
 
 
-def test_invoke_action(client: Client, test_action):
-    task_id = client.invoke_action(test_action)
-    assert isinstance(task_id, str)
-    assert len(task_id) == 32
-
-
 def test_get_task_status(client: Client, test_action):
-    task_status = client.get_task_status(test_action, client.invoke_action(test_action))
+    task_status = client.get_task_status(test_action, client.run_action(test_action, False).id)
     assert isinstance(task_status, TaskStatus)
 
 

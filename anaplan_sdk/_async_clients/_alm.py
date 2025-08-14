@@ -1,11 +1,21 @@
+import logging
 from asyncio import sleep
 from typing import Literal, overload
 
 import httpx
 
 from anaplan_sdk._base import _AsyncBaseClient
-from anaplan_sdk.models import ModelRevision, ReportTask, Revision, SyncTask, TaskSummary
-from anaplan_sdk.models._alm import SummaryReport
+from anaplan_sdk.exceptions import AnaplanActionError
+from anaplan_sdk.models import (
+    ModelRevision,
+    ReportTask,
+    Revision,
+    SummaryReport,
+    SyncTask,
+    TaskSummary,
+)
+
+logger = logging.getLogger("anaplan_sdk")
 
 
 class _AsyncAlmClient(_AsyncBaseClient):
@@ -13,6 +23,7 @@ class _AsyncAlmClient(_AsyncBaseClient):
         self, client: httpx.AsyncClient, model_id: str, retry_count: int, status_poll_delay: int
     ) -> None:
         self.status_poll_delay = status_poll_delay
+        self._model_id = model_id
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
         super().__init__(retry_count, client)
 
@@ -21,6 +32,7 @@ class _AsyncAlmClient(_AsyncBaseClient):
         Use this call to change the status of a model.
         :param status: The status of the model. Can be either "online" or "offline".
         """
+        logger.info(f"Changed model status to '{status}' for model {self._model_id}.")
         await self._put(f"{self._url}/onlineStatus", json={"status": status})
 
     async def list_revisions(self) -> list[Revision]:
@@ -66,7 +78,9 @@ class _AsyncAlmClient(_AsyncBaseClient):
         res = await self._post(
             f"{self._url}/alm/revisions", json={"name": name, "description": description}
         )
-        return Revision.model_validate(res["revision"])
+        rev = Revision.model_validate(res["revision"])
+        logger.info(f"Created revision '{name} ({rev.id})'for model {self._model_id}.")
+        return rev
 
     async def list_sync_tasks(self) -> list[TaskSummary]:
         """
@@ -111,10 +125,16 @@ class _AsyncAlmClient(_AsyncBaseClient):
         }
         res = await self._post(f"{self._url}/alm/syncTasks", json=payload)
         sync_task = await self.get_sync_task(res["task"]["taskId"])
+        logger.info(
+            f"Started sync task '{sync_task.id}' from Model '{source_model_id}' "
+            f"(Revision '{source_revision_id}') to Model '{self._model_id}'."
+        )
         if not wait_for_completion:
             return sync_task
         while (sync_task := await self.get_sync_task(sync_task.id)).task_state != "COMPLETE":
             await sleep(self.status_poll_delay)
+        result = "successfully" if sync_task.result.success else "with errors"
+        logger.info(f"Sync task {sync_task.id} completed {result}.")
         return sync_task
 
     async def list_models_for_revision(self, revision_id: str) -> list[ModelRevision]:
@@ -151,10 +171,19 @@ class _AsyncAlmClient(_AsyncBaseClient):
         }
         res = await self._post(f"{self._url}/alm/comparisonReportTasks", json=payload)
         task = await self.get_comparison_report_task(res["task"]["taskId"])
+        logger.info(
+            f"Started Comparison Report task '{task.id}' between Model '{source_model_id}' "
+            f"(Revision '{source_revision_id}') and Model '{self._model_id}'."
+        )
         if not wait_for_completion:
             return task
         while (task := await self.get_comparison_report_task(task.id)).task_state != "COMPLETE":
             await sleep(self.status_poll_delay)
+        if not task.result.successful:
+            msg = f"Comparison Report task {task.id} completed with errors: {task.result.error}."
+            logger.error(msg)
+            raise AnaplanActionError(msg)
+        logger.info(f"Comparison Report task {task.id} completed successfully.")
         return task
 
     async def get_comparison_report_task(self, task_id: str) -> ReportTask:
@@ -218,10 +247,19 @@ class _AsyncAlmClient(_AsyncBaseClient):
         }
         res = await self._post(f"{self._url}/alm/summaryReportTasks", json=payload)
         task = await self.get_comparison_summary_task(res["task"]["taskId"])
+        logger.info(
+            f"Started Comparison Summary task '{task.id}' between Model '{source_model_id}' "
+            f"(Revision '{source_revision_id}') and Model '{self._model_id}'."
+        )
         if not wait_for_completion:
             return task
         while (task := await self.get_comparison_summary_task(task.id)).task_state != "COMPLETE":
             await sleep(self.status_poll_delay)
+        if not task.result.successful:
+            msg = f"Comparison Summary task {task.id} completed with errors: {task.result.error}."
+            logger.error(msg)
+            raise AnaplanActionError(msg)
+        logger.info(f"Comparison Summary task {task.id} completed successfully.")
         return await self.get_comparison_summary(task)
 
     async def get_comparison_summary_task(self, task_id: str) -> ReportTask:

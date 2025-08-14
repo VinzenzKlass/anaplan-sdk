@@ -1,11 +1,21 @@
+import logging
 from time import sleep
 from typing import Literal, overload
 
 import httpx
 
 from anaplan_sdk._base import _BaseClient
-from anaplan_sdk.models import ModelRevision, ReportTask, Revision, SyncTask, TaskSummary
-from anaplan_sdk.models._alm import SummaryReport
+from anaplan_sdk.exceptions import AnaplanActionError
+from anaplan_sdk.models import (
+    ModelRevision,
+    ReportTask,
+    Revision,
+    SummaryReport,
+    SyncTask,
+    TaskSummary,
+)
+
+logger = logging.getLogger("anaplan_sdk")
 
 
 class _AlmClient(_BaseClient):
@@ -13,6 +23,7 @@ class _AlmClient(_BaseClient):
         self, client: httpx.Client, model_id: str, retry_count: int, status_poll_delay: int
     ) -> None:
         self.status_poll_delay = status_poll_delay
+        self._model_id = model_id
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
         super().__init__(retry_count, client)
 
@@ -21,6 +32,7 @@ class _AlmClient(_BaseClient):
         Use this call to change the status of a model.
         :param status: The status of the model. Can be either "online" or "offline".
         """
+        logger.info(f"Changed model status to '{status}' for model {self._model_id}.")
         self._put(f"{self._url}/onlineStatus", json={"status": status})
 
     def list_revisions(self) -> list[Revision]:
@@ -66,7 +78,9 @@ class _AlmClient(_BaseClient):
         res = self._post(
             f"{self._url}/alm/revisions", json={"name": name, "description": description}
         )
-        return Revision.model_validate(res["revision"])
+        rev = Revision.model_validate(res["revision"])
+        logger.info(f"Created revision '{name} ({rev.id})'for model {self._model_id}.")
+        return rev
 
     def list_sync_tasks(self) -> list[TaskSummary]:
         """
@@ -111,10 +125,16 @@ class _AlmClient(_BaseClient):
         }
         res = self._post(f"{self._url}/alm/syncTasks", json=payload)
         sync_task = self.get_sync_task(res["task"]["taskId"])
+        logger.info(
+            f"Started sync task '{sync_task.id}' from Model '{source_model_id}' "
+            f"(Revision '{source_revision_id}') to Model '{self._model_id}'."
+        )
         if not wait_for_completion:
             return sync_task
         while (sync_task := self.get_sync_task(sync_task.id)).task_state != "COMPLETE":
             sleep(self.status_poll_delay)
+        result = "successfully" if sync_task.result.success else "with errors"
+        logger.info(f"Sync task {sync_task.id} completed {result}.")
         return sync_task
 
     def list_models_for_revision(self, revision_id: str) -> list[ModelRevision]:
@@ -151,10 +171,19 @@ class _AlmClient(_BaseClient):
         }
         res = self._post(f"{self._url}/alm/comparisonReportTasks", json=payload)
         task = self.get_comparison_report_task(res["task"]["taskId"])
+        logger.info(
+            f"Started Comparison Report task '{task.id}' between Model '{source_model_id}' "
+            f"(Revision '{source_revision_id}') and Model '{self._model_id}'."
+        )
         if not wait_for_completion:
             return task
         while (task := self.get_comparison_report_task(task.id)).task_state != "COMPLETE":
             sleep(self.status_poll_delay)
+        if not task.result.successful:
+            msg = f"Comparison Report task {task.id} completed with errors: {task.result.error}."
+            logger.error(msg)
+            raise AnaplanActionError(msg)
+        logger.info(f"Comparison Report task {task.id} completed successfully.")
         return task
 
     def get_comparison_report_task(self, task_id: str) -> ReportTask:
@@ -218,10 +247,19 @@ class _AlmClient(_BaseClient):
         }
         res = self._post(f"{self._url}/alm/summaryReportTasks", json=payload)
         task = self.get_comparison_summary_task(res["task"]["taskId"])
+        logger.info(
+            f"Started Comparison Summary task '{task.id}' between Model '{source_model_id}' "
+            f"(Revision '{source_revision_id}') and Model '{self._model_id}'."
+        )
         if not wait_for_completion:
             return task
         while (task := self.get_comparison_summary_task(task.id)).task_state != "COMPLETE":
             sleep(self.status_poll_delay)
+        if not task.result.successful:
+            msg = f"Comparison Summary task {task.id} completed with errors: {task.result.error}."
+            logger.error(msg)
+            raise AnaplanActionError(msg)
+        logger.info(f"Comparison Summary task {task.id} completed successfully.")
         return self.get_comparison_summary(task)
 
     def get_comparison_summary_task(self, task_id: str) -> ReportTask:

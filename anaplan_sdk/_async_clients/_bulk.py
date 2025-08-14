@@ -146,6 +146,10 @@ class AsyncClient(_AsyncBaseClient):
         client = copy(existing)
         new_ws_id = workspace_id or existing._workspace_id
         new_model_id = model_id or existing._model_id
+        logger.debug(
+            f"Creating a new AsyncClient from existing instance "
+            f"with workspace_id={new_ws_id}, model_id={new_model_id}."
+        )
         client._url = f"https://api.anaplan.com/2/0/workspaces/{new_ws_id}/models/{new_model_id}"
         client._transactional_client = _AsyncTransactionalClient(
             existing._client, model_id, existing._retry_count
