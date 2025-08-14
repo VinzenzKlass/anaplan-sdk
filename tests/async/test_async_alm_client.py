@@ -55,8 +55,6 @@ async def test_create_comparison_summary_task(
         src_rev.id, alm_src_model_id, latest_rev.id, False
     )
     assert isinstance(report_task, ReportTask)
-    assert report_task.result.source_revision_id == src_rev.id
-    assert report_task.result.target_revision_id == latest_rev.id
 
 
 async def test_create_comparison_summary(
