@@ -13,7 +13,15 @@ import httpx
 from httpx import HTTPError, Response
 
 from .exceptions import AnaplanException, AnaplanTimeoutException, InvalidIdentifierException
-from .models import AnaplanModel
+from .models import (
+    AnaplanModel,
+    InsertionResult,
+    ModelCalendar,
+    MonthsQuartersYearsCalendar,
+    WeeksGeneralCalendar,
+    WeeksGroupingCalendar,
+    WeeksPeriodsCalendar,
+)
 from .models.cloud_works import (
     AmazonS3ConnectionInput,
     AzureBlobConnectionInput,
@@ -36,6 +44,7 @@ class _BaseClient:
     def __init__(self, retry_count: int, client: httpx.Client):
         self._retry_count = retry_count
         self._client = client
+        logger.debug(f"Initialized BaseClient with retry_count={retry_count}.")
 
     def _get(self, url: str, **kwargs) -> dict[str, Any]:
         return self._run_with_retry(self._client.get, url, **kwargs).json()
@@ -47,7 +56,8 @@ class _BaseClient:
         return self._run_with_retry(self._client.post, url, headers=_json_header, json=json).json()
 
     def _put(self, url: str, json: dict | list) -> dict[str, Any]:
-        return (self._run_with_retry(self._client.put, url, headers=_json_header, json=json)).json()
+        res = self._run_with_retry(self._client.put, url, headers=_json_header, json=json)
+        return res.json() if res.num_bytes_downloaded > 0 else {}
 
     def _patch(self, url: str, json: dict | list) -> dict[str, Any]:
         return (
@@ -57,8 +67,8 @@ class _BaseClient:
     def _delete(self, url: str) -> dict[str, Any]:
         return (self._run_with_retry(self._client.delete, url, headers=_json_header)).json()
 
-    def _post_empty(self, url: str) -> dict[str, Any]:
-        res = self._run_with_retry(self._client.post, url)
+    def _post_empty(self, url: str, **kwargs) -> dict[str, Any]:
+        res = self._run_with_retry(self._client.post, url, **kwargs)
         return res.json() if res.num_bytes_downloaded > 0 else {}
 
     def _put_binary_gzip(self, url: str, content: bytes) -> Response:
@@ -67,27 +77,35 @@ class _BaseClient:
         )
 
     def __get_page(self, url: str, limit: int, offset: int, result_key: str, **kwargs) -> list:
+        logger.debug(f"Fetching page: offset={offset}, limit={limit} from {url}.")
         kwargs["params"] = kwargs.get("params") or {} | {"limit": limit, "offset": offset}
         return self._get(url, **kwargs).get(result_key, [])
 
     def __get_first_page(self, url: str, limit: int, result_key: str, **kwargs) -> tuple[list, int]:
+        logger.debug(f"Fetching first page with limit={limit} from {url}.")
         kwargs["params"] = kwargs.get("params") or {} | {"limit": limit}
         res = self._get(url, **kwargs)
-        return res.get(result_key, []), res["meta"]["paging"]["totalSize"]
+        total_items, first_page = res["meta"]["paging"]["totalSize"], res.get(result_key, [])
+        logger.debug(f"Found {total_items} total items, retrieved {len(first_page)} in first page.")
+        return first_page, total_items
 
     def _get_paginated(
         self, url: str, result_key: str, page_size: int = 5_000, **kwargs
     ) -> Iterator[dict[str, Any]]:
+        logger.debug(f"Starting paginated fetch from {url} with page_size={page_size}.")
         first_page, total_items = self.__get_first_page(url, page_size, result_key, **kwargs)
         if total_items <= page_size:
+            logger.debug("All items fit in first page, no additional requests needed.")
             return iter(first_page)
 
+        pages_needed = ceil(total_items / page_size)
+        logger.debug(f"Fetching {pages_needed - 1} additional pages with {page_size} items each.")
         with ThreadPoolExecutor() as executor:
             pages = executor.map(
                 lambda n: self.__get_page(url, page_size, n * page_size, result_key, **kwargs),
-                range(1, ceil(total_items / page_size)),
+                range(1, pages_needed),
             )
-
+        logger.debug(f"Completed paginated fetch of {total_items} total items.")
         return chain(first_page, *pages)
 
     def _run_with_retry(self, func: Callable[..., Response], *args, **kwargs) -> Response:
@@ -98,7 +116,7 @@ class _BaseClient:
                     if i >= self._retry_count - 1:
                         raise AnaplanException("Rate limit exceeded.")
                     backoff_time = max(i, 1) * random.randint(2, 5)
-                    logger.info(f"Rate limited. Retrying in {backoff_time} seconds.")
+                    logger.warning(f"Rate limited. Retrying in {backoff_time} seconds.")
                     time.sleep(backoff_time)
                     continue
                 response.raise_for_status()
@@ -116,6 +134,7 @@ class _AsyncBaseClient:
     def __init__(self, retry_count: int, client: httpx.AsyncClient):
         self._retry_count = retry_count
         self._client = client
+        logger.debug(f"Initialized AsyncBaseClient with retry_count={retry_count}.")
 
     async def _get(self, url: str, **kwargs) -> dict[str, Any]:
         return (await self._run_with_retry(self._client.get, url, **kwargs)).json()
@@ -129,9 +148,8 @@ class _AsyncBaseClient:
         ).json()
 
     async def _put(self, url: str, json: dict | list) -> dict[str, Any]:
-        return (
-            await self._run_with_retry(self._client.put, url, headers=_json_header, json=json)
-        ).json()
+        res = await self._run_with_retry(self._client.put, url, headers=_json_header, json=json)
+        return res.json() if res.num_bytes_downloaded > 0 else {}
 
     async def _patch(self, url: str, json: dict | list) -> dict[str, Any]:
         return (
@@ -141,8 +159,8 @@ class _AsyncBaseClient:
     async def _delete(self, url: str) -> dict[str, Any]:
         return (await self._run_with_retry(self._client.delete, url, headers=_json_header)).json()
 
-    async def _post_empty(self, url: str) -> dict[str, Any]:
-        res = await self._run_with_retry(self._client.post, url)
+    async def _post_empty(self, url: str, **kwargs) -> dict[str, Any]:
+        res = await self._run_with_retry(self._client.post, url, **kwargs)
         return res.json() if res.num_bytes_downloaded > 0 else {}
 
     async def _put_binary_gzip(self, url: str, content: bytes) -> Response:
@@ -153,21 +171,27 @@ class _AsyncBaseClient:
     async def __get_page(
         self, url: str, limit: int, offset: int, result_key: str, **kwargs
     ) -> list:
+        logger.debug(f"Fetching page: offset={offset}, limit={limit} from {url}.")
         kwargs["params"] = kwargs.get("params") or {} | {"limit": limit, "offset": offset}
         return (await self._get(url, **kwargs)).get(result_key, [])
 
     async def __get_first_page(
         self, url: str, limit: int, result_key: str, **kwargs
     ) -> tuple[list, int]:
+        logger.debug(f"Fetching first page with limit={limit} from {url}.")
         kwargs["params"] = kwargs.get("params") or {} | {"limit": limit}
         res = await self._get(url, **kwargs)
-        return res.get(result_key, []), res["meta"]["paging"]["totalSize"]
+        total_items, first_page = res["meta"]["paging"]["totalSize"], res.get(result_key, [])
+        logger.debug(f"Found {total_items} total items, retrieved {len(first_page)} in first page.")
+        return first_page, total_items
 
     async def _get_paginated(
         self, url: str, result_key: str, page_size: int = 5_000, **kwargs
     ) -> Iterator[dict[str, Any]]:
+        logger.debug(f"Starting paginated fetch from {url} with page_size={page_size}.")
         first_page, total_items = await self.__get_first_page(url, page_size, result_key, **kwargs)
         if total_items <= page_size:
+            logger.debug("All items fit in first page, no additional requests needed.")
             return iter(first_page)
         pages = await gather(
             *(
@@ -175,6 +199,7 @@ class _AsyncBaseClient:
                 for n in range(1, ceil(total_items / page_size))
             )
         )
+        logger.info(f"Completed paginated fetch of {total_items} total items.")
         return chain(first_page, *pages)
 
     async def _run_with_retry(
@@ -187,7 +212,7 @@ class _AsyncBaseClient:
                     if i >= self._retry_count - 1:
                         raise AnaplanException("Rate limit exceeded.")
                     backoff_time = (i + 1) * random.randint(3, 5)
-                    logger.info(f"Rate limited. Retrying in {backoff_time} seconds.")
+                    logger.warning(f"Rate limited. Retrying in {backoff_time} seconds.")
                     await asyncio.sleep(backoff_time)
                     continue
                 response.raise_for_status()
@@ -295,3 +320,59 @@ def raise_error(error: HTTPError) -> None:
 
     logger.error(f"Error: {error}")
     raise AnaplanException from error
+
+
+def parse_calendar_response(data: dict) -> ModelCalendar:
+    """
+    Parse calendar response and return appropriate calendar model.
+    :param data: The calendar data from the API response.
+    :return: The calendar settings of the model based on calendar type.
+    """
+    calendar_data = data["modelCalendar"]
+    cal_type = calendar_data["calendarType"]
+    if cal_type == "Calendar Months/Quarters/Years":
+        return MonthsQuartersYearsCalendar.model_validate(calendar_data)
+    if cal_type == "Weeks: 4-4-5, 4-5-4 or 5-4-4":
+        return WeeksGroupingCalendar.model_validate(calendar_data)
+    if cal_type == "Weeks: General":
+        return WeeksGeneralCalendar.model_validate(calendar_data)
+    if cal_type == "Weeks: 13 4-week Periods":
+        return WeeksPeriodsCalendar.model_validate(calendar_data)
+    raise AnaplanException(
+        "Unknown calendar type encountered. Please report this issue: "
+        "https://github.com/VinzenzKlass/anaplan-sdk/issues/new"
+    )
+
+
+def parse_insertion_response(data: list[dict]) -> InsertionResult:
+    failures, added, ignored, total = [], 0, 0, 0
+    for res in data:
+        failures.append(res.get("failures", []))
+        added += res.get("added", 0)
+        total += res.get("total", 0)
+        ignored += res.get("ignored", 0)
+    return InsertionResult(
+        added=added, ignored=ignored, total=total, failures=list(chain.from_iterable(failures))
+    )
+
+
+def validate_dimension_id(dimension_id: int) -> int:
+    if not (
+        dimension_id == 101999999999
+        or 101_000_000_000 <= dimension_id < 102_000_000_000
+        or 109_000_000_000 <= dimension_id < 110_000_000_000
+        or 114_000_000_000 <= dimension_id < 115_000_000_000
+    ):
+        raise InvalidIdentifierException(
+            "Invalid dimension_id. Must be a List (101xxxxxxxxx), List Subset (109xxxxxxxxx), "
+            "Line Item Subset (114xxxxxxxxx), or Users (101999999999)."
+        )
+    msg = (
+        "Using `get_dimension_items` for {} is discouraged. "
+        "Prefer `{}` for better performance and more details on the members."
+    )
+    if dimension_id == 101999999999:
+        logger.warning(msg.format("Users", "list_users"))
+    if 101000000000 <= dimension_id < 102000000000:
+        logger.warning(msg.format("Lists", "get_list_items"))
+    return dimension_id

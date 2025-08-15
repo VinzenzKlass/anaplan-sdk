@@ -94,7 +94,8 @@ plugins:
             show_source: false
             show_bases: false
             extensions:
-              - griffe_fieldz
+              - griffe_fieldz:
+                  include_inherited: true
 
 watch:
   - "anaplan_sdk"

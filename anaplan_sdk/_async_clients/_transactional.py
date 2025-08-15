@@ -1,25 +1,68 @@
+import logging
 from asyncio import gather
-from itertools import chain
 from typing import Any
 
 import httpx
 
-from anaplan_sdk._base import _AsyncBaseClient
+from anaplan_sdk._base import (
+    _AsyncBaseClient,
+    parse_calendar_response,
+    parse_insertion_response,
+    validate_dimension_id,
+)
+from anaplan_sdk.exceptions import InvalidIdentifierException
 from anaplan_sdk.models import (
+    CurrentPeriod,
+    Dimension,
+    DimensionWithCode,
+    FiscalYear,
     InsertionResult,
     LineItem,
     List,
     ListItem,
     ListMetadata,
+    Model,
+    ModelCalendar,
     ModelStatus,
     Module,
+    View,
+    ViewInfo,
 )
+
+logger = logging.getLogger("anaplan_sdk")
 
 
 class _AsyncTransactionalClient(_AsyncBaseClient):
     def __init__(self, client: httpx.AsyncClient, model_id: str, retry_count: int) -> None:
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
+        self._model_id = model_id
         super().__init__(retry_count, client)
+
+    async def get_model_details(self) -> Model:
+        """
+        Retrieves the Model details for the current Model.
+        :return: The Model details.
+        """
+        res = await self._get(self._url, params={"modelDetails": "true"})
+        return Model.model_validate(res["model"])
+
+    async def get_model_status(self) -> ModelStatus:
+        """
+        Gets the current status of the Model.
+        :return: The current status of the Model.
+        """
+        res = await self._get(f"{self._url}/status")
+        return ModelStatus.model_validate(res["requestStatus"])
+
+    async def wake_model(self) -> None:
+        """Wake up the current model."""
+        await self._post_empty(f"{self._url}/open", headers={"Content-Type": "application/text"})
+        logger.info(f"Woke up model '{self._model_id}'.")
+
+    async def close_model(self) -> None:
+        """Close the current model."""
+        await self._post_empty(f"{self._url}/close", headers={"Content-Type": "application/text"})
+        logger.info(f"Closed model '{self._model_id}'.")
 
     async def list_modules(self) -> list[Module]:
         """
@@ -31,14 +74,25 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
             for e in await self._get_paginated(f"{self._url}/modules", "modules")
         ]
 
-    async def get_model_status(self) -> ModelStatus:
+    async def list_views(self) -> list[View]:
         """
-        Gets the current status of the Model.
-        :return: The current status of the Model.
+        Lists all the Views in the Model. This will include all Modules and potentially other saved
+        views.
+        :return: The List of Views.
         """
-        return ModelStatus.model_validate(
-            (await self._get(f"{self._url}/status")).get("requestStatus")
-        )
+        params = {"includesubsidiaryviews": True}
+        return [
+            View.model_validate(e)
+            for e in await self._get_paginated(f"{self._url}/views", "views", params=params)
+        ]
+
+    async def get_view_info(self, view_id: int) -> ViewInfo:
+        """
+        Gets the detailed information about a View.
+        :param view_id: The ID of the View.
+        :return: The information about the View.
+        """
+        return ViewInfo.model_validate((await self._get(f"{self._url}/views/{view_id}")))
 
     async def list_line_items(self, only_module_id: int | None = None) -> list[LineItem]:
         """
@@ -107,27 +161,22 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
                  ignored or failed.
         """
         if len(items) <= 100_000:
-            return InsertionResult.model_validate(
+            result = InsertionResult.model_validate(
                 await self._post(
                     f"{self._url}/lists/{list_id}/items?action=add", json={"items": items}
                 )
             )
+            logger.info(f"Inserted {result.added} items into list '{list_id}'.")
+            return result
         responses = await gather(
             *(
                 self._post(f"{self._url}/lists/{list_id}/items?action=add", json={"items": chunk})
                 for chunk in (items[i : i + 100_000] for i in range(0, len(items), 100_000))
             )
         )
-        failures, added, ignored, total = [], 0, 0, 0
-        for res in responses:
-            failures.append(res.get("failures", []))
-            added += res.get("added", 0)
-            total += res.get("total", 0)
-            ignored += res.get("ignored", 0)
-
-        return InsertionResult(
-            added=added, ignored=ignored, total=total, failures=list(chain.from_iterable(failures))
-        )
+        result = parse_insertion_response(responses)
+        logger.info(f"Inserted {result.added} items into list '{list_id}'.")
+        return result
 
     async def delete_list_items(self, list_id: int, items: list[dict[str, str | int]]) -> int:
         """
@@ -146,11 +195,13 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
                       as the keys to identify the records to delete.
         """
         if len(items) <= 100_000:
-            return (
+            deleted_count = (
                 await self._post(
                     f"{self._url}/lists/{list_id}/items?action=delete", json={"items": items}
                 )
             ).get("deleted", 0)
+            logger.info(f"Deleted {deleted_count} items from list '{list_id}'.")
+            return deleted_count
 
         responses = await gather(
             *(
@@ -160,7 +211,9 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
                 for chunk in (items[i : i + 100_000] for i in range(0, len(items), 100_000))
             )
         )
-        return sum(res.get("deleted", 0) for res in responses)
+        deleted_count = sum(res.get("deleted", 0) for res in responses)
+        logger.info(f"Deleted {deleted_count} items from list '{list_id}'.")
+        return deleted_count
 
     async def reset_list_index(self, list_id: int) -> None:
         """
@@ -168,6 +221,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :param list_id: The ID of the List.
         """
         await self._post_empty(f"{self._url}/lists/{list_id}/resetIndex")
+        logger.info(f"Reset index for list '{list_id}'.")
 
     async def update_module_data(
         self, module_id: int, data: list[dict[str, Any]]
@@ -187,4 +241,107 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :return: The number of cells changed or the response with the according error details.
         """
         res = await self._post(f"{self._url}/modules/{module_id}/data", json=data)
+        if "failures" not in res:
+            logger.info(f"Updated {res['numberOfCellsChanged']} cells in module '{module_id}'.")
         return res if "failures" in res else res["numberOfCellsChanged"]
+
+    async def get_current_period(self) -> CurrentPeriod:
+        """
+        Gets the current period of the model.
+        :return: The current period of the model.
+        """
+        res = await self._get(f"{self._url}/currentPeriod")
+        return CurrentPeriod.model_validate(res["currentPeriod"])
+
+    async def set_current_period(self, date: str) -> CurrentPeriod:
+        """
+        Sets the current period of the model to the given date.
+        :param date: The date to set the current period to, in the format 'YYYY-MM-DD'.
+        :return: The updated current period of the model.
+        """
+        res = await self._put(f"{self._url}/currentPeriod", {"date": date})
+        logger.info(f"Set current period to '{date}'.")
+        return CurrentPeriod.model_validate(res["currentPeriod"])
+
+    async def set_current_fiscal_year(self, year: str) -> FiscalYear:
+        """
+        Sets the current fiscal year of the model.
+        :param year: The fiscal year to set, in the format specified in the model, e.g. FY24.
+        :return: The updated fiscal year of the model.
+        """
+        res = await self._put(f"{self._url}/modelCalendar/fiscalYear", {"year": year})
+        logger.info(f"Set current fiscal year to '{year}'.")
+        return FiscalYear.model_validate(res["modelCalendar"]["fiscalYear"])
+
+    async def get_model_calendar(self) -> ModelCalendar:
+        """
+        Get the calendar settings of the model.
+        :return: The calendar settings of the model.
+        """
+        return parse_calendar_response(await self._get(f"{self._url}/modelCalendar"))
+
+    async def get_dimension_items(self, dimension_id: int) -> list[DimensionWithCode]:
+        """
+        Get all items in a dimension. This will fail if the dimensions holds more than 1_000_000
+        items. Valid Dimensions are:
+
+        - Lists (101xxxxxxxxx)
+        - List Subsets (109xxxxxxxxx)
+        - Line Item Subsets (114xxxxxxxxx)
+        - Users (101999999999)
+        For lists and users, you should prefer using the `get_list_items` and `list_users` methods,
+        respectively, instead.
+        :param dimension_id: The ID of the dimension to list items for.
+        :return: A list of Dimension items.
+        """
+        res = await self._get(f"{self._url}/dimensions/{validate_dimension_id(dimension_id)}/items")
+        return [DimensionWithCode.model_validate(e) for e in res.get("items", [])]
+
+    async def lookup_dimension_items(
+        self, dimension_id: int, codes: list[str] = None, names: list[str] = None
+    ) -> list[DimensionWithCode]:
+        """
+        Looks up items in a dimension by their codes or names. If both are provided, both will be
+        searched for. You must provide at least one of `codes` or `names`. Valid Dimensions to
+        lookup are:
+
+        - Lists (101xxxxxxxxx)
+        - Time (20000000003)
+        - Version (20000000020)
+        - Users (101999999999)
+        :param dimension_id: The ID of the dimension to lookup items for.
+        :param codes: A list of codes to lookup in the dimension.
+        :param names: A list of names to lookup in the dimension.
+        :return: A list of Dimension items that match the provided codes or names.
+        """
+        if not codes and not names:
+            raise ValueError("At least one of 'codes' or 'names' must be provided.")
+        if not (
+            dimension_id == 101999999999
+            or 101_000_000_000 <= dimension_id < 102_000_000_000
+            or dimension_id == 20000000003
+            or dimension_id == 20000000020
+        ):
+            raise InvalidIdentifierException(
+                "Invalid dimension_id. Must be a List (101xxxxxxxxx), Time (20000000003), "
+                "Version (20000000020), or Users (101999999999)."
+            )
+        res = await self._post(
+            f"{self._url}/dimensions/{dimension_id}/items", json={"codes": codes, "names": names}
+        )
+        return [DimensionWithCode.model_validate(e) for e in res.get("items", [])]
+
+    async def get_view_dimension_items(self, view_id: int, dimension_id: int) -> list[Dimension]:
+        """
+        Get the members of a dimension that are part of the given View. This call returns data as
+        filtered by the page builder when they configure the view. This call respects hidden items,
+        filtering selections, and Selective Access. If the view contains hidden or filtered items,
+        these do not display in the response. This will fail if the dimensions holds more than
+        1_000_000 items. The response returns Items within a flat list (no hierarchy) and order
+        is not guaranteed.
+        :param view_id: The ID of the View.
+        :param dimension_id: The ID of the Dimension to get items for.
+        :return: A list of Dimensions used in the View.
+        """
+        res = await self._get(f"{self._url}/views/{view_id}/dimensions/{dimension_id}/items")
+        return [Dimension.model_validate(e) for e in res.get("items", [])]

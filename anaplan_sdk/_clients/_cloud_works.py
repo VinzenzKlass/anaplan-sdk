@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Literal
 
 import httpx
@@ -26,6 +27,8 @@ from anaplan_sdk.models.cloud_works import (
 )
 
 from ._cw_flow import _FlowClient
+
+logger = logging.getLogger("anaplan_sdk")
 
 
 class _CloudWorksClient(_BaseClient):
@@ -62,7 +65,9 @@ class _CloudWorksClient(_BaseClient):
         res = self._post(
             f"{self._url}/connections", json=construct_payload(ConnectionInput, con_info)
         )
-        return res["connections"]["connectionId"]
+        connection_id = res["connections"]["connectionId"]
+        logger.info(f"Created connection '{connection_id}'.")
+        return connection_id
 
     def update_connection(self, con_id: str, con_info: ConnectionBody | dict[str, Any]) -> None:
         """
@@ -89,6 +94,7 @@ class _CloudWorksClient(_BaseClient):
         :param con_id: The ID of the connection to delete.
         """
         self._delete(f"{self._url}/connections/{con_id}")
+        logger.info(f"Deleted connection '{con_id}'.")
 
     def list_integrations(
         self, sort_by_name: Literal["ascending", "descending"] = "ascending"
@@ -141,7 +147,9 @@ class _CloudWorksClient(_BaseClient):
         :return: The ID of the new integration.
         """
         json = integration_payload(body)
-        return (self._post(f"{self._url}", json=json))["integration"]["integrationId"]
+        integration_id = (self._post(f"{self._url}", json=json))["integration"]["integrationId"]
+        logger.info(f"Created integration '{integration_id}'.")
+        return integration_id
 
     def update_integration(
         self, integration_id: str, body: IntegrationInput | IntegrationProcessInput | dict[str, Any]
@@ -162,7 +170,9 @@ class _CloudWorksClient(_BaseClient):
         :param integration_id: The ID of the integration to run.
         :return: The ID of the run instance.
         """
-        return (self._post_empty(f"{self._url}/{integration_id}/run"))["run"]["id"]
+        run_id = (self._post_empty(f"{self._url}/{integration_id}/run"))["run"]["id"]
+        logger.info(f"Started integration run '{run_id}' for integration '{integration_id}'.")
+        return run_id
 
     def delete_integration(self, integration_id: str) -> None:
         """
@@ -170,6 +180,7 @@ class _CloudWorksClient(_BaseClient):
         :param integration_id: The ID of the integration to delete.
         """
         self._delete(f"{self._url}/{integration_id}")
+        logger.info(f"Deleted integration '{integration_id}'.")
 
     def get_run_history(self, integration_id: str) -> list[RunSummary]:
         """
@@ -216,6 +227,7 @@ class _CloudWorksClient(_BaseClient):
             f"{self._url}/{integration_id}/schedule",
             json=schedule_payload(integration_id, schedule),
         )
+        logger.info(f"Created schedule for integration '{integration_id}'.")
 
     def update_schedule(
         self, integration_id: str, schedule: ScheduleInput | dict[str, Any]
@@ -231,6 +243,7 @@ class _CloudWorksClient(_BaseClient):
             f"{self._url}/{integration_id}/schedule",
             json=schedule_payload(integration_id, schedule),
         )
+        logger.info(f"Updated schedule for integration '{integration_id}'.")
 
     def set_schedule_status(
         self, integration_id: str, status: Literal["enabled", "disabled"]
@@ -241,6 +254,7 @@ class _CloudWorksClient(_BaseClient):
         :param status: The status of the schedule. This can be either "enabled" or "disabled".
         """
         self._post_empty(f"{self._url}/{integration_id}/schedule/status/{status}")
+        logger.info(f"Set schedule status to '{status}' for integration '{integration_id}'.")
 
     def delete_schedule(self, integration_id: str) -> None:
         """
@@ -248,6 +262,7 @@ class _CloudWorksClient(_BaseClient):
         :param integration_id: The ID of the integration to schedule.
         """
         self._delete(f"{self._url}/{integration_id}/schedule")
+        logger.info(f"Deleted schedule for integration '{integration_id}'.")
 
     def get_notification_config(
         self, notification_id: str | None = None, integration_id: str | None = None
@@ -283,7 +298,9 @@ class _CloudWorksClient(_BaseClient):
         res = self._post(
             f"{self._url}/notification", json=construct_payload(NotificationInput, config)
         )
-        return res["notification"]["notificationId"]
+        notification_id = res["notification"]["notificationId"]
+        logger.info(f"Created notification configuration '{notification_id}'.")
+        return notification_id
 
     def update_notification_config(
         self, notification_id: str, config: NotificationInput | dict[str, Any]
@@ -318,6 +335,7 @@ class _CloudWorksClient(_BaseClient):
         if integration_id:
             notification_id = (self.get_integration(integration_id)).notification_id
         self._delete(f"{self._url}/notification/{notification_id}")
+        logger.info(f"Deleted notification configuration '{notification_id}'.")
 
     def get_import_error_dump(self, run_id: str) -> bytes:
         """

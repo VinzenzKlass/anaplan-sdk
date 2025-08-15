@@ -1,15 +1,61 @@
+import logging
+from time import sleep
+from typing import Literal, overload
+
 import httpx
 
 from anaplan_sdk._base import _BaseClient
-from anaplan_sdk.models import ModelRevision, Revision, SyncTask
+from anaplan_sdk.exceptions import AnaplanActionError
+from anaplan_sdk.models import (
+    ModelRevision,
+    ReportTask,
+    Revision,
+    SummaryReport,
+    SyncTask,
+    TaskSummary,
+)
+
+logger = logging.getLogger("anaplan_sdk")
 
 
 class _AlmClient(_BaseClient):
-    def __init__(self, client: httpx.Client, model_id: str, retry_count: int) -> None:
-        self._url = f"https://api.anaplan.com/2/0/models/{model_id}/alm"
+    def __init__(
+        self, client: httpx.Client, model_id: str, retry_count: int, status_poll_delay: int
+    ) -> None:
+        self.status_poll_delay = status_poll_delay
+        self._model_id = model_id
+        self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
         super().__init__(retry_count, client)
 
-    def get_syncable_revisions(self, source_model_id: str) -> list[Revision]:
+    def change_model_status(self, status: Literal["online", "offline"]) -> None:
+        """
+        Use this call to change the status of a model.
+        :param status: The status of the model. Can be either "online" or "offline".
+        """
+        logger.info(f"Changed model status to '{status}' for model {self._model_id}.")
+        self._put(f"{self._url}/onlineStatus", json={"status": status})
+
+    def list_revisions(self) -> list[Revision]:
+        """
+        Use this call to return a list of revisions for a specific model.
+        :return: A list of revisions for a specific model.
+        """
+        res = self._get(f"{self._url}/alm/revisions")
+        return [Revision.model_validate(e) for e in res.get("revisions", [])]
+
+    def get_latest_revision(self) -> Revision | None:
+        """
+        Use this call to return the latest revision for a specific model. The response is in the
+        same format as in Getting a list of syncable revisions between two models.
+
+        If a revision exists, the return list should contain one element only which is the
+        latest revision.
+        :return: The latest revision for a specific model, or None if no revisions exist.
+        """
+        res = (self._get(f"{self._url}/alm/latestRevision")).get("revisions")
+        return Revision.model_validate(res[0]) if res else None
+
+    def list_syncable_revisions(self, source_model_id: str) -> list[Revision]:
         """
         Use this call to return the list of revisions from your source model that can be
         synchronized to your target model.
@@ -19,59 +65,223 @@ class _AlmClient(_BaseClient):
         :param source_model_id: The ID of the source model.
         :return: A list of revisions that can be synchronized to the target model.
         """
-        return [
-            Revision.model_validate(e)
-            for e in self._get(
-                f"{self._url}/syncableRevisions?sourceModelId={source_model_id}"
-            ).get("revisions", [])
-        ]
+        res = self._get(f"{self._url}/alm/syncableRevisions?sourceModelId={source_model_id}")
+        return [Revision.model_validate(e) for e in res.get("revisions", [])]
 
-    def get_latest_revision(self) -> list[Revision]:
+    def create_revision(self, name: str, description: str) -> Revision:
         """
-        Use this call to return the latest revision for a specific model. The response is in the
-        same format as in Getting a list of syncable revisions between two models.
+        Create a new revision for the model.
+        :param name: The name (title) of the revision.
+        :param description: The description of the revision.
+        :return: The created Revision Info.
+        """
+        res = self._post(
+            f"{self._url}/alm/revisions", json={"name": name, "description": description}
+        )
+        rev = Revision.model_validate(res["revision"])
+        logger.info(f"Created revision '{name} ({rev.id})'for model {self._model_id}.")
+        return rev
 
-        If a revision exists, the return list should contain one element only which is the
-        latest revision.
-        :return: The latest revision for a specific model.
+    def list_sync_tasks(self) -> list[TaskSummary]:
         """
-        return [
-            Revision.model_validate(e)
-            for e in self._get(f"{self._url}/latestRevision").get("revisions", [])
-        ]
+        List the sync tasks for a target mode. The returned the tasks are either in progress, or
+        they completed within the last 48 hours.
+        :return: A list of sync tasks in descending order of creation time.
+        """
+        res = self._get(f"{self._url}/alm/syncTasks")
+        return [TaskSummary.model_validate(e) for e in res.get("tasks", [])]
 
-    def get_sync_tasks(self) -> list[SyncTask]:
+    def get_sync_task(self, task_id: str) -> SyncTask:
         """
-        Use this endpoint to return a list of sync tasks for a target model, where the tasks are
-        either in progress, or they were completed within the last 48 hours.
+        Get the information for a specific sync task.
+        :param task_id: The ID of the sync task.
+        :return: The sync task information.
+        """
+        res = self._get(f"{self._url}/alm/syncTasks/{task_id}")
+        return SyncTask.model_validate(res["task"])
 
-        The list is in descending order of when the tasks were created.
-        :return: A list of sync tasks for a target model.
+    def sync_models(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: bool = True,
+    ) -> SyncTask:
         """
-        return [
-            SyncTask.model_validate(e) for e in self._get(f"{self._url}/syncTasks").get("tasks", [])
-        ]
+        Create a synchronization task between two revisions. This will synchronize the
+        source revision of the source model to the target revision of the target model. This will
+        fail if the source revision is incompatible with the target revision.
+        :param source_revision_id: The ID of the source revision.
+        :param source_model_id: The ID of the source model.
+        :param target_revision_id: The ID of the target revision.
+        :param wait_for_completion: If True, the method will poll the task status and not return
+               until the task is complete. If False, it will spawn the task and return immediately.
+        :return: The created sync task.
+        """
+        payload = {
+            "sourceRevisionId": source_revision_id,
+            "sourceModelId": source_model_id,
+            "targetRevisionId": target_revision_id,
+        }
+        res = self._post(f"{self._url}/alm/syncTasks", json=payload)
+        task = self.get_sync_task(res["task"]["taskId"])
+        logger.info(
+            f"Started sync task '{task.id}' from Model '{source_model_id}' "
+            f"(Revision '{source_revision_id}') to Model '{self._model_id}'."
+        )
+        if not wait_for_completion:
+            return task
+        while (task := self.get_sync_task(task.id)).task_state != "COMPLETE":
+            sleep(self.status_poll_delay)
+        if not task.result.successful:
+            msg = f"Sync task {task.id} completed with errors: {task.result.error}."
+            logger.error(msg)
+            raise AnaplanActionError(msg)
+        logger.info(f"Sync task {task.id} completed successfully.")
+        return task
 
-    def get_revisions(self) -> list[Revision]:
-        """
-        Use this call to return a list of revisions for a specific model.
-        :return: A list of revisions for a specific model.
-        """
-        return [
-            Revision.model_validate(e)
-            for e in self._get(f"{self._url}/revisions").get("revisions", [])
-        ]
-
-    def get_models_for_revision(self, revision_id: str) -> list[ModelRevision]:
+    def list_models_for_revision(self, revision_id: str) -> list[ModelRevision]:
         """
         Use this call when you need a list of the models that had a specific revision applied
         to them.
         :param revision_id: The ID of the revision.
         :return: A list of models that had a specific revision applied to them.
         """
-        return [
-            ModelRevision.model_validate(e)
-            for e in self._get(f"{self._url}/revisions/{revision_id}/appliedToModels").get(
-                "appliedToModels", []
-            )
-        ]
+        res = self._get(f"{self._url}/alm/revisions/{revision_id}/appliedToModels")
+        return [ModelRevision.model_validate(e) for e in res.get("appliedToModels", [])]
+
+    def create_comparison_report(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: bool = True,
+    ) -> ReportTask:
+        """
+        Generate a full comparison report between two revisions. This will list all the changes made
+        to the source revision compared to the target revision.
+        :param source_revision_id: The ID of the source revision.
+        :param source_model_id: The ID of the source model.
+        :param target_revision_id: The ID of the target revision.
+        :param wait_for_completion: If True, the method will poll the task status and not return
+               until the task is complete. If False, it will spawn the task and return immediately.
+        :return: The created report task summary.
+        """
+        payload = {
+            "sourceRevisionId": source_revision_id,
+            "sourceModelId": source_model_id,
+            "targetRevisionId": target_revision_id,
+        }
+        res = self._post(f"{self._url}/alm/comparisonReportTasks", json=payload)
+        task = self.get_comparison_report_task(res["task"]["taskId"])
+        logger.info(
+            f"Started Comparison Report task '{task.id}' between Model '{source_model_id}' "
+            f"(Revision '{source_revision_id}') and Model '{self._model_id}'."
+        )
+        if not wait_for_completion:
+            return task
+        while (task := self.get_comparison_report_task(task.id)).task_state != "COMPLETE":
+            sleep(self.status_poll_delay)
+        if not task.result.successful:
+            msg = f"Comparison Report task {task.id} completed with errors: {task.result.error}."
+            logger.error(msg)
+            raise AnaplanActionError(msg)
+        logger.info(f"Comparison Report task {task.id} completed successfully.")
+        return task
+
+    def get_comparison_report_task(self, task_id: str) -> ReportTask:
+        """
+        Get the task information for a comparison report task.
+        :param task_id: The ID of the comparison report task.
+        :return: The report task information.
+        """
+        res = self._get(f"{self._url}/alm/comparisonReportTasks/{task_id}")
+        return ReportTask.model_validate(res["task"])
+
+    def get_comparison_report(self, task: ReportTask) -> bytes:
+        """
+        Get the report for a specific task.
+        :param task: The report task object containing the task ID.
+        :return: The binary content of the comparison report.
+        """
+        return self._get_binary(
+            f"{self._url}/alm/comparisonReports/"
+            f"{task.result.target_revision_id}/{task.result.source_revision_id}"
+        )
+
+    @overload
+    def create_comparison_summary(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: Literal[True] = True,
+    ) -> SummaryReport: ...
+
+    @overload
+    def create_comparison_summary(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: Literal[False],
+    ) -> ReportTask: ...
+
+    def create_comparison_summary(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: bool = True,
+    ) -> ReportTask | SummaryReport:
+        """
+        Generate a comparison summary between two revisions.
+        :param source_revision_id: The ID of the source revision.
+        :param source_model_id: The ID of the source model.
+        :param target_revision_id: The ID of the target revision.
+        :param wait_for_completion: If True, the method will poll the task status and not return
+               until the task is complete. If False, it will spawn the task and return immediately.
+        :return: The created summary task or the summary report, if `wait_for_completion` is True.
+        """
+        payload = {
+            "sourceRevisionId": source_revision_id,
+            "sourceModelId": source_model_id,
+            "targetRevisionId": target_revision_id,
+        }
+        res = self._post(f"{self._url}/alm/summaryReportTasks", json=payload)
+        task = self.get_comparison_summary_task(res["task"]["taskId"])
+        logger.info(
+            f"Started Comparison Summary task '{task.id}' between Model '{source_model_id}' "
+            f"(Revision '{source_revision_id}') and Model '{self._model_id}'."
+        )
+        if not wait_for_completion:
+            return task
+        while (task := self.get_comparison_summary_task(task.id)).task_state != "COMPLETE":
+            sleep(self.status_poll_delay)
+        if not task.result.successful:
+            msg = f"Comparison Summary task {task.id} completed with errors: {task.result.error}."
+            logger.error(msg)
+            raise AnaplanActionError(msg)
+        logger.info(f"Comparison Summary task {task.id} completed successfully.")
+        return self.get_comparison_summary(task)
+
+    def get_comparison_summary_task(self, task_id: str) -> ReportTask:
+        """
+        Get the task information for a comparison summary task.
+        :param task_id: The ID of the comparison summary task.
+        :return: The report task information.
+        """
+        res = self._get(f"{self._url}/alm/summaryReportTasks/{task_id}")
+        return ReportTask.model_validate(res["task"])
+
+    def get_comparison_summary(self, task: ReportTask) -> SummaryReport:
+        """
+        Get the comparison summary for a specific task.
+        :param task: The summary task object containing the task ID.
+        :return: The binary content of the comparison summary.
+        """
+        res = self._get(
+            f"{self._url}/alm/summaryReports/"
+            f"{task.result.target_revision_id}/{task.result.source_revision_id}"
+        )
+        return SummaryReport.model_validate(res["summaryReport"])

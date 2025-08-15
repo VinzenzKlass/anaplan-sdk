@@ -1,9 +1,12 @@
+import logging
 from typing import Any
 
 import httpx
 
 from anaplan_sdk._base import _AsyncBaseClient, construct_payload
 from anaplan_sdk.models.flows import Flow, FlowInput, FlowSummary
+
+logger = logging.getLogger("anaplan_sdk")
 
 
 class _AsyncFlowClient(_AsyncBaseClient):
@@ -49,7 +52,9 @@ class _AsyncFlowClient(_AsyncBaseClient):
             if only_steps
             else self._post_empty(url)
         )
-        return res["run"]["id"]
+        run_id = res["run"]["id"]
+        logger.info(f"Started flow run '{run_id}' for flow '{flow_id}'.")
+        return run_id
 
     async def create_flow(self, flow: FlowInput | dict[str, Any]) -> str:
         """
@@ -60,7 +65,9 @@ class _AsyncFlowClient(_AsyncBaseClient):
         :return: The ID of the created flow.
         """
         res = await self._post(self._url, json=construct_payload(FlowInput, flow))
-        return res["integrationFlow"]["integrationFlowId"]
+        flow_id = res["integrationFlow"]["integrationFlowId"]
+        logger.info(f"Created flow '{flow_id}'.")
+        return flow_id
 
     async def update_flow(self, flow_id: str, flow: FlowInput | dict[str, Any]) -> None:
         """
@@ -70,6 +77,7 @@ class _AsyncFlowClient(_AsyncBaseClient):
         :param flow: The flow to update. This can be a FlowInput object or a dictionary.
         """
         await self._put(f"{self._url}/{flow_id}", json=construct_payload(FlowInput, flow))
+        logger.info(f"Updated flow '{flow_id}'.")
 
     async def delete_flow(self, flow_id: str) -> None:
         """
@@ -78,3 +86,4 @@ class _AsyncFlowClient(_AsyncBaseClient):
         :param flow_id: The ID of the flow to delete.
         """
         await self._delete(f"{self._url}/{flow_id}")
+        logger.info(f"Deleted flow '{flow_id}'.")

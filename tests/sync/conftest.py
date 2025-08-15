@@ -18,6 +18,16 @@ def client() -> Client:
 
 
 @pytest.fixture(scope="session")
+def alm_src_client(client: Client, alm_src_model_id) -> Client:
+    return Client.from_existing(client, model_id=alm_src_model_id)
+
+
+@pytest.fixture(scope="session")
+def alm_client(client: Client, alm_model_id) -> Client:
+    return Client.from_existing(client, model_id=alm_model_id)
+
+
+@pytest.fixture(scope="session")
 def broken_client() -> Client:
     return Client(
         workspace_id="",
@@ -59,6 +69,28 @@ def test_action(py_version):
     if "3.12" in py_version:
         return 118000000022
     return 118000000021
+
+
+@pytest.fixture(scope="session")
+def alm_src_model_id(py_version):
+    if "3.10" in py_version:
+        return "662239743F56420EBECAE7EE0659475C"
+    if "3.11" in py_version:
+        return "4FCB1B5224F64339AADC7B322E1663EF"
+    if "3.12" in py_version:
+        return "A68B26D67D00443FB8A3428CC83E427D"
+    return "5327704441464F36B4B05C6BF9DFACD2"
+
+
+@pytest.fixture(scope="session")
+def alm_model_id(py_version):
+    if "3.10" in py_version:
+        return "7538F3BE46B94F208C6AF5051919E56E"
+    if "3.11" in py_version:
+        return "5C31E832E0B04567B5A8784B25AF3572"
+    if "3.12" in py_version:
+        return "7F51D466D915425CA80BEDF54BF364AE"
+    return "33A804FE8FE34AC291A6E866CA6B2284"
 
 
 @pytest.fixture(scope="session")
