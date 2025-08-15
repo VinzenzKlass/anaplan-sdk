@@ -41,6 +41,10 @@ class Dimension(AnaplanModel):
     name: str = Field(description="The name of this dimension.")
 
 
+class DimensionWithCode(Dimension):
+    code: str = Field(description="The code of this dimension.")
+
+
 class View(AnaplanModel):
     code: str = Field(description="The code of this view.")
     id: int = Field(description="The unique identifier of this view.")

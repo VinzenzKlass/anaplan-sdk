@@ -4,9 +4,17 @@ from typing import Any
 
 import httpx
 
-from anaplan_sdk._base import _AsyncBaseClient, parse_calendar_response, parse_insertion_response
+from anaplan_sdk._base import (
+    _AsyncBaseClient,
+    parse_calendar_response,
+    parse_insertion_response,
+    validate_dimension_id,
+)
+from anaplan_sdk.exceptions import InvalidIdentifierException
 from anaplan_sdk.models import (
     CurrentPeriod,
+    Dimension,
+    DimensionWithCode,
     FiscalYear,
     InsertionResult,
     LineItem,
@@ -72,8 +80,10 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         views.
         :return: The List of Views.
         """
+        params = {"includesubsidiaryviews": True}
         return [
-            View.model_validate(e) for e in await self._get_paginated(f"{self._url}/views", "views")
+            View.model_validate(e)
+            for e in await self._get_paginated(f"{self._url}/views", "views", params=params)
         ]
 
     async def get_view_info(self, view_id: int) -> ViewInfo:
@@ -269,3 +279,69 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :return: The calendar settings of the model.
         """
         return parse_calendar_response(await self._get(f"{self._url}/modelCalendar"))
+
+    async def get_dimension_items(self, dimension_id: int) -> list[DimensionWithCode]:
+        """
+        Get all items in a dimension. This will fail if the dimensions holds more than 1_000_000
+        items. Valid Dimensions are:
+
+        - Lists (101xxxxxxxxx)
+        - List Subsets (109xxxxxxxxx)
+        - Line Item Subsets (114xxxxxxxxx)
+        - Users (101999999999)
+        For lists and users, you should prefer using the `get_list_items` and `list_users` methods,
+        respectively, instead.
+        :param dimension_id: The ID of the dimension to list items for.
+        :return: A list of Dimension items.
+        """
+        res = await self._get(f"{self._url}/dimensions/{validate_dimension_id(dimension_id)}/items")
+        return [DimensionWithCode.model_validate(e) for e in res.get("items", [])]
+
+    async def lookup_dimension_items(
+        self, dimension_id: int, codes: list[str] = None, names: list[str] = None
+    ) -> list[DimensionWithCode]:
+        """
+        Looks up items in a dimension by their codes or names. If both are provided, both will be
+        searched for. You must provide at least one of `codes` or `names`. Valid Dimensions to
+        lookup are:
+
+        - Lists (101xxxxxxxxx)
+        - Time (20000000003)
+        - Version (20000000020)
+        - Users (101999999999)
+        :param dimension_id: The ID of the dimension to lookup items for.
+        :param codes: A list of codes to lookup in the dimension.
+        :param names: A list of names to lookup in the dimension.
+        :return: A list of Dimension items that match the provided codes or names.
+        """
+        if not codes and not names:
+            raise ValueError("At least one of 'codes' or 'names' must be provided.")
+        if not (
+            dimension_id == 101999999999
+            or 101_000_000_000 <= dimension_id < 102_000_000_000
+            or dimension_id == 20000000003
+            or dimension_id == 20000000020
+        ):
+            raise InvalidIdentifierException(
+                "Invalid dimension_id. Must be a List (101xxxxxxxxx), Time (20000000003), "
+                "Version (20000000020), or Users (101999999999)."
+            )
+        res = await self._post(
+            f"{self._url}/dimensions/{dimension_id}/items", json={"codes": codes, "names": names}
+        )
+        return [DimensionWithCode.model_validate(e) for e in res.get("items", [])]
+
+    async def get_view_dimension_items(self, view_id: int, dimension_id: int) -> list[Dimension]:
+        """
+        Get the members of a dimension that are part of the given View. This call returns data as
+        filtered by the page builder when they configure the view. This call respects hidden items,
+        filtering selections, and Selective Access. If the view contains hidden or filtered items,
+        these do not display in the response. This will fail if the dimensions holds more than
+        1_000_000 items. The response returns Items within a flat list (no hierarchy) and order
+        is not guaranteed.
+        :param view_id: The ID of the View.
+        :param dimension_id: The ID of the Dimension to get items for.
+        :return: A list of Dimensions used in the View.
+        """
+        res = await self._get(f"{self._url}/views/{view_id}/dimensions/{dimension_id}/items")
+        return [Dimension.model_validate(e) for e in res.get("items", [])]
