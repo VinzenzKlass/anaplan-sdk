@@ -5,6 +5,7 @@ from os import getenv
 from anaplan_sdk import Client
 from anaplan_sdk.models import (
     CurrentPeriod,
+    DimensionWithCode,
     FiscalYear,
     InsertionResult,
     ListMetadata,
@@ -131,3 +132,29 @@ def test_set_current_fiscal_year(client: Client):
 def test_get_model_calendar(client: Client):
     calendar = client.transactional.get_model_calendar()
     assert isinstance(calendar, MonthsQuartersYearsCalendar)
+
+
+def test_get_dimension_items(client: Client):
+    items = client.transactional.get_dimension_items(109000000000)
+    assert isinstance(items, list)
+    assert all(isinstance(item, DimensionWithCode) for item in items)
+
+
+def test_get_dimension_items_with_list_warns(client: Client, caplog):
+    items = client.transactional.get_dimension_items(101000000008)
+    assert isinstance(items, list)
+    assert all(isinstance(item, DimensionWithCode) for item in items)
+    assert any(
+        ("warn" in record.levelname.lower() and "is discouraged." in record.msg)
+        for record in caplog.records
+    )
+
+
+def test_get_dimension_items_with_users_warns(client: Client, caplog):
+    items = client.transactional.get_dimension_items(101999999999)
+    assert isinstance(items, list)
+    assert all(isinstance(item, DimensionWithCode) for item in items)
+    assert any(
+        ("warn" in record.levelname.lower() and "is discouraged." in record.msg)
+        for record in caplog.records
+    )

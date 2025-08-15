@@ -19,12 +19,6 @@ class User(AnaplanModel):
     )
 
 
-class Dimension(AnaplanModel):
-    id: int = Field(description="The unique identifier of this list item.")
-    name: str = Field(description="The name of this list item.")
-    code: str = Field(description="The code of this list item.")
-
-
 class ListItem(AnaplanModel):
     id: int = Field(description="The unique identifier of this list item.")
     name: str = Field(description="The name of this list item.")
@@ -42,9 +36,13 @@ class Module(AnaplanModel):
     name: str = Field(description="The name of this module.")
 
 
-class _Dimension(AnaplanModel):
+class Dimension(AnaplanModel):
     id: int = Field(description="The unique identifier of this dimension.")
     name: str = Field(description="The name of this dimension.")
+
+
+class DimensionWithCode(Dimension):
+    code: str = Field(description="The code of this dimension.")
 
 
 class View(AnaplanModel):
@@ -57,10 +55,10 @@ class View(AnaplanModel):
 class ViewInfo(AnaplanModel):
     view_id: int = Field(description="The unique identifier of this view.")
     view_name: str = Field(description="The name of this view.")
-    rows: list[_Dimension] = Field(
+    rows: list[Dimension] = Field(
         [], description="The list of dimensions in the rows of this view."
     )
-    pages: list[_Dimension] = Field(
+    pages: list[Dimension] = Field(
         [], description="The list of dimensions in the pages of this view."
     )
 

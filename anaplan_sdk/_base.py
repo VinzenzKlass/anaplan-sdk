@@ -354,3 +354,25 @@ def parse_insertion_response(data: list[dict]) -> InsertionResult:
     return InsertionResult(
         added=added, ignored=ignored, total=total, failures=list(chain.from_iterable(failures))
     )
+
+
+def validate_dimension_id(dimension_id: int) -> int:
+    if not (
+        dimension_id == 101999999999
+        or 101_000_000_000 <= dimension_id < 102_000_000_000
+        or 109_000_000_000 <= dimension_id < 110_000_000_000
+        or 114_000_000_000 <= dimension_id < 115_000_000_000
+    ):
+        raise InvalidIdentifierException(
+            "Invalid dimension_id. Must be a List (101xxxxxxxxx), List Subset (109xxxxxxxxx), "
+            "Line Item Subset (114xxxxxxxxx), or Users (101999999999)."
+        )
+    msg = (
+        "Using `get_dimension_items` for {} is discouraged. "
+        "Prefer `{}` for better performance and more details on the members."
+    )
+    if dimension_id == 101999999999:
+        logger.warning(msg.format("Users", "list_users"))
+    if 101000000000 <= dimension_id < 102000000000:
+        logger.warning(msg.format("Lists", "get_list_items"))
+    return dimension_id

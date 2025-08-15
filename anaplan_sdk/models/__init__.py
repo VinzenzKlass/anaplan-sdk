@@ -29,6 +29,7 @@ from ._bulk import (
 from ._transactional import (
     CurrentPeriod,
     Dimension,
+    DimensionWithCode,
     Failure,
     FiscalYear,
     InsertionResult,
@@ -89,5 +90,5 @@ __all__ = [
     "ViewInfo",
     "ModelCalendar",
     "DeletionResult",
-    "Dimension",
+    "DimensionWithCode",
 ]
