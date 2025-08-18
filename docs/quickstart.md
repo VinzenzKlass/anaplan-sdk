@@ -1,4 +1,9 @@
-This Quickstart focuses on the Bulk APIs, which are the most commonly used APIs for data import and export. If you are
+---
+title: Quick Start
+description: How to get started with Anaplan SDK and the Anaplan API.
+---
+
+This Quickstart focuses on the Bulk endpoints of the Anaplan API, which are most commonly used for data import and export. If you are
 looking for different APIs, such as the Transactional APIs or CloudWork APIs, please refer to the respective 
 [Guides](guides/index.md).
 
@@ -130,7 +135,7 @@ Conversely, for exporting data, we start by listing the available exports.
 
 ## Next Steps
 
-To gain a better understanding of how Anaplan handles data, head over to the [Anaplan Explained](anaplan_explained.md)
+To gain a better understanding of how Anaplan handles data, head over to the [Anaplan Explained](concepts.md)
 section.
 
 For a more detailed guide on how to use both the [Bulk APIs](guides/bulk.md)
