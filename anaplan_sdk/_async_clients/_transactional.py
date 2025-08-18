@@ -98,14 +98,14 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         """
         Lists all the Line Items in the Model.
         :param only_module_id: If provided, only Line Items from this Module will be returned.
-        :return: All Line Items on this Model.
+        :return: All Line Items on this Model or only from the specified Module.
         """
-        url = (
+        res = await self._get(
             f"{self._url}/modules/{only_module_id}/lineItems?includeAll=true"
             if only_module_id
             else f"{self._url}/lineItems?includeAll=true"
         )
-        return [LineItem.model_validate(e) for e in (await self._get(url)).get("items", [])]
+        return [LineItem.model_validate(e) for e in res.get("items", [])]
 
     async def list_lists(self) -> list[List]:
         """
@@ -345,3 +345,13 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         """
         res = await self._get(f"{self._url}/views/{view_id}/dimensions/{dimension_id}/items")
         return [Dimension.model_validate(e) for e in res.get("items", [])]
+
+    async def get_line_item_dimensions(self, line_item_id: int) -> list[Dimension]:
+        """
+        Get the dimensions of a Line Item. This will return all dimensions that are used in the
+        Line Item.
+        :param line_item_id: The ID of the Line Item.
+        :return: A list of Dimensions used in the Line Item.
+        """
+        res = await self._get(f"{self._url}/lineItems/{line_item_id}/dimensions")
+        return [Dimension.model_validate(e) for e in res.get("dimensions", [])]

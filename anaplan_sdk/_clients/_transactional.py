@@ -91,7 +91,7 @@ class _TransactionalClient(_BaseClient):
         """
         Lists all the Line Items in the Model.
         :param only_module_id: If provided, only Line Items from this Module will be returned.
-        :return: The List of Line Items.
+        :return: All Line Items on this Model or only from the specified Module.
         """
         url = (
             f"{self._url}/modules/{only_module_id}/lineItems?includeAll=true"
@@ -337,3 +337,13 @@ class _TransactionalClient(_BaseClient):
         """
         res = self._get(f"{self._url}/views/{view_id}/dimensions/{dimension_id}/items")
         return [Dimension.model_validate(e) for e in res.get("items", [])]
+
+    def get_line_item_dimensions(self, line_item_id: int) -> list[Dimension]:
+        """
+        Get the dimensions of a Line Item. This will return all dimensions that are used in the
+        Line Item.
+        :param line_item_id: The ID of the Line Item.
+        :return: A list of Dimensions used in the Line Item.
+        """
+        res = self._get(f"{self._url}/lineItems/{line_item_id}/dimensions")
+        return [Dimension.model_validate(e) for e in res.get("dimensions", [])]
