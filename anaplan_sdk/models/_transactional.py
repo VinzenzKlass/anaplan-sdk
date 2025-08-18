@@ -64,10 +64,10 @@ class ViewInfo(AnaplanModel):
 
 
 class PeriodType(AnaplanModel):
-    entity_id: Literal["YEAR", "MONTH", "QUARTER", "WEEK", "DAY"] = Field(
+    entity_id: Literal["YEAR", "HALF_YEAR", "MONTH", "QUARTER", "WEEK", "DAY"] = Field(
         description="The type of period entity."
     )
-    entity_label: Literal["Year", "Month", "Quarter", "Week", "Day"] = Field(
+    entity_label: Literal["Year", "Half-Year", "Month", "Quarter", "Week", "Day"] = Field(
         description="The type of period entity."
     )
     entity_index: int = Field(description="The index of the period entity")
@@ -86,7 +86,9 @@ class TextMetadata(AnaplanModel):
     data_type: Literal["TEXT"] = Field(
         description="The data type. Literal for the tagged union discriminator."
     )
-    text_type: Literal["DRILLTHRU_URI", "GENERAL"] = Field(description="The text type.")
+    text_type: Literal["DRILLTHRU_URI", "EMAIL_ADDRESS", "GENERAL"] = Field(
+        description="The text type."
+    )
 
 
 class ListMetadata(AnaplanModel):
@@ -123,18 +125,23 @@ class NumberMetadata(AnaplanModel):
     custom_units: str | None = Field(None, description="Custom units for display.")
     decimal_places: int = Field(description="Number of decimal places.")
     decimal_separator: Literal["COMMA", "FULL_STOP"] = Field(description="The decimal separator.")
-    units_display_type: Literal["CUSTOM_SUFFIX", "CURRENCY_SYMBOL", "PERCENTAGE_SUFFIX", "NONE"] = (
-        Field(description="Units display type.")
-    )
+    units_display_type: Literal[
+        "CUSTOM_SUFFIX",
+        "CUSTOM_PREFIX",
+        "CURRENCY_CODE",
+        "CURRENCY_SYMBOL",
+        "PERCENTAGE_SUFFIX",
+        "NONE",
+    ] = Field(description="Units display type.")
     units_type: Literal["CUSTOM", "CURRENCY", "PERCENTAGE", "NONE"] = Field(
         description="Units type."
     )
-    zero_format: Literal["HYPHEN", "ZERO"] = Field(description="Zero format display.")
+    zero_format: Literal["HYPHEN", "ZERO", "BLANK"] = Field(description="Zero format display.")
     grouping_separator: Literal["COMMA", "FULL_STOP", "SPACE", "NONE"] = Field(
         description="The grouping separator."
     )
     minimum_significant_digits: int = Field(description="Minimum significant digits.")
-    negative_number_notation: Literal["MINUS_SIGN", "BRACKETS"] = Field(
+    negative_number_notation: Literal["MINUS_SIGN", "PARENTHESES"] = Field(
         description="Negative number notation."
     )
 
