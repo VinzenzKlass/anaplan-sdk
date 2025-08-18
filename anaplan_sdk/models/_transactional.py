@@ -73,16 +73,6 @@ class PeriodType(AnaplanModel):
     entity_index: int = Field(description="The index of the period entity")
 
 
-class FormatMetadata(AnaplanModel):
-    data_type: Literal["NUMBER", "BOOLEAN", "TEXT", "NONE", "DATE", "ENTITY", "TIME_ENTITY"] = (
-        Field(description="The data type.")
-    )
-
-
-class TextMetadata(FormatMetadata):
-    text_type: Literal["DRILLTHRU_URI", "GENERAL"] = Field(description="The text type.")
-
-
 class EntityFormatFilter(AnaplanModel):
     source_line_item_or_property: str = Field(
         description="The unique identifier of the source line item or property."
@@ -92,7 +82,17 @@ class EntityFormatFilter(AnaplanModel):
     value_property: str = Field(description="The unique identifier of the value property.")
 
 
-class ListMetadata(FormatMetadata):
+class TextMetadata(AnaplanModel):
+    data_type: Literal["TEXT"] = Field(
+        description="The data type. Literal for the tagged union discriminator."
+    )
+    text_type: Literal["DRILLTHRU_URI", "GENERAL"] = Field(description="The text type.")
+
+
+class ListMetadata(AnaplanModel):
+    data_type: Literal["ENTITY"] = Field(
+        description="The data type. Literal for the tagged union discriminator."
+    )
     hierarchy_entity_id: int = Field(
         validation_alias="hierarchyEntityLongId",
         description="The unique identifier of the hierarchy entity, like Lists or List Subsets.",
@@ -101,16 +101,22 @@ class ListMetadata(FormatMetadata):
         description="Whether selective access is applied or not."
     )
     show_all: bool = Field(description="Whether to show all values or not.")
-    entity_format_filter: EntityFormatFilter = Field(
-        description="Entity format filter configuration."
+    entity_format_filter: EntityFormatFilter | None = Field(
+        None, description="Entity format filter configuration."
     )
 
 
-class TimePeriodMetadata(FormatMetadata):
+class TimePeriodMetadata(AnaplanModel):
+    data_type: Literal["TIME_ENTITY"] = Field(
+        description="The data type. Literal for the tagged union discriminator."
+    )
     period_type: PeriodType = Field(description="The period type.")
 
 
-class NumberMetadata(FormatMetadata):
+class NumberMetadata(AnaplanModel):
+    data_type: Literal["NUMBER"] = Field(
+        description="The data type. Literal for the tagged union discriminator."
+    )
     comparison_increase: Literal["GOOD", "BAD", "NEUTRAL"] | None = Field(
         description="The comparison increase setting."
     )
@@ -129,6 +135,10 @@ class NumberMetadata(FormatMetadata):
     )
 
 
+class GenericTypeMetadata(AnaplanModel):
+    data_type: Literal["BOOLEAN", "NONE", "DATE"] = Field(description="The data type.")
+
+
 class LineItem(AnaplanModel):
     id: int = Field(description="The unique identifier of this line item.")
     name: str = Field(description="The name of this line item.")
@@ -140,8 +150,8 @@ class LineItem(AnaplanModel):
         description="The format of this line item."
     )
     format_metadata: (
-        NumberMetadata | ListMetadata | TimePeriodMetadata | FormatMetadata | TextMetadata
-    ) = Field(description="The format metadata of this line item.")
+        NumberMetadata | ListMetadata | TimePeriodMetadata | TextMetadata | GenericTypeMetadata
+    ) = Field(description="The format metadata of this line item.", discriminator="data_type")
     summary: str = Field(description="The summary of this line item.")
     applies_to: list[Dimension] = Field([], description="The applies to value of this line item.")
     data_tags: list[Dimension] = Field([], description="The data tags of this line item.")
