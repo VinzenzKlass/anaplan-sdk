@@ -1,6 +1,7 @@
 import logging
 from asyncio import gather
-from typing import Any
+from itertools import chain
+from typing import Any, Literal, overload
 
 import httpx
 
@@ -28,6 +29,7 @@ from anaplan_sdk.models import (
     View,
     ViewInfo,
 )
+from anaplan_sdk.models._transactional import ListDeletionResult
 
 logger = logging.getLogger("anaplan_sdk")
 
@@ -127,18 +129,31 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
             (await self._get(f"{self._url}/lists/{list_id}")).get("metadata")
         )
 
-    async def get_list_items(self, list_id: int) -> list[ListItem]:
+    @overload
+    async def get_list_items(
+        self, list_id: int, return_raw: Literal[False] = False
+    ) -> list[ListItem]: ...
+
+    @overload
+    async def get_list_items(
+        self, list_id: int, return_raw: Literal[True] = True
+    ) -> list[dict[str, Any]]: ...
+
+    async def get_list_items(
+        self, list_id: int, return_raw: bool = False
+    ) -> list[ListItem] | list[dict[str, Any]]:
         """
         Gets all the items in a List.
         :param list_id: The ID of the List.
+        :param return_raw: If True, returns the items as a list of dictionaries instead of ListItem
+               objects. If you use the result of this call in a DataFrame or you simply pass on the
+               data, you will want to set this to avoid unnecessary (de-)serialization.
         :return: All items in the List.
         """
-        return [
-            ListItem.model_validate(e)
-            for e in (await self._get(f"{self._url}/lists/{list_id}/items?includeAll=true")).get(
-                "listItems"
-            )
-        ]
+        res = await self._get(f"{self._url}/lists/{list_id}/items?includeAll=true")
+        if return_raw:
+            return res.get("listItems", [])
+        return [ListItem.model_validate(e) for e in res.get("listItems", [])]
 
     async def insert_list_items(
         self, list_id: int, items: list[dict[str, str | int | dict]]
@@ -160,6 +175,8 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :return: The result of the insertion, indicating how many items were added,
                  ignored or failed.
         """
+        if not items:
+            return InsertionResult(added=0, ignored=0, failures=[], total=0)
         if len(items) <= 100_000:
             result = InsertionResult.model_validate(
                 await self._post(
@@ -178,7 +195,9 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         logger.info(f"Inserted {result.added} items into list '{list_id}'.")
         return result
 
-    async def delete_list_items(self, list_id: int, items: list[dict[str, str | int]]) -> int:
+    async def delete_list_items(
+        self, list_id: int, items: list[dict[str, str | int]]
+    ) -> ListDeletionResult:
         """
         Deletes items from a List. If you pass a long list, it will be split into chunks of 100,000
         items, the maximum allowed by the API.
@@ -192,16 +211,18 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
 
         :param list_id: The ID of the List.
         :param items: The items to delete from the List. Must be a dict with either `code` or `id`
-                      as the keys to identify the records to delete.
+                      as the keys to identify the records to delete. Specifying both will error.
+        :return: The result of the deletion, indicating how many items were deleted or failed.
         """
+        if not items:
+            return ListDeletionResult(deleted=0, failures=[])
         if len(items) <= 100_000:
-            deleted_count = (
-                await self._post(
-                    f"{self._url}/lists/{list_id}/items?action=delete", json={"items": items}
-                )
-            ).get("deleted", 0)
-            logger.info(f"Deleted {deleted_count} items from list '{list_id}'.")
-            return deleted_count
+            res = await self._post(
+                f"{self._url}/lists/{list_id}/items?action=delete", json={"items": items}
+            )
+            info = ListDeletionResult.model_validate(res)
+            logger.info(f"Deleted {info.deleted} items from list '{list_id}'.")
+            return info
 
         responses = await gather(
             *(
@@ -211,9 +232,12 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
                 for chunk in (items[i : i + 100_000] for i in range(0, len(items), 100_000))
             )
         )
-        deleted_count = sum(res.get("deleted", 0) for res in responses)
-        logger.info(f"Deleted {deleted_count} items from list '{list_id}'.")
-        return deleted_count
+        info = ListDeletionResult(
+            deleted=sum(res.get("deleted", 0) for res in responses),
+            failures=list(chain.from_iterable(res.get("failures", []) for res in responses)),
+        )
+        logger.info(f"Deleted {info} items from list '{list_id}'.")
+        return info
 
     async def reset_list_index(self, list_id: int) -> None:
         """

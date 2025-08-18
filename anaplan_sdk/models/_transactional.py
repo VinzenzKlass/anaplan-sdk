@@ -227,6 +227,11 @@ class InsertionResult(AnaplanModel):
     failures: list[Failure] = Field([], description="The list of failures.")
 
 
+class ListDeletionResult(AnaplanModel):
+    deleted: int = Field(description="The number of items successfully deleted.")
+    failures: list[Failure] = Field([], description="The list of failures.")
+
+
 class PartialCurrentPeriod(AnaplanModel):
     period_text: str = Field(description="The text representation of the current period.")
     last_day: str = Field(description="The last day of the current period in YYYY-MM-DD format.")

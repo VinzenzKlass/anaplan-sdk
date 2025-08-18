@@ -224,7 +224,7 @@ class _AlmClient(_BaseClient):
         source_revision_id: str,
         source_model_id: str,
         target_revision_id: str,
-        wait_for_completion: Literal[False],
+        wait_for_completion: Literal[False] = False,
     ) -> ReportTask: ...
 
     def create_comparison_summary(

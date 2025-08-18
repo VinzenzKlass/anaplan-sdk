@@ -224,7 +224,7 @@ class _AsyncAlmClient(_AsyncBaseClient):
         source_revision_id: str,
         source_model_id: str,
         target_revision_id: str,
-        wait_for_completion: Literal[False],
+        wait_for_completion: Literal[False] = False,
     ) -> ReportTask: ...
 
     async def create_comparison_summary(

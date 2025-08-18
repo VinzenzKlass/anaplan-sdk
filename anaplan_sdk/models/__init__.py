@@ -10,7 +10,6 @@ from ._alm import (
 from ._base import AnaplanModel
 from ._bulk import (
     Action,
-    DeletionResult,
     Export,
     ExportTypes,
     File,
@@ -19,6 +18,7 @@ from ._bulk import (
     List,
     ListMetadata,
     Model,
+    ModelDeletionResult,
     Process,
     TaskResult,
     TaskResultDetail,
@@ -89,6 +89,6 @@ __all__ = [
     "View",
     "ViewInfo",
     "ModelCalendar",
-    "DeletionResult",
+    "ModelDeletionResult",
     "DimensionWithCode",
 ]

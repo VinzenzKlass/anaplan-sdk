@@ -1,4 +1,4 @@
-from typing import Literal
+from typing import Any, Literal
 
 import httpx
 
@@ -40,13 +40,15 @@ class _AsyncAuditClient(_AsyncBaseClient):
             (await self._get(f"https://api.anaplan.com/2/0/users/{user_id}")).get("user")
         )
 
-    async def get_events(self, days_into_past: int = 30, event_type: Event = "all") -> list:
+    async def get_events(
+        self, days_into_past: int = 30, event_type: Event = "all"
+    ) -> list[dict[str, Any]]:
         """
         Get audit events from Anaplan Audit API.
         :param days_into_past: The nuber of days into the past to get events for. The API provides
                data for up to 30 days.
         :param event_type: The type of events to get.
-        :return: A list of audit events.
+        :return: A list of log entries, each containing a dictionary with event details.
         """
         return list(
             await self._get_paginated(
