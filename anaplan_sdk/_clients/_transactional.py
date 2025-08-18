@@ -62,7 +62,7 @@ class _TransactionalClient(_BaseClient):
         self._post_empty(f"{self._url}/close", headers={"Content-Type": "application/text"})
         logger.info(f"Closed model '{self._model_id}'.")
 
-    def list_modules(self) -> list[Module]:
+    def get_modules(self) -> list[Module]:
         """
         Lists all the Modules in the Model.
         :return: The List of Modules.
@@ -71,7 +71,7 @@ class _TransactionalClient(_BaseClient):
             Module.model_validate(e) for e in self._get_paginated(f"{self._url}/modules", "modules")
         ]
 
-    def list_views(self) -> list[View]:
+    def get_views(self) -> list[View]:
         """
         Lists all the Views in the Model. This will include all Modules and potentially other saved
         views.
@@ -87,7 +87,7 @@ class _TransactionalClient(_BaseClient):
         """
         return ViewInfo.model_validate(self._get(f"{self._url}/views/{view_id}"))
 
-    def list_line_items(self, only_module_id: int | None = None) -> list[LineItem]:
+    def get_line_items(self, only_module_id: int | None = None) -> list[LineItem]:
         """
         Lists all the Line Items in the Model.
         :param only_module_id: If provided, only Line Items from this Module will be returned.
@@ -100,7 +100,7 @@ class _TransactionalClient(_BaseClient):
         )
         return [LineItem.model_validate(e) for e in self._get(url).get("items", [])]
 
-    def list_lists(self) -> list[List]:
+    def get_lists(self) -> list[List]:
         """
         Lists all the Lists in the Model.
         :return: All Lists on this model.
@@ -281,7 +281,7 @@ class _TransactionalClient(_BaseClient):
         - List Subsets (109xxxxxxxxx)
         - Line Item Subsets (114xxxxxxxxx)
         - Users (101999999999)
-        For lists and users, you should prefer using the `get_list_items` and `list_users` methods,
+        For lists and users, you should prefer using the `get_list_items` and `get_users` methods,
         respectively, instead.
         :param dimension_id: The ID of the dimension to list items for.
         :return: A list of Dimension items.

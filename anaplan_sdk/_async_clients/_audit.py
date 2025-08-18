@@ -14,7 +14,7 @@ class _AsyncAuditClient(_AsyncBaseClient):
         self._url = "https://audit.anaplan.com/audit/api/1/events"
         super().__init__(retry_count, client)
 
-    async def list_users(self, search_pattern: str | None = None) -> list[User]:
+    async def get_users(self, search_pattern: str | None = None) -> list[User]:
         """
         Lists all the Users in the authenticated users default tenant.
         :param search_pattern: Optionally filter for specific users. When provided,

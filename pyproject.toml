@@ -45,6 +45,7 @@ dev = [
     "oauthlib>=3.2.2",
     "cryptography>=45.0.0",
     "keyring>=25.6.0",
+    "mkdocs-minify-plugin>=0.8.0",
 ]
 
 [project.urls]

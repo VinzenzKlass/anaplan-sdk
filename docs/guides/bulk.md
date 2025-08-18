@@ -53,26 +53,26 @@ provide the workspace and model IDs.
 === "Synchronous"
     ```python
     # Globals, this will work on an instance with auth info only
-    workspaces = anaplan.list_workspaces()
-    models = anaplan.list_models()
+    workspaces = anaplan.get_workspaces()
+    models = anaplan.get_models()
     
     # These require an instance with workspace and model info
-    imports = anaplan.list_imports()
-    exports = anaplan.list_exports()
-    actions = anaplan.list_actions()
-    processes = anaplan.list_processes()
+    imports = anaplan.get_imports()
+    exports = anaplan.get_exports()
+    actions = anaplan.get_actions()
+    processes = anaplan.get_processes()
     ```
 === "Asynchronous"
     ```python
     workspaces, models = await gather(
-        anaplan.list_workspaces(), anaplan.list_models()
+        anaplan.get_workspaces(), anaplan.get_models()
     ) # Globals, this will work on an instance with auth info only
     
     imports, exports, actions, processes = await gather(
-        anaplan.list_imports(),
-        anaplan.list_exports(),
-        anaplan.list_actions(),
-        anaplan.list_processes(),
+        anaplan.get_imports(),
+        anaplan.get_exports(),
+        anaplan.get_actions(),
+        anaplan.get_processes(),
     ) # These require an instance with workspace and model info
     ```
 

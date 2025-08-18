@@ -372,7 +372,7 @@ def validate_dimension_id(dimension_id: int) -> int:
         "Prefer `{}` for better performance and more details on the members."
     )
     if dimension_id == 101999999999:
-        logger.warning(msg.format("Users", "list_users"))
+        logger.warning(msg.format("Users", "get_users"))
     if 101000000000 <= dimension_id < 102000000000:
         logger.warning(msg.format("Lists", "get_list_items"))
     return dimension_id

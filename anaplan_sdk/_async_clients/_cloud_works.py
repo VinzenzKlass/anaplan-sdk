@@ -44,7 +44,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         """
         return self._flow
 
-    async def list_connections(self) -> list[Connection]:
+    async def get_connections(self) -> list[Connection]:
         """
         List all Connections available in CloudWorks.
         :return: A list of connections.
@@ -98,7 +98,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         await self._delete(f"{self._url}/connections/{con_id}")
         logger.info(f"Deleted connection '{con_id}'.")
 
-    async def list_integrations(
+    async def get_integrations(
         self, sort_by_name: Literal["ascending", "descending"] = "ascending"
     ) -> list[Integration]:
         """

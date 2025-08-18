@@ -7,7 +7,7 @@ Modules or read data from Lists and Modules.
 
 All the methods for the Transactional APIs reside in a different namespace for better API navigability and
 comprehensiveness, but are accessible through the same client for convenience. For e.g., you can call
-the `.list_lists()` method like so:
+the `.get_lists()` method like so:
 
 === "Synchronous"
     ```python
@@ -19,7 +19,7 @@ the `.list_lists()` method like so:
         certificate="~/certs/anaplan.pem",
         private_key="~/keys/anaplan.pem",
     )
-    lists = anaplan.transactional.list_lists()
+    lists = anaplan.transactional.get_lists()
     ```
 === "Asynchronous"
     ```python
@@ -31,7 +31,7 @@ the `.list_lists()` method like so:
         certificate="~/certs/anaplan.pem",
         private_key="~/keys/anaplan.pem",
     )
-    lists = await anaplan.transactional.list_lists()
+    lists = await anaplan.transactional.get_lists()
     ```
 
 For brevity, if you need to access only the Transactional API or need to do so repeatedly, you can assign the
@@ -40,14 +40,14 @@ Transactional Client to its own variable.
 === "Synchronous"
     ```python
     trans_anaplan = anaplan.transactional
-    lists = trans_anaplan.list_lists()
-    modules = trans_anaplan.list_modules()
+    lists = trans_anaplan.get_lists()
+    modules = trans_anaplan.get_modules()
     ```
 === "Asynchronous"
     ```python
     trans_anaplan = anaplan.transactional
     lists, modules = await gather(
-       trans_anaplan.list_lists(), trans_anaplan.list_modules()
+       trans_anaplan.get_lists(), trans_anaplan.get_modules()
     )
     ```
 

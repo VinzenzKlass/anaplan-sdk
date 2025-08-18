@@ -15,7 +15,7 @@ class _AuditClient(_BaseClient):
         self._url = "https://audit.anaplan.com/audit/api/1/events"
         super().__init__(retry_count, client)
 
-    def list_users(self, search_pattern: str | None = None) -> list[User]:
+    def get_users(self, search_pattern: str | None = None) -> list[User]:
         """
         Lists all the Users in the authenticated users default tenant.
         :param search_pattern: Optional filter for users. When provided, case-insensitive matches

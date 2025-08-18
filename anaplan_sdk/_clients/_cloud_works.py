@@ -44,7 +44,7 @@ class _CloudWorksClient(_BaseClient):
         """
         return self._flow
 
-    def list_connections(self) -> list[Connection]:
+    def get_connections(self) -> list[Connection]:
         """
         List all Connections available in CloudWorks.
         :return: A list of connections.
@@ -96,7 +96,7 @@ class _CloudWorksClient(_BaseClient):
         self._delete(f"{self._url}/connections/{con_id}")
         logger.info(f"Deleted connection '{con_id}'.")
 
-    def list_integrations(
+    def get_integrations(
         self, sort_by_name: Literal["ascending", "descending"] = "ascending"
     ) -> list[Integration]:
         """

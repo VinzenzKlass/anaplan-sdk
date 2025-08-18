@@ -1,4 +1,6 @@
 ---
+title: Home
+description: Streamlined Python Interface for the Anaplan API.
 hide:
   - navigation
   - toc
@@ -13,7 +15,7 @@ Anaplan SDK
 </h1>
 
 <h1 align="center" style="font-size: 1.2rem; font-weight: 300; margin: 15px 0">
-    Streamlined Python Interface for Anaplan
+    Streamlined Python Interface for the Anaplan API.
 </h1>
 
 <div align="center">
@@ -29,16 +31,18 @@ Anaplan SDK
 </div>
 
 ---
+Streamlined Python Interface for the Anaplan API. Get up and running with the Anaplan API in minutes.
+
 
 Anaplan SDK is an independent, unofficial project providing pythonic access to Anaplan. It delivers high-level
-abstractions over all Anaplan APIs, allowing you to focus on business requirements rather than implementation details.
+abstractions over all parts of the Anaplan API, allowing you to focus on business requirements rather than implementation details.
 
 ## Key Features
 
 - **Pythonic Interface**: Clean, intuitive access to Anaplan functionality
 - **Simplified API Interactions**: Automatic handling of authentication, error handling, and data formatting
 - **Performance Optimizations**: Built-in chunking and compression techniques
-- **Multiple API Support**: Compatible with all major Anaplan API endpoints
+- **Multiple API Support**: Supports all Anaplan API catgeories
 - **Flexible Client Options**: Both synchronous and asynchronous implementations
 - **Developer-Friendly**: Designed to reduce boilerplate code and accelerate development
 

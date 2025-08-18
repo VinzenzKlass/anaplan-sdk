@@ -14,7 +14,7 @@ class _FlowClient(_BaseClient):
         self._url = "https://api.cloudworks.anaplan.com/2/0/integrationflows"
         super().__init__(retry_count, client)
 
-    def list_flows(self, current_user_only: bool = False) -> list[FlowSummary]:
+    def get_flows(self, current_user_only: bool = False) -> list[FlowSummary]:
         """
         List all flows in CloudWorks.
         :param current_user_only: Filters the flows to only those created by the current user.
