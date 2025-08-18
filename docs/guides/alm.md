@@ -8,7 +8,7 @@ For details on required subscriptions and what you might want to use the ALM API
 
 All the methods for the ALM APIs reside in a different namespace for better API navigability and
 comprehensiveness, but are accessible through the same client for convenience. For e.g., you can call
-the `.list_revisions()` method like so:
+the `.get_revisions()` method like so:
 
 === "Synchronous"
       ```python
@@ -20,7 +20,7 @@ the `.list_revisions()` method like so:
           certificate="~/certs/anaplan.pem",
           private_key="~/keys/anaplan.pem",
       )
-      revisions = anaplan.alm.list_revisions()
+      revisions = anaplan.alm.get_revisions()
       ```
 === "Asynchronous"
       ```python
@@ -32,7 +32,7 @@ the `.list_revisions()` method like so:
           certificate="~/certs/anaplan.pem",
           private_key="~/keys/anaplan.pem",
       )
-      revisions = await anaplan.alm.list_revisions()
+      revisions = await anaplan.alm.get_revisions()
       ```
 ???+ note
       While you can instantiate a [Client](../api/sync/sync_client.md) without the workspace or model parameters, trying to access
@@ -44,14 +44,14 @@ ALM Client to its own variable.
 === "Synchronous"
       ```python
       alm = anaplan.alm
-      revisions = alm.list_revisions()
-      syncs = alm.list_sync_tasks()
+      revisions = alm.get_revisions()
+      syncs = alm.get_sync_tasks()
       ```
 === "Asynchronous"
       ```python
       alm = anaplan.alm
       revisions, syncs = await asyncio.gather(
-          alm.list_revisions(), alm.list_sync_tasks()
+          alm.get_revisions(), alm.get_sync_tasks()
       )
       ```
 
@@ -78,7 +78,7 @@ Revisions are snapshots of your model at a specific point in time. You can creat
 
 === "Synchronous"
     ```python
-    revisions = anaplan.alm.list_revisions()
+    revisions = anaplan.alm.get_revisions()
     latest = anaplan.alm.get_latest_revision()
     new_revision = anaplan.alm.create_revision(
         name="Production Release v2.1",
@@ -87,7 +87,7 @@ Revisions are snapshots of your model at a specific point in time. You can creat
     ```
 === "Asynchronous"
     ```python
-    revisions = await anaplan.alm.list_revisions()
+    revisions = await anaplan.alm.get_revisions()
     latest = await anaplan.alm.get_latest_revision()
     new_revision = await anaplan.alm.create_revision(
         name="Production Release v2.1",
@@ -100,12 +100,12 @@ Before synchronizing models, you need to identify which revisions from your sour
 === "Synchronous"
     ```python
     source_model_id = "22222222222222222222222222222222"
-    syncable_revisions = anaplan.alm.list_syncable_revisions(source_model_id)
+    syncable_revisions = anaplan.alm.get_syncable_revisions(source_model_id)
     ```
 === "Asynchronous"
     ```python
     source_model_id = "22222222222222222222222222222222"
-    syncable_revisions = await anaplan.alm.list_syncable_revisions(source_model_id)
+    syncable_revisions = await anaplan.alm.get_syncable_revisions(source_model_id)
     ```
 
 ## Model Synchronization
@@ -135,14 +135,14 @@ You can list and monitor all sync tasks for your model to track ongoing or recen
 
 === "Synchronous"
     ```python
-    sync_tasks = anaplan.alm.list_sync_tasks()
+    sync_tasks = anaplan.alm.get_sync_tasks()
     
     # See if there is any task that is still running
     running_task = next((t for t in sync_tasks if t.task_state != "COMPLETE"), None)
     ```
 === "Asynchronous"
     ```python
-    sync_tasks = await anaplan.alm.list_sync_tasks()
+    sync_tasks = await anaplan.alm.get_sync_tasks()
     
     # See if there is any task that is still running
     running_task = next((t for t in sync_tasks if t.task_state != "COMPLETE"), None)

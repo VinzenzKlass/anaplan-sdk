@@ -221,7 +221,7 @@ class Client(_BaseClient):
             )
         return self._alm_client
 
-    def list_workspaces(self, search_pattern: str | None = None) -> list[Workspace]:
+    def get_workspaces(self, search_pattern: str | None = None) -> list[Workspace]:
         """
         Lists all the Workspaces the authenticated user has access to.
         :param search_pattern: Optional filter for workspaces. When provided, case-insensitive
@@ -239,7 +239,7 @@ class Client(_BaseClient):
             )
         ]
 
-    def list_models(self, search_pattern: str | None = None) -> list[Model]:
+    def get_models(self, search_pattern: str | None = None) -> list[Model]:
         """
         Lists all the Models the authenticated user has access to.
         :param search_pattern: Optionally filter for specific models. When provided,
@@ -272,14 +272,14 @@ class Client(_BaseClient):
         )
         return DeletionResult.model_validate(res)
 
-    def list_files(self) -> list[File]:
+    def get_files(self) -> list[File]:
         """
         Lists all the Files in the Model.
         :return: The List of Files.
         """
         return [File.model_validate(e) for e in self._get_paginated(f"{self._url}/files", "files")]
 
-    def list_actions(self) -> list[Action]:
+    def get_actions(self) -> list[Action]:
         """
         Lists all the Actions in the Model. This will only return the Actions listed under
         `Other Actions` in Anaplan. For Imports, exports, and processes, see their respective
@@ -290,7 +290,7 @@ class Client(_BaseClient):
             Action.model_validate(e) for e in self._get_paginated(f"{self._url}/actions", "actions")
         ]
 
-    def list_processes(self) -> list[Process]:
+    def get_processes(self) -> list[Process]:
         """
         Lists all the Processes in the Model.
         :return: The List of Processes.
@@ -300,7 +300,7 @@ class Client(_BaseClient):
             for e in self._get_paginated(f"{self._url}/processes", "processes")
         ]
 
-    def list_imports(self) -> list[Import]:
+    def get_imports(self) -> list[Import]:
         """
         Lists all the Imports in the Model.
         :return: The List of Imports.
@@ -309,7 +309,7 @@ class Client(_BaseClient):
             Import.model_validate(e) for e in self._get_paginated(f"{self._url}/imports", "imports")
         ]
 
-    def list_exports(self) -> list[Export]:
+    def get_exports(self) -> list[Export]:
         """
         Lists all the Exports in the Model.
         :return: The List of Exports.
@@ -446,7 +446,7 @@ class Client(_BaseClient):
         self.run_action(action_id)
         return self.get_file(action_id)
 
-    def list_task_status(self, action_id: int) -> list[TaskSummary]:
+    def get_task_summaries(self, action_id: int) -> list[TaskSummary]:
         """
         Retrieves the status of all tasks spawned by the specified action.
         :param action_id: The identifier of the action that was invoked.
@@ -484,7 +484,7 @@ class Client(_BaseClient):
         )
 
     def _file_pre_check(self, file_id: int) -> int:
-        file = next(filter(lambda f: f.id == file_id, self.list_files()), None)
+        file = next(filter(lambda f: f.id == file_id, self.get_files()), None)
         if not file:
             raise InvalidIdentifierException(f"File {file_id} not found.")
         return file.chunk_count

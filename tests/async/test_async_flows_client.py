@@ -4,13 +4,13 @@ from anaplan_sdk.models.flows import Flow, FlowSummary
 
 
 async def test_list_flows(client):
-    flows = await client.cw.flows.list_flows()
+    flows = await client.cw.flows.get_flows()
     assert isinstance(flows, list)
     assert all(isinstance(f, FlowSummary) for f in flows)
 
 
 async def test_list_flows_current_user(client):
-    flows = await client.cw.flows.list_flows(current_user_only=True)
+    flows = await client.cw.flows.get_flows(current_user_only=True)
     assert isinstance(flows, list)
     assert all(isinstance(f, FlowSummary) for f in flows)
 

@@ -215,7 +215,7 @@ class AsyncClient(_AsyncBaseClient):
             )
         return self._alm_client
 
-    async def list_workspaces(self, search_pattern: str | None = None) -> list[Workspace]:
+    async def get_workspaces(self, search_pattern: str | None = None) -> list[Workspace]:
         """
         Lists all the Workspaces the authenticated user has access to.
         :param search_pattern: Optionally filter for specific workspaces. When provided,
@@ -234,7 +234,7 @@ class AsyncClient(_AsyncBaseClient):
             )
         ]
 
-    async def list_models(self, search_pattern: str | None = None) -> list[Model]:
+    async def get_models(self, search_pattern: str | None = None) -> list[Model]:
         """
         Lists all the Models the authenticated user has access to.
         :param search_pattern: Optionally filter for specific models. When provided,
@@ -267,7 +267,7 @@ class AsyncClient(_AsyncBaseClient):
         )
         return DeletionResult.model_validate(res)
 
-    async def list_files(self) -> list[File]:
+    async def get_files(self) -> list[File]:
         """
         Lists all the Files in the Model.
         :return: The List of Files.
@@ -276,7 +276,7 @@ class AsyncClient(_AsyncBaseClient):
             File.model_validate(e) for e in await self._get_paginated(f"{self._url}/files", "files")
         ]
 
-    async def list_actions(self) -> list[Action]:
+    async def get_actions(self) -> list[Action]:
         """
         Lists all the Actions in the Model. This will only return the Actions listed under
         `Other Actions` in Anaplan. For Imports, exports, and processes, see their respective
@@ -288,7 +288,7 @@ class AsyncClient(_AsyncBaseClient):
             for e in await self._get_paginated(f"{self._url}/actions", "actions")
         ]
 
-    async def list_processes(self) -> list[Process]:
+    async def get_processes(self) -> list[Process]:
         """
         Lists all the Processes in the Model.
         :return: The List of Processes.
@@ -298,7 +298,7 @@ class AsyncClient(_AsyncBaseClient):
             for e in await self._get_paginated(f"{self._url}/processes", "processes")
         ]
 
-    async def list_imports(self) -> list[Import]:
+    async def get_imports(self) -> list[Import]:
         """
         Lists all the Imports in the Model.
         :return: The List of Imports.
@@ -308,7 +308,7 @@ class AsyncClient(_AsyncBaseClient):
             for e in await self._get_paginated(f"{self._url}/imports", "imports")
         ]
 
-    async def list_exports(self) -> list[Export]:
+    async def get_exports(self) -> list[Export]:
         """
         Lists all the Exports in the Model.
         :return: The List of Exports.
@@ -457,7 +457,7 @@ class AsyncClient(_AsyncBaseClient):
         await self.run_action(action_id)
         return await self.get_file(action_id)
 
-    async def list_task_status(self, action_id: int) -> list[TaskSummary]:
+    async def get_task_summaries(self, action_id: int) -> list[TaskSummary]:
         """
         Retrieves the status of all tasks spawned by the specified action.
         :param action_id: The identifier of the action that was invoked.
@@ -495,7 +495,7 @@ class AsyncClient(_AsyncBaseClient):
         )
 
     async def _file_pre_check(self, file_id: int) -> int:
-        file = next(filter(lambda f: f.id == file_id, await self.list_files()), None)
+        file = next(filter(lambda f: f.id == file_id, await self.get_files()), None)
         if not file:
             raise InvalidIdentifierException(f"File {file_id} not found.")
         return file.chunk_count

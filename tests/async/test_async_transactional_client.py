@@ -35,19 +35,19 @@ async def test_get_model(client: AsyncClient):
 
 
 async def test_list_modules(client: AsyncClient):
-    modules = await client.transactional.list_modules()
+    modules = await client.transactional.get_modules()
     assert isinstance(modules, list)
     assert len(modules) > 0
 
 
 async def test_list_lists(client: AsyncClient):
-    lists = await client.transactional.list_lists()
+    lists = await client.transactional.get_lists()
     assert isinstance(lists, list)
     assert len(lists) > 0
 
 
 async def test_list_line_items(client: AsyncClient):
-    items = await client.transactional.list_line_items()
+    items = await client.transactional.get_line_items()
     assert isinstance(items, list)
     assert len(items) > 0
 
@@ -99,7 +99,7 @@ async def test_reset_list_index(client: AsyncClient, test_list):
 
 
 async def test_list_views(client: AsyncClient):
-    views = await client.transactional.list_views()
+    views = await client.transactional.get_views()
     assert isinstance(views, list)
     assert len(views) > 0
     assert all(isinstance(view, View) for view in views)

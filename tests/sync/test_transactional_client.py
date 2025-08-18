@@ -35,19 +35,19 @@ def test_get_model(client: Client):
 
 
 def test_list_modules(client: Client):
-    modules = client.transactional.list_modules()
+    modules = client.transactional.get_modules()
     assert isinstance(modules, list)
     assert len(modules) > 0
 
 
 def test_list_lists(client: Client):
-    lists = client.transactional.list_lists()
+    lists = client.transactional.get_lists()
     assert isinstance(lists, list)
     assert len(lists) > 0
 
 
 def test_list_line_items(client: Client):
-    items = client.transactional.list_line_items()
+    items = client.transactional.get_line_items()
     assert isinstance(items, list)
     assert len(items) > 0
 
@@ -99,7 +99,7 @@ def test_reset_list_index(client: Client, test_list):
 
 
 def test_list_views(client: Client):
-    views = client.transactional.list_views()
+    views = client.transactional.get_views()
     assert isinstance(views, list)
     assert len(views) > 0
     assert all(isinstance(view, View) for view in views)

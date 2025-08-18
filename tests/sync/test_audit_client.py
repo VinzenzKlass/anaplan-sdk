@@ -2,7 +2,7 @@ from anaplan_sdk.models import User
 
 
 def test_list_users(client):
-    users, search = client.audit.list_users(), client.audit.list_users("vinzenz")
+    users, search = client.audit.get_users(), client.audit.get_users("vinzenz")
     assert isinstance(users, list)
     assert all(isinstance(user, User) for user in users)
     assert all(isinstance(user, User) for user in search)

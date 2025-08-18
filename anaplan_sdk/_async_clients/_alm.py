@@ -35,7 +35,7 @@ class _AsyncAlmClient(_AsyncBaseClient):
         logger.info(f"Changed model status to '{status}' for model {self._model_id}.")
         await self._put(f"{self._url}/onlineStatus", json={"status": status})
 
-    async def list_revisions(self) -> list[Revision]:
+    async def get_revisions(self) -> list[Revision]:
         """
         Use this call to return a list of revisions for a specific model.
         :return: A list of revisions for a specific model.
@@ -55,7 +55,7 @@ class _AsyncAlmClient(_AsyncBaseClient):
         res = (await self._get(f"{self._url}/alm/latestRevision")).get("revisions")
         return Revision.model_validate(res[0]) if res else None
 
-    async def list_syncable_revisions(self, source_model_id: str) -> list[Revision]:
+    async def get_syncable_revisions(self, source_model_id: str) -> list[Revision]:
         """
         Use this call to return the list of revisions from your source model that can be
         synchronized to your target model.
@@ -82,7 +82,7 @@ class _AsyncAlmClient(_AsyncBaseClient):
         logger.info(f"Created revision '{name} ({rev.id})'for model {self._model_id}.")
         return rev
 
-    async def list_sync_tasks(self) -> list[TaskSummary]:
+    async def get_sync_tasks(self) -> list[TaskSummary]:
         """
         List the sync tasks for a target mode. The returned the tasks are either in progress, or
         they completed within the last 48 hours.
@@ -140,7 +140,7 @@ class _AsyncAlmClient(_AsyncBaseClient):
         logger.info(f"Sync task {task.id} completed successfully.")
         return task
 
-    async def list_models_for_revision(self, revision_id: str) -> list[ModelRevision]:
+    async def get_models_for_revision(self, revision_id: str) -> list[ModelRevision]:
         """
         Use this call when you need a list of the models that had a specific revision applied
         to them.

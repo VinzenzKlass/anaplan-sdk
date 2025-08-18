@@ -18,7 +18,7 @@ async def test_change_model_status(alm_client: AsyncClient):
 
 
 async def test_list_revisions(alm_client: AsyncClient):
-    revisions = await alm_client.alm.list_revisions()
+    revisions = await alm_client.alm.get_revisions()
     assert isinstance(revisions, list)
     assert all(isinstance(rev, Revision) for rev in revisions)
 
@@ -29,7 +29,7 @@ async def test_get_latest_revision(alm_client: AsyncClient):
 
 
 async def test_list_syncable_revisions(alm_client: AsyncClient, alm_src_model_id: str):
-    revisions = await alm_client.alm.list_syncable_revisions(alm_src_model_id)
+    revisions = await alm_client.alm.get_syncable_revisions(alm_src_model_id)
     assert isinstance(revisions, list)
     assert all(isinstance(rev, Revision) for rev in revisions)
 
@@ -98,12 +98,12 @@ async def test_sync_models(
 
 async def test_list_models_for_revision(alm_client: AsyncClient):
     rev = await alm_client.alm.get_latest_revision()
-    model_revs = await alm_client.alm.list_models_for_revision(rev.id)
+    model_revs = await alm_client.alm.get_models_for_revision(rev.id)
     assert isinstance(model_revs, list)
     assert all(isinstance(rev, ModelRevision) for rev in model_revs)
 
 
 async def test_list_sync_tasks(alm_client: AsyncClient):
-    tasks = await alm_client.alm.list_sync_tasks()
+    tasks = await alm_client.alm.get_sync_tasks()
     assert isinstance(tasks, list)
     assert all(isinstance(task, TaskSummary) for task in tasks)
