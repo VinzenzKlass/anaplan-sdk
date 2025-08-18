@@ -123,12 +123,16 @@ class NumberMetadata(AnaplanModel):
     custom_units: str | None = Field(None, description="Custom units for display.")
     decimal_places: int = Field(description="Number of decimal places.")
     decimal_separator: Literal["COMMA", "FULL_STOP"] = Field(description="The decimal separator.")
-    units_display_type: Literal["CUSTOM_SUFFIX", "NONE", "PERCENTAGE_SUFFIX"] = Field(
-        description="Units display type."
+    units_display_type: Literal["CUSTOM_SUFFIX", "CURRENCY_SYMBOL", "PERCENTAGE_SUFFIX", "NONE"] = (
+        Field(description="Units display type.")
     )
-    units_type: Literal["CUSTOM", "NONE", "PERCENTAGE"] = Field(description="Units type.")
+    units_type: Literal["CUSTOM", "CURRENCY", "PERCENTAGE", "NONE"] = Field(
+        description="Units type."
+    )
     zero_format: Literal["HYPHEN", "ZERO"] = Field(description="Zero format display.")
-    grouping_separator: Literal["COMMA", "FULL_STOP"] = Field(description="The grouping separator.")
+    grouping_separator: Literal["COMMA", "FULL_STOP", "SPACE", "NONE"] = Field(
+        description="The grouping separator."
+    )
     minimum_significant_digits: int = Field(description="Minimum significant digits.")
     negative_number_notation: Literal["MINUS_SIGN", "BRACKETS"] = Field(
         description="Negative number notation."
@@ -151,7 +155,10 @@ class LineItem(AnaplanModel):
     )
     format_metadata: (
         NumberMetadata | ListMetadata | TimePeriodMetadata | TextMetadata | GenericTypeMetadata
-    ) = Field(description="The format metadata of this line item.", discriminator="data_type")
+    ) = Field(
+        description="The format metadata of this line item. Each Type provides different metadata.",
+        discriminator="data_type",
+    )
     summary: str = Field(description="The summary of this line item.")
     applies_to: list[Dimension] = Field([], description="The applies to value of this line item.")
     data_tags: list[Dimension] = Field([], description="The data tags of this line item.")

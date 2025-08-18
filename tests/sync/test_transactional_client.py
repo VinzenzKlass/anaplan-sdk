@@ -5,6 +5,7 @@ from os import getenv
 from anaplan_sdk import Client
 from anaplan_sdk.models import (
     CurrentPeriod,
+    Dimension,
     DimensionWithCode,
     FiscalYear,
     InsertionResult,
@@ -158,3 +159,9 @@ def test_get_dimension_items_with_users_warns(client: Client, caplog):
         ("warn" in record.levelname.lower() and "is discouraged." in record.msg)
         for record in caplog.records
     )
+
+
+def test_get_line_item_dimensions(client: Client):
+    items = client.transactional.get_line_item_dimensions(284000000077)
+    assert isinstance(items, list)
+    assert all(isinstance(item, Dimension) for item in items)

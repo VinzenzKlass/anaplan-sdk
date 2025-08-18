@@ -98,7 +98,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         """
         Lists all the Line Items in the Model.
         :param only_module_id: If provided, only Line Items from this Module will be returned.
-        :return: All Line Items on this Model.
+        :return: All Line Items on this Model or only from the specified Module.
         """
         res = await self._get(
             f"{self._url}/modules/{only_module_id}/lineItems?includeAll=true"
