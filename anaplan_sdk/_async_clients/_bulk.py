@@ -366,12 +366,15 @@ class AsyncClient(_AsyncBaseClient):
             )
         )
 
-    async def get_file_stream(self, file_id: int) -> AsyncIterator[bytes]:
+    async def get_file_stream(self, file_id: int, batch_size: int = 1) -> AsyncIterator[bytes]:
         """
         Retrieves the content of the specified file as a stream of chunks. The chunks are yielded
         one by one, so you can process them as they arrive. This is useful for large files where
         you don't want to or cannot load the entire file into memory at once.
         :param file_id: The identifier of the file to retrieve.
+        :param batch_size: Number of chunks to fetch concurrently. If > 1, n chunks will be fetched
+               concurrently. This still yields each chunk individually, only the requests are
+               batched. If 1 (default), each chunk is fetched sequentially.
         :return: A generator yielding the chunks of the file.
         """
         chunk_count = await self._file_pre_check(file_id)
@@ -379,8 +382,16 @@ class AsyncClient(_AsyncBaseClient):
         if chunk_count <= 1:
             yield await self._get_binary(f"{self._url}/files/{file_id}")
             return
-        for i in range(chunk_count):
-            yield await self._get_binary(f"{self._url}/files/{file_id}/chunks/{i}")
+
+        for batch_start in range(0, chunk_count, batch_size):
+            batch_chunks = await gather(
+                *(
+                    self._get_binary(f"{self._url}/files/{file_id}/chunks/{i}")
+                    for i in range(batch_start, min(batch_start + batch_size, chunk_count))
+                )
+            )
+            for chunk in batch_chunks:
+                yield chunk
 
     async def upload_file(self, file_id: int, content: str | bytes) -> None:
         """
@@ -391,8 +402,6 @@ class AsyncClient(_AsyncBaseClient):
         :param content: The content to upload. **This Content will be compressed before uploading.
                If you are passing the Input as bytes, pass it uncompressed.**
         """
-        if isinstance(content, str):
-            content = content.encode()
         chunks = [
             content[i : i + self.upload_chunk_size]
             for i in range(0, len(content), self.upload_chunk_size)
@@ -404,7 +413,10 @@ class AsyncClient(_AsyncBaseClient):
         )
 
     async def upload_file_stream(
-        self, file_id: int, content: AsyncIterator[bytes | str] | Iterator[str | bytes]
+        self,
+        file_id: int,
+        content: AsyncIterator[bytes | str] | Iterator[str | bytes],
+        batch_size: int = 1,
     ) -> None:
         """
         Uploads the content to the specified file as a stream of chunks. This is useful either for
@@ -414,25 +426,42 @@ class AsyncClient(_AsyncBaseClient):
         generator that yields the chunks of the file one by one to this method.
 
         :param file_id: The identifier of the file to upload to.
-        :param content: An Iterator or AsyncIterator yielding the chunks of the file.
-               (Most likely a generator).
+        :param content: An Iterator or AsyncIterator yielding the chunks of the file. You can pass
+               any Iterator, but you will most likely want to pass a Generator.
+        :param batch_size: Number of chunks to upload concurrently. If > 1, n chunks will be
+               uploaded concurrently. This can be useful if you either do not control the chunk
+               size, or if you want to keep the chunk size small but still want some concurrency.
         """
+        logger.info(f"Starting upload stream for file '{file_id}' with batch size {batch_size}.")
         await self._set_chunk_count(file_id, -1)
+        tasks = []
         if isinstance(content, Iterator):
             for index, chunk in enumerate(content):
-                await self._upload_chunk(
-                    file_id, index, chunk.encode() if isinstance(chunk, str) else chunk
-                )
+                tasks.append(self._upload_chunk(file_id, index, chunk))
+                if len(tasks) == max(batch_size, 1):
+                    await gather(*tasks)
+                    logger.info(
+                        f"Completed upload stream batch of size {batch_size} for file {file_id}."
+                    )
+                    tasks = []
         else:
             index = 0
             async for chunk in content:
-                await self._upload_chunk(
-                    file_id, index, chunk.encode() if isinstance(chunk, str) else chunk
-                )
+                tasks.append(self._upload_chunk(file_id, index, chunk))
                 index += 1
-
+                if len(tasks) == max(batch_size, 1):
+                    await gather(*tasks)
+                    logger.info(
+                        f"Completed upload stream batch of size {batch_size} for file {file_id}."
+                    )
+                    tasks = []
+        if tasks:
+            await gather(*tasks)
+            logger.info(
+                f"Completed final upload stream batch of size {len(tasks)} for file {file_id}."
+            )
         await self._post(f"{self._url}/files/{file_id}/complete", json={"id": file_id})
-        logger.info(f"Marked all chunks as complete for file '{file_id}'.")
+        logger.info(f"Completed upload stream for '{file_id}'.")
 
     async def upload_and_import(self, file_id: int, content: str | bytes, action_id: int) -> None:
         """
@@ -495,16 +524,14 @@ class AsyncClient(_AsyncBaseClient):
         )
 
     async def _file_pre_check(self, file_id: int) -> int:
-        file = next(filter(lambda f: f.id == file_id, await self.get_files()), None)
+        file = next((f for f in await self.get_files() if f.id == file_id), None)
         if not file:
             raise InvalidIdentifierException(f"File {file_id} not found.")
         return file.chunk_count
 
-    async def _upload_chunk(self, file_id: int, index: int, chunk: bytes) -> None:
-        await self._run_with_retry(
-            self._put_binary_gzip, f"{self._url}/files/{file_id}/chunks/{index}", content=chunk
-        )
-        logger.info(f"Chunk {index} loaded to file '{file_id}'.")
+    async def _upload_chunk(self, file_id: int, index: int, chunk: str | bytes) -> None:
+        await self._put_binary_gzip(f"{self._url}/files/{file_id}/chunks/{index}", chunk)
+        logger.debug(f"Chunk {index} loaded to file '{file_id}'.")
 
     async def _set_chunk_count(self, file_id: int, num_chunks: int) -> None:
         if not self.allow_file_creation and not (113000000000 <= file_id <= 113999999999):

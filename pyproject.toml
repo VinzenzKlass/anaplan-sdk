@@ -46,6 +46,7 @@ dev = [
     "cryptography>=45.0.0",
     "keyring>=25.6.0",
     "mkdocs-minify-plugin>=0.8.0",
+    "polars>=1.32.3",
 ]
 
 [project.urls]
