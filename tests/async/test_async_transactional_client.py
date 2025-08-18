@@ -9,6 +9,7 @@ from anaplan_sdk.models import (
     DimensionWithCode,
     FiscalYear,
     InsertionResult,
+    ListItem,
     ListMetadata,
     Model,
     ModelStatus,
@@ -72,7 +73,8 @@ async def test_long_list_insertion(client: AsyncClient, test_list, list_items_lo
 
 async def test_long_list_deletion(client: AsyncClient, test_list, list_items_long):
     result = await client.transactional.delete_list_items(test_list, list_items_long)
-    assert result == 200_000
+    assert result.deleted == 200_000
+    assert result.failures == []
 
 
 async def test_short_list_insertion(client: AsyncClient, test_list, list_items_short):
@@ -84,14 +86,23 @@ async def test_short_list_insertion(client: AsyncClient, test_list, list_items_s
 
 
 async def test_get_list_items(client: AsyncClient, test_list):
-    items = await client.transactional.get_list_items(test_list)
+    items = await client.transactional.get_list_items(test_list, False)
     assert isinstance(items, list)
     assert len(items) == 1_000
+    assert all(isinstance(item, ListItem) for item in items)
+
+
+async def test_get_list_items_raw(client: AsyncClient, test_list):
+    items = await client.transactional.get_list_items(test_list, True)
+    assert isinstance(items, list)
+    assert len(items) == 1_000
+    assert all(isinstance(item, dict) for item in items)
 
 
 async def test_short_list_deletion(client: AsyncClient, test_list, list_items_short):
     result = await client.transactional.delete_list_items(test_list, list_items_short)
-    assert result == 1_000
+    assert result.deleted == 1_000
+    assert result.failures == []
 
 
 async def test_reset_list_index(client: AsyncClient, test_list):

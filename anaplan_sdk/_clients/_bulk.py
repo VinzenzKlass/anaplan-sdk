@@ -13,11 +13,11 @@ from anaplan_sdk._base import _BaseClient, action_url
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
 from anaplan_sdk.models import (
     Action,
-    DeletionResult,
     Export,
     File,
     Import,
     Model,
+    ModelDeletionResult,
     Process,
     TaskStatus,
     TaskSummary,
@@ -258,7 +258,7 @@ class Client(_BaseClient):
             )
         ]
 
-    def delete_models(self, model_ids: list[str]) -> DeletionResult:
+    def delete_models(self, model_ids: list[str]) -> ModelDeletionResult:
         """
         Delete the given Models. Models need to be closed before they can be deleted. If one of the
         deletions fails, the other deletions will still be attempted and may complete.
@@ -270,7 +270,7 @@ class Client(_BaseClient):
             f"https://api.anaplan.com/2/0/workspaces/{self._workspace_id}/bulkDeleteModels",
             json={"modelIdsToDelete": model_ids},
         )
-        return DeletionResult.model_validate(res)
+        return ModelDeletionResult.model_validate(res)
 
     def get_files(self) -> list[File]:
         """

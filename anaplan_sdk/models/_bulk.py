@@ -181,7 +181,7 @@ class DeletionFailure(AnaplanModel):
     message: str = Field(description="The error message explaining why the deletion failed.")
 
 
-class DeletionResult(AnaplanModel):
+class ModelDeletionResult(AnaplanModel):
     models_deleted: int = Field(description="The number of models that were successfully deleted.")
     failures: list[DeletionFailure] = Field(
         [],

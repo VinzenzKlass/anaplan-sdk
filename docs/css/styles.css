@@ -1,6 +1,7 @@
 :root > * {
     --md-accent-fg-color: #0075ff;
     --md-primary-fg-color: #0075ff;
+    --md-primary-fg-color--dark: #0075ff;
 }
 
 :root, [data-md-color-scheme=default] {
