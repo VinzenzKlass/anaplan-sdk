@@ -172,7 +172,7 @@ Warning. To automate this tedious task without losing any data, we can perform f
     def reset_list_index(list_id: int) -> None:
         items = anaplan.transactional.get_list_items(list_id, return_raw=True)
         for item in items:
-        del item["id"]  # Specifying both "id" and "code" will cause an error.
+            del item["id"]  # Specifying both "id" and "code" will cause an error.
         anaplan.transactional.delete_list_items(list_id, items)
         anaplan.transactional.reset_list_index(list_id)
         anaplan.transactional.insert_list_items(list_id, items)
@@ -183,7 +183,7 @@ Warning. To automate this tedious task without losing any data, we can perform f
     async def reset_list_index(list_id: int) -> None:
         items = await anaplan.transactional.get_list_items(list_id, return_raw=True)
         for item in items:
-        del item["id"]  # Specifying both "id" and "code" will cause an error.
+            del item["id"]  # Specifying both "id" and "code" will cause an error.
         await anaplan.transactional.delete_list_items(list_id, items)
         await anaplan.transactional.reset_list_index(list_id)
         await anaplan.transactional.insert_list_items(list_id, items)
