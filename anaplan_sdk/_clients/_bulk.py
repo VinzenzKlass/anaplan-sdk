@@ -408,7 +408,7 @@ class Client(_BaseClient):
             content[i : i + self.upload_chunk_size]
             for i in range(0, len(content), self.upload_chunk_size)
         ]
-        logger.info(f"Content will be uploaded in {len(chunks)} chunks.")
+        logger.info(f"Content for file '{file_id}' will be uploaded in {len(chunks)} chunks.")
         self._set_chunk_count(file_id, len(chunks))
         if self.upload_parallel:
             with ThreadPoolExecutor(max_workers=self._thread_count) as executor:
@@ -418,6 +418,7 @@ class Client(_BaseClient):
         else:
             for index, chunk in enumerate(chunks):
                 self._upload_chunk(file_id, index, chunk)
+        logger.info(f"Completed upload for file '{file_id}'.")
 
     def upload_file_stream(
         self, file_id: int, content: Iterator[str | bytes], batch_size: int = 1
@@ -531,6 +532,7 @@ class Client(_BaseClient):
         logger.debug(f"Chunk {index} loaded to file '{file_id}'.")
 
     def _set_chunk_count(self, file_id: int, num_chunks: int) -> None:
+        logger.debug(f"Setting chunk count for file '{file_id}' to {num_chunks}.")
         if not self.allow_file_creation and not (113000000000 <= file_id <= 113999999999):
             raise InvalidIdentifierException(
                 f"File with Id {file_id} does not exist. If you want to dynamically create files "

@@ -406,11 +406,13 @@ class AsyncClient(_AsyncBaseClient):
             content[i : i + self.upload_chunk_size]
             for i in range(0, len(content), self.upload_chunk_size)
         ]
-        logger.info(f"Content will be uploaded in {len(chunks)} chunks.")
+        logger.info(f"Content for file '{file_id}' will be uploaded in {len(chunks)} chunks.")
         await self._set_chunk_count(file_id, len(chunks))
         await gather(
             *(self._upload_chunk(file_id, index, chunk) for index, chunk in enumerate(chunks))
         )
+
+        logger.info(f"Completed upload for file '{file_id}'.")
 
     async def upload_file_stream(
         self,
