@@ -38,23 +38,6 @@ the `.get_revisions()` method like so:
       While you can instantiate a [Client](../api/sync/sync_client.md) without the workspace or model parameters, trying to access
       the [ALM Client](../api/sync/sync_alm_client.md) on an instance without the `model_id` will raise a `ValueError`.
 
-For brevity, if you need to access only the ALM API or need to do so repeatedly, you can assign the
-ALM Client to its own variable.
-
-=== "Synchronous"
-      ```python
-      alm = anaplan.alm
-      revisions = alm.get_revisions()
-      syncs = alm.get_sync_tasks()
-      ```
-=== "Asynchronous"
-      ```python
-      alm = anaplan.alm
-      revisions, syncs = await asyncio.gather(
-          alm.get_revisions(), alm.get_sync_tasks()
-      )
-      ```
-
 
 ## Model Status Management
 

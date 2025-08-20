@@ -34,7 +34,7 @@ def test_list_syncable_revisions(alm_client: Client, alm_src_model_id: str):
 
 
 def test_create_revision(alm_src_client: Client):
-    alm_src_client.transactional.insert_list_items(
+    alm_src_client.tr.insert_list_items(
         101000000005, [{"name": str(uuid4()), "code": str(uuid4())}]
     )
     name, desc = datetime.now().strftime("%Y-%m-%d %H:%M:%S"), "Test Sync Revision."

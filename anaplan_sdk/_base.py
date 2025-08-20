@@ -44,7 +44,6 @@ class _BaseClient:
     def __init__(self, retry_count: int, client: httpx.Client):
         self._retry_count = retry_count
         self._client = client
-        logger.debug(f"Initialized BaseClient with retry_count={retry_count}.")
 
     def _get(self, url: str, **kwargs) -> dict[str, Any]:
         return self.__run_with_retry(self._client.get, url, **kwargs).json()
@@ -133,7 +132,6 @@ class _AsyncBaseClient:
     def __init__(self, retry_count: int, client: httpx.AsyncClient):
         self._retry_count = retry_count
         self._client = client
-        logger.debug(f"Initialized AsyncBaseClient with retry_count={retry_count}.")
 
     async def _get(self, url: str, **kwargs) -> dict[str, Any]:
         return (await self.__run_with_retry(self._client.get, url, **kwargs)).json()
@@ -199,7 +197,7 @@ class _AsyncBaseClient:
                 for n in range(1, ceil(total_items / page_size))
             )
         )
-        logger.info(f"Completed paginated fetch of {total_items} total items.")
+        logger.debug(f"Completed paginated fetch of {total_items} total items.")
         return chain(first_page, *pages)
 
     async def __run_with_retry(

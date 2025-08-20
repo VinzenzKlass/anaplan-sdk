@@ -20,51 +20,51 @@ from anaplan_sdk.models import (
 
 
 async def test_wake_model(client: AsyncClient):
-    await client.transactional.wake_model()
+    await client.tr.wake_model()
 
 
 async def test_close_model(client: AsyncClient):
     other = AsyncClient.from_existing(client, model_id="C87EBE934BD442B1A798540E0CA5A877")
-    await other.transactional.close_model()
+    await other.tr.close_model()
 
 
 async def test_get_model(client: AsyncClient):
     model_id = getenv("ANAPLAN_SDK_TEST_MODEL_ID")
-    model = await client.transactional.get_model_details()
+    model = await client.tr.get_model_details()
     assert isinstance(model, Model)
     assert model.id == model_id
 
 
 async def test_list_modules(client: AsyncClient):
-    modules = await client.transactional.get_modules()
+    modules = await client.tr.get_modules()
     assert isinstance(modules, list)
     assert len(modules) > 0
 
 
 async def test_list_lists(client: AsyncClient):
-    lists = await client.transactional.get_lists()
+    lists = await client.tr.get_lists()
     assert isinstance(lists, list)
     assert len(lists) > 0
 
 
 async def test_list_line_items(client: AsyncClient):
-    items = await client.transactional.get_line_items()
+    items = await client.tr.get_line_items()
     assert isinstance(items, list)
     assert len(items) > 0
 
 
 async def test_get_list_meta(client: AsyncClient, test_list):
-    meta = await client.transactional.get_list_metadata(test_list)
+    meta = await client.tr.get_list_metadata(test_list)
     assert isinstance(meta, ListMetadata)
 
 
 async def test_get_model_status(client: AsyncClient):
-    status = await client.transactional.get_model_status()
+    status = await client.tr.get_model_status()
     assert isinstance(status, ModelStatus)
 
 
 async def test_long_list_insertion(client: AsyncClient, test_list, list_items_long):
-    result = await client.transactional.insert_list_items(test_list, list_items_long)
+    result = await client.tr.insert_list_items(test_list, list_items_long)
     assert isinstance(result, InsertionResult)
     assert result.failures == []
     assert result.added == 200_000
@@ -72,13 +72,13 @@ async def test_long_list_insertion(client: AsyncClient, test_list, list_items_lo
 
 
 async def test_long_list_deletion(client: AsyncClient, test_list, list_items_long):
-    result = await client.transactional.delete_list_items(test_list, list_items_long)
+    result = await client.tr.delete_list_items(test_list, list_items_long)
     assert result.deleted == 200_000
     assert result.failures == []
 
 
 async def test_short_list_insertion(client: AsyncClient, test_list, list_items_short):
-    result = await client.transactional.insert_list_items(test_list, list_items_short)
+    result = await client.tr.insert_list_items(test_list, list_items_short)
     assert isinstance(result, InsertionResult)
     assert result.failures == []
     assert result.added == 1_000
@@ -86,74 +86,74 @@ async def test_short_list_insertion(client: AsyncClient, test_list, list_items_s
 
 
 async def test_get_list_items(client: AsyncClient, test_list):
-    items = await client.transactional.get_list_items(test_list, False)
+    items = await client.tr.get_list_items(test_list, False)
     assert isinstance(items, list)
     assert len(items) == 1_000
     assert all(isinstance(item, ListItem) for item in items)
 
 
 async def test_get_list_items_raw(client: AsyncClient, test_list):
-    items = await client.transactional.get_list_items(test_list, True)
+    items = await client.tr.get_list_items(test_list, True)
     assert isinstance(items, list)
     assert len(items) == 1_000
     assert all(isinstance(item, dict) for item in items)
 
 
 async def test_short_list_deletion(client: AsyncClient, test_list, list_items_short):
-    result = await client.transactional.delete_list_items(test_list, list_items_short)
+    result = await client.tr.delete_list_items(test_list, list_items_short)
     assert result.deleted == 1_000
     assert result.failures == []
 
 
 async def test_reset_list_index(client: AsyncClient, test_list):
-    await client.transactional.reset_list_index(test_list)
+    await client.tr.reset_list_index(test_list)
 
 
 async def test_list_views(client: AsyncClient):
-    views = await client.transactional.get_views()
+    views = await client.tr.get_views()
     assert isinstance(views, list)
     assert len(views) > 0
     assert all(isinstance(view, View) for view in views)
 
 
 async def test_get_view_info(client: AsyncClient):
-    info = await client.transactional.get_view_info(102000000015)
+    info = await client.tr.get_view_info(102000000015)
     assert isinstance(info, ViewInfo)
 
 
 async def test_get_current_period(client: AsyncClient):
-    period = await client.transactional.get_current_period()
+    period = await client.tr.get_current_period()
     assert isinstance(period, CurrentPeriod)
 
 
 async def test_set_current_period(client: AsyncClient):
     today = date.today()
     last_day_of_month = date(today.year, today.month, monthrange(today.year, today.month)[1])
-    period = await client.transactional.set_current_period(today.strftime("%Y-%m-%d"))
+    period = await client.tr.set_current_period(today.strftime("%Y-%m-%d"))
     assert isinstance(period, CurrentPeriod)
     assert period.last_day == last_day_of_month.strftime("%Y-%m-%d")
 
 
 async def test_set_current_fiscal_year(client: AsyncClient):
     year = "FY25"
-    fiscal_year = await client.transactional.set_current_fiscal_year(year)
+    fiscal_year = await client.tr.set_current_fiscal_year(year)
     assert isinstance(fiscal_year, FiscalYear)
     assert fiscal_year.year == year
 
 
 async def test_get_model_calendar(client: AsyncClient):
-    calendar = await client.transactional.get_model_calendar()
+    calendar = await client.tr.get_model_calendar()
     assert isinstance(calendar, MonthsQuartersYearsCalendar)
 
 
 async def test_get_dimension_items(client: AsyncClient):
-    items = await client.transactional.get_dimension_items(109000000000)
+    items = await client.tr.get_dimension_items(109000000000)
     assert isinstance(items, list)
     assert all(isinstance(item, DimensionWithCode) for item in items)
 
 
 async def test_get_dimension_items_with_list_warns(client: AsyncClient, caplog):
-    items = await client.transactional.get_dimension_items(101000000008)
+    items = await client.tr.get_dimension_items(101000000008)
     assert isinstance(items, list)
     assert all(isinstance(item, DimensionWithCode) for item in items)
     assert any(
@@ -163,7 +163,7 @@ async def test_get_dimension_items_with_list_warns(client: AsyncClient, caplog):
 
 
 async def test_get_dimension_items_with_users_warns(client: AsyncClient, caplog):
-    items = await client.transactional.get_dimension_items(101999999999)
+    items = await client.tr.get_dimension_items(101999999999)
     assert isinstance(items, list)
     assert all(isinstance(item, DimensionWithCode) for item in items)
     assert any(
@@ -173,6 +173,6 @@ async def test_get_dimension_items_with_users_warns(client: AsyncClient, caplog)
 
 
 async def test_get_line_item_dimensions(client: AsyncClient):
-    items = await client.transactional.get_line_item_dimensions(284000000077)
+    items = await client.tr.get_line_item_dimensions(284000000077)
     assert isinstance(items, list)
     assert all(isinstance(item, Dimension) for item in items)

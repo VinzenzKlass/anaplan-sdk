@@ -55,6 +55,7 @@ class Client(_BaseClient):
         upload_parallel: bool = True,
         upload_chunk_size: int = 25_000_000,
         allow_file_creation: bool = False,
+        **httpx_kwargs,
     ) -> None:
         """
         Synchronous Anaplan Client. For guides and examples
@@ -96,6 +97,9 @@ class Client(_BaseClient):
                altogether. A file that is created this way will not be referenced by any action in
                anaplan until manually assigned so there is typically no value in dynamically
                creating new files and uploading content to them.
+        :param httpx_kwargs: Additional keyword arguments to pass to the `httpx.Client`.
+               This can be used to set additional options such as proxies, headers, etc. See
+               https://www.python-httpx.org/api/#client for the full list of arguments.
         """
         _client = httpx.Client(
             auth=(
@@ -110,6 +114,7 @@ class Client(_BaseClient):
                 )
             ),
             timeout=timeout,
+            **httpx_kwargs,
         )
         self._retry_count = retry_count
         self._workspace_id = workspace_id
@@ -183,14 +188,14 @@ class Client(_BaseClient):
         return self._cloud_works
 
     @property
-    def transactional(self) -> _TransactionalClient:
+    def tr(self) -> _TransactionalClient:
         """
         The Transactional Client provides access to the Anaplan Transactional API. This is useful
         for more advanced use cases where you need to interact with the Anaplan Model in a more
         granular way.
 
         If you instantiated the client without the field `model_id`, this will raise a
-        :py:class:`ValueError`, since none of the endpoints can be invoked without the model Id.
+        `ValueError`, since none of the endpoints can be invoked without the model Id.
         :return: The Transactional Client.
         """
         if not self._transactional_client:
