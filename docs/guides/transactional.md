@@ -19,7 +19,7 @@ the `.get_lists()` method like so:
         certificate="~/certs/anaplan.pem",
         private_key="~/keys/anaplan.pem",
     )
-    lists = anaplan.transactional.get_lists()
+    lists = anaplan.tr.get_lists()
     ```
 === "Asynchronous"
     ```python
@@ -31,24 +31,7 @@ the `.get_lists()` method like so:
         certificate="~/certs/anaplan.pem",
         private_key="~/keys/anaplan.pem",
     )
-    lists = await anaplan.transactional.get_lists()
-    ```
-
-For brevity, if you need to access only the Transactional API or need to do so repeatedly, you can assign the
-Transactional Client to its own variable.
-
-=== "Synchronous"
-    ```python
-    trans_anaplan = anaplan.transactional
-    lists = trans_anaplan.get_lists()
-    modules = trans_anaplan.get_modules()
-    ```
-=== "Asynchronous"
-    ```python
-    trans_anaplan = anaplan.transactional
-    lists, modules = await gather(
-       trans_anaplan.get_lists(), trans_anaplan.get_modules()
-    )
+    lists = await anaplan.tr.get_lists()
     ```
 
 ???+ note
@@ -61,11 +44,11 @@ Transactional Client to its own variable.
 
 === "Synchronous"
     ```python
-    products = anaplan.transactional.get_list_items(101000000299)
+    products = anaplan.tr.get_list_items(101000000299)
     ```
 === "Asynchronous"
     ```python
-    products = await anaplan.transactional.get_list_items(101000000299)
+    products = await anaplan.tr.get_list_items(101000000299)
     ```
 
 ### Insert new List Items
@@ -74,7 +57,7 @@ These dicts must at least hold `code` or `id`and the name.
 
 === "Synchronous"
     ```python
-    anaplan.transactional.insert_list_items(
+    anaplan.tr.insert_list_items(
         101000000299,
         [
             {"code": "A", "name": "A"},
@@ -86,7 +69,7 @@ These dicts must at least hold `code` or `id`and the name.
     ```
 === "Asynchronous"
     ```python
-    await anaplan.transactional.insert_list_items(
+    await anaplan.tr.insert_list_items(
         101000000299,
         [
             {"code": "A", "name": "A"},
@@ -107,7 +90,7 @@ their `id` or `name`. The `value` can be a string, number or boolean.
 
 === "Synchronous"
     ```python
-    anaplan.transactional.update_module_data(
+    anaplan.tr.update_module_data(
         101000000299,
         [
             {
@@ -131,7 +114,7 @@ their `id` or `name`. The `value` can be a string, number or boolean.
     ```
 === "Asynchronous"
     ```python
-    await anaplan.transactional.update_module_data(
+    await anaplan.tr.update_module_data(
         101000000299,
         [
             {
@@ -158,7 +141,7 @@ their `id` or `name`. The `value` can be a string, number or boolean.
 
 ### Resetting List Index w/o data loss
 
-Lists holding large sets of transactional data that are frequently updated, will often produce a `List index limit`
+Lists holding large sets of tr data that are frequently updated, will often produce a `List index limit`
 Warning. To automate this tedious task without losing any data, we can perform four simple steps:
 
 1. Export the list data and either hold it in memory or save it.
@@ -170,21 +153,21 @@ Warning. To automate this tedious task without losing any data, we can perform f
 === "Synchronous"
     ```python
     def reset_list_index(list_id: int) -> None:
-        items = anaplan.transactional.get_list_items(list_id, return_raw=True)
+        items = anaplan.tr.get_list_items(list_id, return_raw=True)
         for item in items:
             del item["id"]  # Specifying both "id" and "code" will cause an error.
-        anaplan.transactional.delete_list_items(list_id, items)
-        anaplan.transactional.reset_list_index(list_id)
-        anaplan.transactional.insert_list_items(list_id, items)
+        anaplan.tr.delete_list_items(list_id, items)
+        anaplan.tr.reset_list_index(list_id)
+        anaplan.tr.insert_list_items(list_id, items)
 
     ```
 === "Asynchronous"
     ```python
     async def reset_list_index(list_id: int) -> None:
-        items = await anaplan.transactional.get_list_items(list_id, return_raw=True)
+        items = await anaplan.tr.get_list_items(list_id, return_raw=True)
         for item in items:
             del item["id"]  # Specifying both "id" and "code" will cause an error.
-        await anaplan.transactional.delete_list_items(list_id, items)
-        await anaplan.transactional.reset_list_index(list_id)
-        await anaplan.transactional.insert_list_items(list_id, items)
+        await anaplan.tr.delete_list_items(list_id, items)
+        await anaplan.tr.reset_list_index(list_id)
+        await anaplan.tr.insert_list_items(list_id, items)
     ```

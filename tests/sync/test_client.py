@@ -36,7 +36,7 @@ def test_broken_client_alm_raises(broken_client: Client):
 
 def test_broken_client_transactional_raises(broken_client: Client):
     with pytest.raises(ValueError):
-        _ = broken_client.transactional
+        _ = broken_client.tr
 
 
 def test_file_creation_raises_exception(client: Client):

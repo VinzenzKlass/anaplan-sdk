@@ -20,51 +20,51 @@ from anaplan_sdk.models import (
 
 
 def test_wake_model(client: Client):
-    client.transactional.wake_model()
+    client.tr.wake_model()
 
 
 def test_close_model(client: Client):
     other = Client.from_existing(client, model_id="C87EBE934BD442B1A798540E0CA5A877")
-    other.transactional.close_model()
+    other.tr.close_model()
 
 
 def test_get_model(client: Client):
     model_id = getenv("ANAPLAN_SDK_TEST_MODEL_ID")
-    model = client.transactional.get_model_details()
+    model = client.tr.get_model_details()
     assert isinstance(model, Model)
     assert model.id == model_id
 
 
 def test_list_modules(client: Client):
-    modules = client.transactional.get_modules()
+    modules = client.tr.get_modules()
     assert isinstance(modules, list)
     assert len(modules) > 0
 
 
 def test_list_lists(client: Client):
-    lists = client.transactional.get_lists()
+    lists = client.tr.get_lists()
     assert isinstance(lists, list)
     assert len(lists) > 0
 
 
 def test_list_line_items(client: Client):
-    items = client.transactional.get_line_items()
+    items = client.tr.get_line_items()
     assert isinstance(items, list)
     assert len(items) > 0
 
 
 def test_get_list_meta(client: Client, test_list):
-    meta = client.transactional.get_list_metadata(test_list)
+    meta = client.tr.get_list_metadata(test_list)
     assert isinstance(meta, ListMetadata)
 
 
 def test_get_model_status(client: Client):
-    status = client.transactional.get_model_status()
+    status = client.tr.get_model_status()
     assert isinstance(status, ModelStatus)
 
 
 def test_long_list_insertion(client: Client, test_list, list_items_long):
-    result = client.transactional.insert_list_items(test_list, list_items_long)
+    result = client.tr.insert_list_items(test_list, list_items_long)
     assert isinstance(result, InsertionResult)
     assert result.failures == []
     assert result.added == 200_000
@@ -72,13 +72,13 @@ def test_long_list_insertion(client: Client, test_list, list_items_long):
 
 
 def test_long_list_deletion(client: Client, test_list, list_items_long):
-    result = client.transactional.delete_list_items(test_list, list_items_long)
+    result = client.tr.delete_list_items(test_list, list_items_long)
     assert result.deleted == 200_000
     assert result.failures == []
 
 
 def test_short_list_insertion(client: Client, test_list, list_items_short):
-    result = client.transactional.insert_list_items(test_list, list_items_short)
+    result = client.tr.insert_list_items(test_list, list_items_short)
     assert isinstance(result, InsertionResult)
     assert result.failures == []
     assert result.added == 1_000
@@ -86,74 +86,74 @@ def test_short_list_insertion(client: Client, test_list, list_items_short):
 
 
 def test_get_list_items(client: Client, test_list):
-    items = client.transactional.get_list_items(test_list)
+    items = client.tr.get_list_items(test_list)
     assert isinstance(items, list)
     assert len(items) == 1_000
     assert all(isinstance(item, ListItem) for item in items)
 
 
 def test_get_list_items_raw(client: Client, test_list):
-    items = client.transactional.get_list_items(test_list, True)
+    items = client.tr.get_list_items(test_list, True)
     assert isinstance(items, list)
     assert len(items) == 1_000
     assert all(isinstance(item, dict) for item in items)
 
 
 def test_short_list_deletion(client: Client, test_list, list_items_short):
-    result = client.transactional.delete_list_items(test_list, list_items_short)
+    result = client.tr.delete_list_items(test_list, list_items_short)
     assert result.deleted == 1_000
     assert result.failures == []
 
 
 def test_reset_list_index(client: Client, test_list):
-    client.transactional.reset_list_index(test_list)
+    client.tr.reset_list_index(test_list)
 
 
 def test_list_views(client: Client):
-    views = client.transactional.get_views()
+    views = client.tr.get_views()
     assert isinstance(views, list)
     assert len(views) > 0
     assert all(isinstance(view, View) for view in views)
 
 
 def test_get_view_info(client: Client):
-    info = client.transactional.get_view_info(102000000015)
+    info = client.tr.get_view_info(102000000015)
     assert isinstance(info, ViewInfo)
 
 
 def test_get_current_period(client: Client):
-    period = client.transactional.get_current_period()
+    period = client.tr.get_current_period()
     assert isinstance(period, CurrentPeriod)
 
 
 def test_set_current_period(client: Client):
     today = date.today()
     last_day_of_month = date(today.year, today.month, monthrange(today.year, today.month)[1])
-    period = client.transactional.set_current_period(today.strftime("%Y-%m-%d"))
+    period = client.tr.set_current_period(today.strftime("%Y-%m-%d"))
     assert isinstance(period, CurrentPeriod)
     assert period.last_day == last_day_of_month.strftime("%Y-%m-%d")
 
 
 def test_set_current_fiscal_year(client: Client):
     year = "FY25"
-    fiscal_year = client.transactional.set_current_fiscal_year(year)
+    fiscal_year = client.tr.set_current_fiscal_year(year)
     assert isinstance(fiscal_year, FiscalYear)
     assert fiscal_year.year == year
 
 
 def test_get_model_calendar(client: Client):
-    calendar = client.transactional.get_model_calendar()
+    calendar = client.tr.get_model_calendar()
     assert isinstance(calendar, MonthsQuartersYearsCalendar)
 
 
 def test_get_dimension_items(client: Client):
-    items = client.transactional.get_dimension_items(109000000000)
+    items = client.tr.get_dimension_items(109000000000)
     assert isinstance(items, list)
     assert all(isinstance(item, DimensionWithCode) for item in items)
 
 
 def test_get_dimension_items_with_list_warns(client: Client, caplog):
-    items = client.transactional.get_dimension_items(101000000008)
+    items = client.tr.get_dimension_items(101000000008)
     assert isinstance(items, list)
     assert all(isinstance(item, DimensionWithCode) for item in items)
     assert any(
@@ -163,7 +163,7 @@ def test_get_dimension_items_with_list_warns(client: Client, caplog):
 
 
 def test_get_dimension_items_with_users_warns(client: Client, caplog):
-    items = client.transactional.get_dimension_items(101999999999)
+    items = client.tr.get_dimension_items(101999999999)
     assert isinstance(items, list)
     assert all(isinstance(item, DimensionWithCode) for item in items)
     assert any(
@@ -173,6 +173,6 @@ def test_get_dimension_items_with_users_warns(client: Client, caplog):
 
 
 def test_get_line_item_dimensions(client: Client):
-    items = client.transactional.get_line_item_dimensions(284000000077)
+    items = client.tr.get_line_item_dimensions(284000000077)
     assert isinstance(items, list)
     assert all(isinstance(item, Dimension) for item in items)
