@@ -209,50 +209,55 @@ pattern:
     await anaplan.run_action(118000000000)
     ```
 
+---
+
 ### Streaming Files (Larger than RAM)
 
-If you have a file that is larger than your available RAM, or you are consuming chunks from i.e. a queue until it is
-exhausted and thus cannot know the number of expected chunks ahead of time, you can use the `upload_file_stream` method.
-You can pass an Iterator - in this case a Generator - that yields the chunks to this method, and it will handle the
+If you have a file that is larger than your available RAM, or you are consuming chunks from a queue, you can use the 
+`upload_file_stream` method. You can pass a Generator that yields the chunks to this method, and it will handle the
 rest. The `upload_file_stream` method on the [AsyncClient](../api/async/async_client.md#anaplan_sdk.AsyncClient.upload_file_stream)
 accepts both `AsyncIterator[bytes | str]` and `Iterator[str | bytes]`.
 
-This will work nicely with i.e. [`scan_parquet()`](https://docs.pola.rs/user-guide/io/parquet/#scan)
-in [Polars](https://docs.pola.rs/). Consider the following example:
+Let's say you want to analyze the popular NYC Taxi dataset of ~170 million rows in Anaplan, you could use the following 
+code to stream the data to Anaplan. 
 
 === "Synchronous"
     ```python
     import polars as pl
     
     
-    def read_file_in_chunks(chunk_size: int = 150_000):
-        df = pl.scan_parquet("massive_data.parquet")
-        row_count = df.select(pl.len()).collect().item()
-        for i in range(0, row_count, chunk_size):
-            yield df.slice(i, chunk_size).collect().write_csv()
+    def stream_file(chunk_size: int = 50_000):
+        url = "s3://datasets-documentation/nyc-taxi/trips*.parquet"
+        options = {"aws_region": "eu-west-3", "skip_signature": "true"}
+        df = pl.scan_parquet(url, storage_options=options)
+        for i in range(0, df.select(pl.len()).collect().item(), chunk_size):
+            chunk = df.slice(i, chunk_size).collect_async(engine="streaming")
+            yield chunk.write_csv(include_header=i == 0)
     
     
-    anaplan.upload_file_stream(113000000000, read_file_in_chunks())
+    anaplan.upload_file_stream(113000000000, stream_file(), batch_size=3)
     ```
 === "Asynchronous"
     ```python
     import polars as pl
-    
-    
-    async def read_file_in_chunks(chunk_size: int = 150_000):
-        df = pl.scan_parquet("massive_data.parquet")
-        row_count = df.select(pl.len()).collect().item()
-        for i in range(0, row_count, chunk_size):
+
+
+    async def stream_file(chunk_size: int = 50_000):
+        url = "s3://datasets-documentation/nyc-taxi/trips*.parquet"
+        options = {"aws_region": "eu-west-3", "skip_signature": "true"}
+        df = pl.scan_parquet(url, storage_options=options)
+        for i in range(0, df.select(pl.len()).collect().item(), chunk_size):
             # WARNING: `collect_async()` is experimental
-            yield (await df.slice(i, chunk_size).collect_async()).write_csv()
+            chunk = await df.slice(i, chunk_size).collect_async(engine="streaming")
+            yield chunk.write_csv(include_header=i == 0)
     
-    
-    await anaplan.upload_file_stream(113000000000, read_file_in_chunks())
+
+    await anaplan.upload_file_stream(113000000000, stream_file(), batch_size=3)
     ```
 
-This will allow you to upload files of arbitrary size without running into memory issues, as long as you keep the chunk
-small enough to fit into memory. It will work equally well with any other source that can be read in chunks and
-especially well with sources that can be read lazily or return the results sets in chunks by default.
+This will allow you to upload files of arbitrary size without running into memory issues, as long as you keep the chunks
+and `batch_size` (= the number of chunks that are read and uploaded concurrently) small enough to fit into memory. It 
+will work equally well with any other source that can be read in chunks and especially well with sources that can be read lazily or return the results sets in chunks by default.
 
 You can in the same way use the `get_file_stream` method to download files in chunks.
 
