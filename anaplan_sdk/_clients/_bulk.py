@@ -364,12 +364,15 @@ class Client(_BaseClient):
             )
             return b"".join(chunks)
 
-    def get_file_stream(self, file_id: int) -> Iterator[bytes]:
+    def get_file_stream(self, file_id: int, batch_size: int = 1) -> Iterator[bytes]:
         """
         Retrieves the content of the specified file as a stream of chunks. The chunks are yielded
         one by one, so you can process them as they arrive. This is useful for large files where
         you don't want to or cannot load the entire file into memory at once.
         :param file_id: The identifier of the file to retrieve.
+        :param batch_size: Number of chunks to fetch concurrently. If > 1, n chunks will be fetched
+               concurrently. This still yields each chunk individually, only the requests are
+               batched. If 1 (default), each chunk is fetched sequentially.
         :return: A generator yielding the chunks of the file.
         """
         chunk_count = self._file_pre_check(file_id)
@@ -377,8 +380,18 @@ class Client(_BaseClient):
         if chunk_count <= 1:
             yield self._get_binary(f"{self._url}/files/{file_id}")
             return
-        for i in range(chunk_count):
-            yield self._get_binary(f"{self._url}/files/{file_id}/chunks/{i}")
+
+        with ThreadPoolExecutor(max_workers=batch_size) as executor:
+            for batch_start in range(0, chunk_count, batch_size):
+                batch_chunks = executor.map(
+                    self._get_binary,
+                    (
+                        f"{self._url}/files/{file_id}/chunks/{i}"
+                        for i in range(batch_start, min(batch_start + batch_size, chunk_count))
+                    ),
+                )
+                for chunk in batch_chunks:
+                    yield chunk
 
     def upload_file(self, file_id: int, content: str | bytes) -> None:
         """
@@ -395,7 +408,7 @@ class Client(_BaseClient):
             content[i : i + self.upload_chunk_size]
             for i in range(0, len(content), self.upload_chunk_size)
         ]
-        logger.info(f"Content will be uploaded in {len(chunks)} chunks.")
+        logger.info(f"Content for file '{file_id}' will be uploaded in {len(chunks)} chunks.")
         self._set_chunk_count(file_id, len(chunks))
         if self.upload_parallel:
             with ThreadPoolExecutor(max_workers=self._thread_count) as executor:
@@ -405,23 +418,48 @@ class Client(_BaseClient):
         else:
             for index, chunk in enumerate(chunks):
                 self._upload_chunk(file_id, index, chunk)
+        logger.info(f"Completed upload for file '{file_id}'.")
 
-    def upload_file_stream(self, file_id: int, content: Iterator[bytes | str]) -> None:
+    def upload_file_stream(
+        self, file_id: int, content: Iterator[str | bytes], batch_size: int = 1
+    ) -> None:
         """
         Uploads the content to the specified file as a stream of chunks. This is useful either for
         large files where you don't want to or cannot load the entire file into memory at once, or
         if you simply do not know the number of chunks ahead of time and instead just want to pass
         on chunks i.e. consumed from a queue until it is exhausted. In this case, you can pass a
         generator that yields the chunks of the file one by one to this method.
-        :param file_id: The identifier of the file to upload to.
-        :param content: An Iterator yielding the chunks of the file. (Most likely a generator).
-        """
-        self._set_chunk_count(file_id, -1)
-        for index, chunk in enumerate(content):
-            self._upload_chunk(file_id, index, chunk.encode() if isinstance(chunk, str) else chunk)
 
+        :param file_id: The identifier of the file to upload to.
+        :param content: An Iterator or AsyncIterator yielding the chunks of the file. You can pass
+               any Iterator, but you will most likely want to pass a Generator.
+        :param batch_size: Number of chunks to upload concurrently. If > 1, n chunks will be
+               uploaded concurrently. This can be useful if you either do not control the chunk
+               size, or if you want to keep the chunk size small but still want some concurrency.
+        """
+        logger.info(f"Starting upload stream for file '{file_id}' with batch size {batch_size}.")
+        self._set_chunk_count(file_id, -1)
+        indices, chunks = [], []
+        with ThreadPoolExecutor(max_workers=batch_size) as executor:
+            for index, chunk in enumerate(content):
+                indices.append(index)
+                chunks.append(chunk)
+                if len(indices) == max(batch_size, 1):
+                    list(
+                        executor.map(self._upload_chunk, (file_id,) * len(indices), indices, chunks)
+                    )
+                    logger.info(
+                        f"Completed upload stream batch of size {batch_size} for file {file_id}."
+                    )
+                    indices, chunks = [], []
+
+            if indices:
+                executor.map(self._upload_chunk, (file_id,) * len(indices), indices, chunks)
+        logger.info(
+            f"Completed final upload stream batch of size {len(indices)} for file {file_id}."
+        )
         self._post(f"{self._url}/files/{file_id}/complete", json={"id": file_id})
-        logger.info(f"Marked all chunks as complete for file '{file_id}'.")
+        logger.info(f"Completed upload stream for '{file_id}'.")
 
     def upload_and_import(self, file_id: int, content: str | bytes, action_id: int) -> None:
         """
@@ -484,16 +522,17 @@ class Client(_BaseClient):
         )
 
     def _file_pre_check(self, file_id: int) -> int:
-        file = next(filter(lambda f: f.id == file_id, self.get_files()), None)
+        file = next((f for f in self.get_files() if f.id == file_id), None)
         if not file:
             raise InvalidIdentifierException(f"File {file_id} not found.")
         return file.chunk_count
 
-    def _upload_chunk(self, file_id: int, index: int, chunk: bytes) -> None:
-        self._put_binary_gzip(f"{self._url}/files/{file_id}/chunks/{index}", content=chunk)
-        logger.info(f"Chunk {index} loaded to file '{file_id}'.")
+    def _upload_chunk(self, file_id: int, index: int, chunk: str | bytes) -> None:
+        self._put_binary_gzip(f"{self._url}/files/{file_id}/chunks/{index}", chunk)
+        logger.debug(f"Chunk {index} loaded to file '{file_id}'.")
 
     def _set_chunk_count(self, file_id: int, num_chunks: int) -> None:
+        logger.debug(f"Setting chunk count for file '{file_id}' to {num_chunks}.")
         if not self.allow_file_creation and not (113000000000 <= file_id <= 113999999999):
             raise InvalidIdentifierException(
                 f"File with Id {file_id} does not exist. If you want to dynamically create files "

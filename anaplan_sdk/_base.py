@@ -47,34 +47,33 @@ class _BaseClient:
         logger.debug(f"Initialized BaseClient with retry_count={retry_count}.")
 
     def _get(self, url: str, **kwargs) -> dict[str, Any]:
-        return self._run_with_retry(self._client.get, url, **kwargs).json()
+        return self.__run_with_retry(self._client.get, url, **kwargs).json()
 
     def _get_binary(self, url: str) -> bytes:
-        return self._run_with_retry(self._client.get, url).content
+        return self.__run_with_retry(self._client.get, url).content
 
     def _post(self, url: str, json: dict | list) -> dict[str, Any]:
-        return self._run_with_retry(self._client.post, url, headers=_json_header, json=json).json()
+        return self.__run_with_retry(self._client.post, url, headers=_json_header, json=json).json()
 
     def _put(self, url: str, json: dict | list) -> dict[str, Any]:
-        res = self._run_with_retry(self._client.put, url, headers=_json_header, json=json)
+        res = self.__run_with_retry(self._client.put, url, headers=_json_header, json=json)
         return res.json() if res.num_bytes_downloaded > 0 else {}
 
     def _patch(self, url: str, json: dict | list) -> dict[str, Any]:
         return (
-            self._run_with_retry(self._client.patch, url, headers=_json_header, json=json)
+            self.__run_with_retry(self._client.patch, url, headers=_json_header, json=json)
         ).json()
 
     def _delete(self, url: str) -> dict[str, Any]:
-        return (self._run_with_retry(self._client.delete, url, headers=_json_header)).json()
+        return (self.__run_with_retry(self._client.delete, url, headers=_json_header)).json()
 
     def _post_empty(self, url: str, **kwargs) -> dict[str, Any]:
-        res = self._run_with_retry(self._client.post, url, **kwargs)
+        res = self.__run_with_retry(self._client.post, url, **kwargs)
         return res.json() if res.num_bytes_downloaded > 0 else {}
 
-    def _put_binary_gzip(self, url: str, content: bytes) -> Response:
-        return self._run_with_retry(
-            self._client.put, url, headers=_gzip_header, content=compress(content)
-        )
+    def _put_binary_gzip(self, url: str, content: str | bytes) -> Response:
+        content = compress(content.encode() if isinstance(content, str) else content)
+        return self.__run_with_retry(self._client.put, url, headers=_gzip_header, content=content)
 
     def __get_page(self, url: str, limit: int, offset: int, result_key: str, **kwargs) -> list:
         logger.debug(f"Fetching page: offset={offset}, limit={limit} from {url}.")
@@ -108,7 +107,7 @@ class _BaseClient:
         logger.debug(f"Completed paginated fetch of {total_items} total items.")
         return chain(first_page, *pages)
 
-    def _run_with_retry(self, func: Callable[..., Response], *args, **kwargs) -> Response:
+    def __run_with_retry(self, func: Callable[..., Response], *args, **kwargs) -> Response:
         for i in range(max(self._retry_count, 1)):
             try:
                 response = func(*args, **kwargs)
@@ -137,35 +136,36 @@ class _AsyncBaseClient:
         logger.debug(f"Initialized AsyncBaseClient with retry_count={retry_count}.")
 
     async def _get(self, url: str, **kwargs) -> dict[str, Any]:
-        return (await self._run_with_retry(self._client.get, url, **kwargs)).json()
+        return (await self.__run_with_retry(self._client.get, url, **kwargs)).json()
 
     async def _get_binary(self, url: str) -> bytes:
-        return (await self._run_with_retry(self._client.get, url)).content
+        return (await self.__run_with_retry(self._client.get, url)).content
 
     async def _post(self, url: str, json: dict | list) -> dict[str, Any]:
         return (
-            await self._run_with_retry(self._client.post, url, headers=_json_header, json=json)
+            await self.__run_with_retry(self._client.post, url, headers=_json_header, json=json)
         ).json()
 
     async def _put(self, url: str, json: dict | list) -> dict[str, Any]:
-        res = await self._run_with_retry(self._client.put, url, headers=_json_header, json=json)
+        res = await self.__run_with_retry(self._client.put, url, headers=_json_header, json=json)
         return res.json() if res.num_bytes_downloaded > 0 else {}
 
     async def _patch(self, url: str, json: dict | list) -> dict[str, Any]:
         return (
-            await self._run_with_retry(self._client.patch, url, headers=_json_header, json=json)
+            await self.__run_with_retry(self._client.patch, url, headers=_json_header, json=json)
         ).json()
 
     async def _delete(self, url: str) -> dict[str, Any]:
-        return (await self._run_with_retry(self._client.delete, url, headers=_json_header)).json()
+        return (await self.__run_with_retry(self._client.delete, url, headers=_json_header)).json()
 
     async def _post_empty(self, url: str, **kwargs) -> dict[str, Any]:
-        res = await self._run_with_retry(self._client.post, url, **kwargs)
+        res = await self.__run_with_retry(self._client.post, url, **kwargs)
         return res.json() if res.num_bytes_downloaded > 0 else {}
 
-    async def _put_binary_gzip(self, url: str, content: bytes) -> Response:
-        return await self._run_with_retry(
-            self._client.put, url, headers=_gzip_header, content=compress(content)
+    async def _put_binary_gzip(self, url: str, content: str | bytes) -> Response:
+        content = compress(content.encode() if isinstance(content, str) else content)
+        return await self.__run_with_retry(
+            self._client.put, url, headers=_gzip_header, content=content
         )
 
     async def __get_page(
@@ -202,7 +202,7 @@ class _AsyncBaseClient:
         logger.info(f"Completed paginated fetch of {total_items} total items.")
         return chain(first_page, *pages)
 
-    async def _run_with_retry(
+    async def __run_with_retry(
         self, func: Callable[..., Coroutine[Any, Any, Response]], *args, **kwargs
     ) -> Response:
         for i in range(max(self._retry_count, 1)):
