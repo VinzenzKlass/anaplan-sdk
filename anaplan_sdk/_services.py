@@ -82,20 +82,22 @@ class _HttpService:
         content = compress(content.encode() if isinstance(content, str) else content)
         return self.__run_with_retry(self._client.put, url, headers=_gzip_header, content=content)
 
-    def get_paginated(
-        self, url: str, result_key: str, page_size: int = 5_000, **kwargs
-    ) -> Iterator[dict[str, Any]]:
-        logger.debug(f"Starting paginated fetch from {url} with page_size={page_size}.")
-        first_page, total_items = self._get_first_page(url, page_size, result_key, **kwargs)
-        if total_items <= page_size:
+    def get_paginated(self, url: str, result_key: str, **kwargs) -> Iterator[dict[str, Any]]:
+        logger.debug(f"Starting paginated fetch from {url} with page_size={self._page_size}.")
+        first_page, total_items = self._get_first_page(url, self._page_size, result_key, **kwargs)
+        if total_items <= self._page_size:
             logger.debug("All items fit in first page, no additional requests needed.")
             return iter(first_page)
 
-        pages_needed = ceil(total_items / page_size)
-        logger.debug(f"Fetching {pages_needed - 1} additional pages with {page_size} items each.")
+        pages_needed = ceil(total_items / self._page_size)
+        logger.debug(
+            f"Fetching {pages_needed - 1} additional pages with {self._page_size} items each."
+        )
         with ThreadPoolExecutor() as executor:
             pages = executor.map(
-                lambda n: self._get_page(url, page_size, n * page_size, result_key, **kwargs),
+                lambda n: self._get_page(
+                    url, self._page_size, n * self._page_size, result_key, **kwargs
+                ),
                 range(1, pages_needed),
             )
         logger.debug(f"Completed paginated fetch of {total_items} total items.")
@@ -187,18 +189,18 @@ class _AsyncHttpService:
             self._client.put, url, headers=_gzip_header, content=content
         )
 
-    async def get_paginated(
-        self, url: str, result_key: str, page_size: int = 5_000, **kwargs
-    ) -> Iterator[dict[str, Any]]:
-        logger.debug(f"Starting paginated fetch from {url} with page_size={page_size}.")
-        first_page, total_items = await self._get_first_page(url, page_size, result_key, **kwargs)
-        if total_items <= page_size:
+    async def get_paginated(self, url: str, result_key: str, **kwargs) -> Iterator[dict[str, Any]]:
+        logger.debug(f"Starting paginated fetch from {url} with page_size={self._page_size}.")
+        first_page, total_items = await self._get_first_page(
+            url, self._page_size, result_key, **kwargs
+        )
+        if total_items <= self._page_size:
             logger.debug("All items fit in first page, no additional requests needed.")
             return iter(first_page)
         pages = await gather(
             *(
-                self._get_page(url, page_size, n * page_size, result_key, **kwargs)
-                for n in range(1, ceil(total_items / page_size))
+                self._get_page(url, self._page_size, n * self._page_size, result_key, **kwargs)
+                for n in range(1, ceil(total_items / self._page_size))
             )
         )
         logger.debug(f"Completed paginated fetch of {total_items} total items.")
