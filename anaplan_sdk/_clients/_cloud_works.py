@@ -269,7 +269,7 @@ class _CloudWorksClient:
     ) -> NotificationConfig:
         """
         Get the notification configuration, either by its Id, or the notification configuration
-        for a specific integration. If the integration_id is specified, the notification_id
+        for a specific integration. If the id is specified, the notification_id
         will be ignored.
         :param notification_id: The ID of the notification configuration to retrieve.
         :param integration_id: The ID of the integration to retrieve the notification
@@ -325,13 +325,13 @@ class _CloudWorksClient:
     ) -> None:
         """
         Delete a notification configuration for an integration in CloudWorks, either by its Id, or
-        the notification configuration for a specific integration. If the integration_id is
+        the notification configuration for a specific integration. If the id is
         specified, the notification_id will be ignored.
         :param notification_id: The ID of the notification configuration to delete.
         :param integration_id: The ID of the integration to delete the notification config of.
         """
         if not (notification_id or integration_id):
-            raise ValueError("Either notification_id or integration_id must be specified.")
+            raise ValueError("Either notification_id or id must be specified.")
         if integration_id:
             notification_id = (self.get_integration(integration_id)).notification_id
         self._http.delete(f"{self._url}/notification/{notification_id}")
