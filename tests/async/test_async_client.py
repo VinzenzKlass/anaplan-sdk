@@ -56,6 +56,13 @@ async def test_list_models(client: AsyncClient):
     assert len(search) < len(models)
 
 
+async def test_list_models_multi_page(client_small_pages: AsyncClient):
+    models = await client_small_pages.get_models()
+    assert isinstance(models, list)
+    assert all(isinstance(model, Model) for model in models)
+    assert len(models) > 0
+
+
 async def test_list_actions(client: AsyncClient):
     actions = await client.get_actions()
     assert isinstance(actions, list)

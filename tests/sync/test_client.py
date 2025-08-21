@@ -54,6 +54,13 @@ def test_list_models(client):
     assert len(search) < len(models)
 
 
+def test_list_models_multi_page(client_small_pages: Client):
+    models = client_small_pages.get_models()
+    assert isinstance(models, list)
+    assert all(isinstance(model, Model) for model in models)
+    assert len(models) > 0
+
+
 def test_list_actions(client: Client):
     actions = client.get_actions()
     assert isinstance(actions, list)
