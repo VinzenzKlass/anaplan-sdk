@@ -269,7 +269,7 @@ class _CloudWorksClient:
     ) -> NotificationConfig:
         """
         Get the notification configuration, either by its Id, or the notification configuration
-        for a specific integration. If the integration_id  is specified, the notification_id
+        for a specific integration. If the integration_id is specified, the notification_id
         will be ignored.
         :param notification_id: The ID of the notification configuration to retrieve.
         :param integration_id: The ID of the integration to retrieve the notification
@@ -307,7 +307,7 @@ class _CloudWorksClient:
     ) -> None:
         """
         Update a notification configuration for an integration in CloudWorks. You cannot pass empty
-        values or nulls to any of the fields If you want to for e.g. override  an existing list of
+        values or nulls to any of the fields If you want to for e.g. override an existing list of
         users with an empty one, you must delete the notification configuration and create a new
         one with only the values you want to keep.
         :param notification_id: The ID of the notification configuration to update.
@@ -325,7 +325,7 @@ class _CloudWorksClient:
     ) -> None:
         """
         Delete a notification configuration for an integration in CloudWorks, either by its Id, or
-        the notification configuration for a specific integration. If the integration_id  is
+        the notification configuration for a specific integration. If the integration_id is
         specified, the notification_id will be ignored.
         :param notification_id: The ID of the notification configuration to delete.
         :param integration_id: The ID of the integration to delete the notification config of.
