@@ -3,10 +3,8 @@ from asyncio import gather
 from itertools import chain
 from typing import Any, Literal, overload
 
-import httpx
-
 from anaplan_sdk._base import (
-    _AsyncBaseClient,
+    _AsyncHttpService,
     parse_calendar_response,
     parse_insertion_response,
     validate_dimension_id,
@@ -34,20 +32,18 @@ from anaplan_sdk.models import (
 logger = logging.getLogger("anaplan_sdk")
 
 
-class _AsyncTransactionalClient(_AsyncBaseClient):
-    def __init__(
-        self, client: httpx.AsyncClient, model_id: str, retry_count: int, page_size: int
-    ) -> None:
+class _AsyncTransactionalClient:
+    def __init__(self, http: _AsyncHttpService, model_id: str) -> None:
+        self._http = http
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
         self._model_id = model_id
-        super().__init__(client, retry_count=retry_count, page_size=page_size)
 
     async def get_model_details(self) -> Model:
         """
         Retrieves the Model details for the current Model.
         :return: The Model details.
         """
-        res = await self._get(self._url, params={"modelDetails": "true"})
+        res = await self._http.get(self._url, params={"modelDetails": "true"})
         return Model.model_validate(res["model"])
 
     async def get_model_status(self) -> ModelStatus:
@@ -55,17 +51,21 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         Gets the current status of the Model.
         :return: The current status of the Model.
         """
-        res = await self._get(f"{self._url}/status")
+        res = await self._http.get(f"{self._url}/status")
         return ModelStatus.model_validate(res["requestStatus"])
 
     async def wake_model(self) -> None:
         """Wake up the current model."""
-        await self._post_empty(f"{self._url}/open", headers={"Content-Type": "application/text"})
+        await self._http.post_empty(
+            f"{self._url}/open", headers={"Content-Type": "application/text"}
+        )
         logger.info(f"Woke up model '{self._model_id}'.")
 
     async def close_model(self) -> None:
         """Close the current model."""
-        await self._post_empty(f"{self._url}/close", headers={"Content-Type": "application/text"})
+        await self._http.post_empty(
+            f"{self._url}/close", headers={"Content-Type": "application/text"}
+        )
         logger.info(f"Closed model '{self._model_id}'.")
 
     async def get_modules(self) -> list[Module]:
@@ -75,7 +75,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         """
         return [
             Module.model_validate(e)
-            for e in await self._get_paginated(f"{self._url}/modules", "modules")
+            for e in await self._http.get_paginated(f"{self._url}/modules", "modules")
         ]
 
     async def get_views(self) -> list[View]:
@@ -87,7 +87,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         params = {"includesubsidiaryviews": True}
         return [
             View.model_validate(e)
-            for e in await self._get_paginated(f"{self._url}/views", "views", params=params)
+            for e in await self._http.get_paginated(f"{self._url}/views", "views", params=params)
         ]
 
     async def get_view_info(self, view_id: int) -> ViewInfo:
@@ -96,7 +96,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :param view_id: The ID of the View.
         :return: The information about the View.
         """
-        return ViewInfo.model_validate((await self._get(f"{self._url}/views/{view_id}")))
+        return ViewInfo.model_validate((await self._http.get(f"{self._url}/views/{view_id}")))
 
     async def get_line_items(self, only_module_id: int | None = None) -> list[LineItem]:
         """
@@ -104,7 +104,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :param only_module_id: If provided, only Line Items from this Module will be returned.
         :return: All Line Items on this Model or only from the specified Module.
         """
-        res = await self._get(
+        res = await self._http.get(
             f"{self._url}/modules/{only_module_id}/lineItems?includeAll=true"
             if only_module_id
             else f"{self._url}/lineItems?includeAll=true"
@@ -117,7 +117,8 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :return: All Lists on this model.
         """
         return [
-            List.model_validate(e) for e in await self._get_paginated(f"{self._url}/lists", "lists")
+            List.model_validate(e)
+            for e in await self._http.get_paginated(f"{self._url}/lists", "lists")
         ]
 
     async def get_list_metadata(self, list_id: int) -> ListMetadata:
@@ -128,7 +129,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         """
 
         return ListMetadata.model_validate(
-            (await self._get(f"{self._url}/lists/{list_id}")).get("metadata")
+            (await self._http.get(f"{self._url}/lists/{list_id}")).get("metadata")
         )
 
     @overload
@@ -152,7 +153,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
                data, you will want to set this to avoid unnecessary (de-)serialization.
         :return: All items in the List.
         """
-        res = await self._get(f"{self._url}/lists/{list_id}/items?includeAll=true")
+        res = await self._http.get(f"{self._url}/lists/{list_id}/items?includeAll=true")
         if return_raw:
             return res.get("listItems", [])
         return [ListItem.model_validate(e) for e in res.get("listItems", [])]
@@ -181,7 +182,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
             return InsertionResult(added=0, ignored=0, failures=[], total=0)
         if len(items) <= 100_000:
             result = InsertionResult.model_validate(
-                await self._post(
+                await self._http.post(
                     f"{self._url}/lists/{list_id}/items?action=add", json={"items": items}
                 )
             )
@@ -189,7 +190,9 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
             return result
         responses = await gather(
             *(
-                self._post(f"{self._url}/lists/{list_id}/items?action=add", json={"items": chunk})
+                self._http.post(
+                    f"{self._url}/lists/{list_id}/items?action=add", json={"items": chunk}
+                )
                 for chunk in (items[i : i + 100_000] for i in range(0, len(items), 100_000))
             )
         )
@@ -219,7 +222,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         if not items:
             return ListDeletionResult(deleted=0, failures=[])
         if len(items) <= 100_000:
-            res = await self._post(
+            res = await self._http.post(
                 f"{self._url}/lists/{list_id}/items?action=delete", json={"items": items}
             )
             info = ListDeletionResult.model_validate(res)
@@ -228,7 +231,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
 
         responses = await gather(
             *(
-                self._post(
+                self._http.post(
                     f"{self._url}/lists/{list_id}/items?action=delete", json={"items": chunk}
                 )
                 for chunk in (items[i : i + 100_000] for i in range(0, len(items), 100_000))
@@ -246,7 +249,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         Resets the index of a List. The List must be empty to do so.
         :param list_id: The ID of the List.
         """
-        await self._post_empty(f"{self._url}/lists/{list_id}/resetIndex")
+        await self._http.post_empty(f"{self._url}/lists/{list_id}/resetIndex")
         logger.info(f"Reset index for list '{list_id}'.")
 
     async def update_module_data(
@@ -266,7 +269,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :param data: The data to write to the Module.
         :return: The number of cells changed or the response with the according error details.
         """
-        res = await self._post(f"{self._url}/modules/{module_id}/data", json=data)
+        res = await self._http.post(f"{self._url}/modules/{module_id}/data", json=data)
         if "failures" not in res:
             logger.info(f"Updated {res['numberOfCellsChanged']} cells in module '{module_id}'.")
         return res if "failures" in res else res["numberOfCellsChanged"]
@@ -276,7 +279,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         Gets the current period of the model.
         :return: The current period of the model.
         """
-        res = await self._get(f"{self._url}/currentPeriod")
+        res = await self._http.get(f"{self._url}/currentPeriod")
         return CurrentPeriod.model_validate(res["currentPeriod"])
 
     async def set_current_period(self, date: str) -> CurrentPeriod:
@@ -285,7 +288,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :param date: The date to set the current period to, in the format 'YYYY-MM-DD'.
         :return: The updated current period of the model.
         """
-        res = await self._put(f"{self._url}/currentPeriod", {"date": date})
+        res = await self._http.put(f"{self._url}/currentPeriod", {"date": date})
         logger.info(f"Set current period to '{date}'.")
         return CurrentPeriod.model_validate(res["currentPeriod"])
 
@@ -295,7 +298,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :param year: The fiscal year to set, in the format specified in the model, e.g. FY24.
         :return: The updated fiscal year of the model.
         """
-        res = await self._put(f"{self._url}/modelCalendar/fiscalYear", {"year": year})
+        res = await self._http.put(f"{self._url}/modelCalendar/fiscalYear", {"year": year})
         logger.info(f"Set current fiscal year to '{year}'.")
         return FiscalYear.model_validate(res["modelCalendar"]["fiscalYear"])
 
@@ -304,7 +307,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         Get the calendar settings of the model.
         :return: The calendar settings of the model.
         """
-        return parse_calendar_response(await self._get(f"{self._url}/modelCalendar"))
+        return parse_calendar_response(await self._http.get(f"{self._url}/modelCalendar"))
 
     async def get_dimension_items(self, dimension_id: int) -> list[DimensionWithCode]:
         """
@@ -320,7 +323,9 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :param dimension_id: The ID of the dimension to list items for.
         :return: A list of Dimension items.
         """
-        res = await self._get(f"{self._url}/dimensions/{validate_dimension_id(dimension_id)}/items")
+        res = await self._http.get(
+            f"{self._url}/dimensions/{validate_dimension_id(dimension_id)}/items"
+        )
         return [DimensionWithCode.model_validate(e) for e in res.get("items", [])]
 
     async def lookup_dimension_items(
@@ -352,7 +357,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
                 "Invalid dimension_id. Must be a List (101xxxxxxxxx), Time (20000000003), "
                 "Version (20000000020), or Users (101999999999)."
             )
-        res = await self._post(
+        res = await self._http.post(
             f"{self._url}/dimensions/{dimension_id}/items", json={"codes": codes, "names": names}
         )
         return [DimensionWithCode.model_validate(e) for e in res.get("items", [])]
@@ -369,7 +374,7 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :param dimension_id: The ID of the Dimension to get items for.
         :return: A list of Dimensions used in the View.
         """
-        res = await self._get(f"{self._url}/views/{view_id}/dimensions/{dimension_id}/items")
+        res = await self._http.get(f"{self._url}/views/{view_id}/dimensions/{dimension_id}/items")
         return [Dimension.model_validate(e) for e in res.get("items", [])]
 
     async def get_line_item_dimensions(self, line_item_id: int) -> list[Dimension]:
@@ -379,5 +384,5 @@ class _AsyncTransactionalClient(_AsyncBaseClient):
         :param line_item_id: The ID of the Line Item.
         :return: A list of Dimensions used in the Line Item.
         """
-        res = await self._get(f"{self._url}/lineItems/{line_item_id}/dimensions")
+        res = await self._http.get(f"{self._url}/lineItems/{line_item_id}/dimensions")
         return [Dimension.model_validate(e) for e in res.get("dimensions", [])]

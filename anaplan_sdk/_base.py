@@ -129,80 +129,78 @@ class _BaseClient:
         raise AnaplanException("Exhausted all retries without a successful response or Error.")
 
 
-class _AsyncBaseClient:
+class _AsyncHttpService:
     def __init__(self, client: httpx.AsyncClient, retry_count: int, page_size: int):
         self._client = client
         self._retry_count = retry_count
         self._page_size = min(page_size, 5_000)
 
-    async def _get(self, url: str, **kwargs) -> dict[str, Any]:
-        return (await self.__run_with_retry(self._client.get, url, **kwargs)).json()
+    async def get(self, url: str, **kwargs) -> dict[str, Any]:
+        return (await self._run_with_retry(self._client.get, url, **kwargs)).json()
 
-    async def _get_binary(self, url: str) -> bytes:
-        return (await self.__run_with_retry(self._client.get, url)).content
+    async def get_binary(self, url: str) -> bytes:
+        return (await self._run_with_retry(self._client.get, url)).content
 
-    async def _post(self, url: str, json: dict | list) -> dict[str, Any]:
+    async def post(self, url: str, json: dict | list) -> dict[str, Any]:
         return (
-            await self.__run_with_retry(self._client.post, url, headers=_json_header, json=json)
+            await self._run_with_retry(self._client.post, url, headers=_json_header, json=json)
         ).json()
 
-    async def _put(self, url: str, json: dict | list) -> dict[str, Any]:
-        res = await self.__run_with_retry(self._client.put, url, headers=_json_header, json=json)
+    async def put(self, url: str, json: dict | list) -> dict[str, Any]:
+        res = await self._run_with_retry(self._client.put, url, headers=_json_header, json=json)
         return res.json() if res.num_bytes_downloaded > 0 else {}
 
-    async def _patch(self, url: str, json: dict | list) -> dict[str, Any]:
+    async def patch(self, url: str, json: dict | list) -> dict[str, Any]:
         return (
-            await self.__run_with_retry(self._client.patch, url, headers=_json_header, json=json)
+            await self._run_with_retry(self._client.patch, url, headers=_json_header, json=json)
         ).json()
 
-    async def _delete(self, url: str) -> dict[str, Any]:
-        return (await self.__run_with_retry(self._client.delete, url, headers=_json_header)).json()
+    async def delete(self, url: str) -> dict[str, Any]:
+        return (await self._run_with_retry(self._client.delete, url, headers=_json_header)).json()
 
-    async def _post_empty(self, url: str, **kwargs) -> dict[str, Any]:
-        res = await self.__run_with_retry(self._client.post, url, **kwargs)
+    async def post_empty(self, url: str, **kwargs) -> dict[str, Any]:
+        res = await self._run_with_retry(self._client.post, url, **kwargs)
         return res.json() if res.num_bytes_downloaded > 0 else {}
 
-    async def _put_binary_gzip(self, url: str, content: str | bytes) -> Response:
+    async def put_binary_gzip(self, url: str, content: str | bytes) -> Response:
         content = compress(content.encode() if isinstance(content, str) else content)
-        return await self.__run_with_retry(
+        return await self._run_with_retry(
             self._client.put, url, headers=_gzip_header, content=content
         )
 
-    async def __get_page(
-        self, url: str, limit: int, offset: int, result_key: str, **kwargs
-    ) -> list:
-        logger.debug(f"Fetching page: offset={offset}, limit={limit} from {url}.")
-        kwargs["params"] = kwargs.get("params") or {} | {"limit": limit, "offset": offset}
-        return (await self._get(url, **kwargs)).get(result_key, [])
-
-    async def __get_first_page(
-        self, url: str, limit: int, result_key: str, **kwargs
-    ) -> tuple[list, int]:
-        logger.debug(f"Fetching first page with limit={limit} from {url}.")
-        kwargs["params"] = kwargs.get("params") or {} | {"limit": limit}
-        res = await self._get(url, **kwargs)
-        total_items, first_page = res["meta"]["paging"]["totalSize"], res.get(result_key, [])
-        logger.debug(f"Found {total_items} total items, retrieved {len(first_page)} in first page.")
-        return first_page, total_items
-
-    async def _get_paginated(
+    async def get_paginated(
         self, url: str, result_key: str, page_size: int = 5_000, **kwargs
     ) -> Iterator[dict[str, Any]]:
         logger.debug(f"Starting paginated fetch from {url} with page_size={page_size}.")
-        first_page, total_items = await self.__get_first_page(url, page_size, result_key, **kwargs)
+        first_page, total_items = await self._get_first_page(url, page_size, result_key, **kwargs)
         if total_items <= page_size:
             logger.debug("All items fit in first page, no additional requests needed.")
             return iter(first_page)
         pages = await gather(
             *(
-                self.__get_page(url, page_size, n * page_size, result_key, **kwargs)
+                self._get_page(url, page_size, n * page_size, result_key, **kwargs)
                 for n in range(1, ceil(total_items / page_size))
             )
         )
         logger.debug(f"Completed paginated fetch of {total_items} total items.")
         return chain(first_page, *pages)
 
-    async def __run_with_retry(
+    async def _get_page(self, url: str, limit: int, offset: int, result_key: str, **kwargs) -> list:
+        logger.debug(f"Fetching page: offset={offset}, limit={limit} from {url}.")
+        kwargs["params"] = kwargs.get("params") or {} | {"limit": limit, "offset": offset}
+        return (await self.get(url, **kwargs)).get(result_key, [])
+
+    async def _get_first_page(
+        self, url: str, limit: int, result_key: str, **kwargs
+    ) -> tuple[list, int]:
+        logger.debug(f"Fetching first page with limit={limit} from {url}.")
+        kwargs["params"] = kwargs.get("params") or {} | {"limit": limit}
+        res = await self.get(url, **kwargs)
+        total_items, first_page = res["meta"]["paging"]["totalSize"], res.get(result_key, [])
+        logger.debug(f"Found {total_items} total items, retrieved {len(first_page)} in first page.")
+        return first_page, total_items
+
+    async def _run_with_retry(
         self, func: Callable[..., Coroutine[Any, Any, Response]], *args, **kwargs
     ) -> Response:
         for i in range(max(self._retry_count, 1)):

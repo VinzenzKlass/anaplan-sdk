@@ -1,18 +1,16 @@
 import logging
 from typing import Any
 
-import httpx
-
-from anaplan_sdk._base import _AsyncBaseClient, construct_payload
+from anaplan_sdk._base import _AsyncHttpService, construct_payload
 from anaplan_sdk.models.flows import Flow, FlowInput, FlowSummary
 
 logger = logging.getLogger("anaplan_sdk")
 
 
-class _AsyncFlowClient(_AsyncBaseClient):
-    def __init__(self, client: httpx.AsyncClient, retry_count: int, page_size: int) -> None:
+class _AsyncFlowClient:
+    def __init__(self, http: _AsyncHttpService) -> None:
+        self._http = http
         self._url = "https://api.cloudworks.anaplan.com/2/0/integrationflows"
-        super().__init__(client, retry_count=retry_count, page_size=page_size)
 
     async def get_flows(self, current_user_only: bool = False) -> list[FlowSummary]:
         """
@@ -23,7 +21,7 @@ class _AsyncFlowClient(_AsyncBaseClient):
         params = {"myIntegrations": 1 if current_user_only else 0}
         return [
             FlowSummary.model_validate(e)
-            for e in await self._get_paginated(
+            for e in await self._http.get_paginated(
                 self._url, "integrationFlows", page_size=25, params=params
             )
         ]
@@ -35,7 +33,9 @@ class _AsyncFlowClient(_AsyncBaseClient):
         :param flow_id: The ID of the flow to get.
         :return: The Flow object.
         """
-        return Flow.model_validate((await self._get(f"{self._url}/{flow_id}"))["integrationFlow"])
+        return Flow.model_validate(
+            (await self._http.get(f"{self._url}/{flow_id}"))["integrationFlow"]
+        )
 
     async def run_flow(self, flow_id: str, only_steps: list[str] = None) -> str:
         """
@@ -48,9 +48,9 @@ class _AsyncFlowClient(_AsyncBaseClient):
         """
         url = f"{self._url}/{flow_id}/run"
         res = await (
-            self._post(url, json={"stepsToRun": only_steps})
+            self._http.post(url, json={"stepsToRun": only_steps})
             if only_steps
-            else self._post_empty(url)
+            else self._http.post_empty(url)
         )
         run_id = res["run"]["id"]
         logger.info(f"Started flow run '{run_id}' for flow '{flow_id}'.")
@@ -64,7 +64,7 @@ class _AsyncFlowClient(_AsyncBaseClient):
         :param flow: The flow to create. This can be a FlowInput object or a dictionary.
         :return: The ID of the created flow.
         """
-        res = await self._post(self._url, json=construct_payload(FlowInput, flow))
+        res = await self._http.post(self._url, json=construct_payload(FlowInput, flow))
         flow_id = res["integrationFlow"]["integrationFlowId"]
         logger.info(f"Created flow '{flow_id}'.")
         return flow_id
@@ -76,7 +76,7 @@ class _AsyncFlowClient(_AsyncBaseClient):
         :param flow_id: The ID of the flow to update.
         :param flow: The flow to update. This can be a FlowInput object or a dictionary.
         """
-        await self._put(f"{self._url}/{flow_id}", json=construct_payload(FlowInput, flow))
+        await self._http.put(f"{self._url}/{flow_id}", json=construct_payload(FlowInput, flow))
         logger.info(f"Updated flow '{flow_id}'.")
 
     async def delete_flow(self, flow_id: str) -> None:
@@ -85,5 +85,5 @@ class _AsyncFlowClient(_AsyncBaseClient):
         the flow is running or if it has any running steps.
         :param flow_id: The ID of the flow to delete.
         """
-        await self._delete(f"{self._url}/{flow_id}")
+        await self._http.delete(f"{self._url}/{flow_id}")
         logger.info(f"Deleted flow '{flow_id}'.")
