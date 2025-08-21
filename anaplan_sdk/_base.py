@@ -2,12 +2,12 @@ import asyncio
 import logging
 import random
 import time
-from asyncio import gather
+from asyncio import gather, sleep
 from concurrent.futures import ThreadPoolExecutor
 from gzip import compress
 from itertools import chain
 from math import ceil
-from typing import Any, Callable, Coroutine, Iterator, Literal, Type, TypeVar
+from typing import Any, Awaitable, Callable, Coroutine, Iterator, Literal, Type, TypeVar
 
 import httpx
 from httpx import HTTPError, Response
@@ -18,6 +18,7 @@ from .models import (
     InsertionResult,
     ModelCalendar,
     MonthsQuartersYearsCalendar,
+    TaskSummary,
     WeeksGeneralCalendar,
     WeeksGroupingCalendar,
     WeeksPeriodsCalendar,
@@ -38,6 +39,7 @@ _json_header = {"Content-Type": "application/json"}
 _gzip_header = {"Content-Type": "application/x-gzip"}
 
 T = TypeVar("T", bound=AnaplanModel)
+Task = TypeVar("Task", bound=TaskSummary)
 
 
 class _BaseClient:
@@ -130,9 +132,12 @@ class _BaseClient:
 
 
 class _AsyncHttpService:
-    def __init__(self, client: httpx.AsyncClient, retry_count: int, page_size: int):
+    def __init__(
+        self, client: httpx.AsyncClient, retry_count: int, page_size: int, poll_delay: int
+    ):
         self._client = client
         self._retry_count = retry_count
+        self._poll_delay = poll_delay
         self._page_size = min(page_size, 5_000)
 
     async def get(self, url: str, **kwargs) -> dict[str, Any]:
@@ -184,6 +189,11 @@ class _AsyncHttpService:
         )
         logger.debug(f"Completed paginated fetch of {total_items} total items.")
         return chain(first_page, *pages)
+
+    async def poll_task(self, func: Callable[..., Awaitable[Task]], *args) -> Task:
+        while (result := await func(*args)).task_state != "COMPLETE":
+            await sleep(self._poll_delay)
+        return result
 
     async def _get_page(self, url: str, limit: int, offset: int, result_key: str, **kwargs) -> list:
         logger.debug(f"Fetching page: offset={offset}, limit={limit} from {url}.")

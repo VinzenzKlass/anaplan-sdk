@@ -1,5 +1,5 @@
 import logging
-from asyncio import gather, sleep
+from asyncio import gather
 from copy import copy
 from typing import AsyncIterator, Iterator
 
@@ -101,34 +101,25 @@ class AsyncClient:
                This can be used to set additional options such as proxies, headers, etc. See
                https://www.python-httpx.org/api/#asyncclient for the full list of arguments.
         """
-        _client = httpx.AsyncClient(
-            auth=(
-                auth
-                or _create_auth(
-                    token=token,
-                    user_email=user_email,
-                    password=password,
-                    certificate=certificate,
-                    private_key=private_key,
-                    private_key_password=private_key_password,
-                )
-            ),
-            timeout=timeout,
-            **httpx_kwargs,
+        _auth = auth or _create_auth(
+            token=token,
+            user_email=user_email,
+            password=password,
+            certificate=certificate,
+            private_key=private_key,
+            private_key_password=private_key_password,
         )
-        self._http = _AsyncHttpService(_client, retry_count, page_size)
+        _client = httpx.AsyncClient(auth=_auth, timeout=timeout, **httpx_kwargs)
+        self._http = _AsyncHttpService(_client, retry_count, page_size, status_poll_delay)
         self._workspace_id = workspace_id
         self._model_id = model_id
         self._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
         self._transactional_client = (
             _AsyncTransactionalClient(self._http, model_id) if model_id else None
         )
-        self._alm_client = (
-            _AsyncAlmClient(self._http, model_id, status_poll_delay) if model_id else None
-        )
+        self._alm_client = _AsyncAlmClient(self._http, model_id) if model_id else None
         self._audit = _AsyncAuditClient(self._http)
         self._cloud_works = _AsyncCloudWorksClient(self._http)
-        self.status_poll_delay = status_poll_delay
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
 
@@ -159,9 +150,7 @@ class AsyncClient:
         )
         client._url = f"https://api.anaplan.com/2/0/workspaces/{new_ws_id}/models/{new_model_id}"
         client._transactional_client = _AsyncTransactionalClient(existing._http, new_model_id)
-        client._alm_client = _AsyncAlmClient(
-            existing._http, new_model_id, existing.status_poll_delay
-        )
+        client._alm_client = _AsyncAlmClient(existing._http, new_model_id)
         return client
 
     @property
@@ -343,10 +332,7 @@ class AsyncClient:
 
         if not wait_for_completion:
             return TaskStatus.model_validate(await self.get_task_status(action_id, task_id))
-
-        while (status := await self.get_task_status(action_id, task_id)).task_state != "COMPLETE":
-            await sleep(self.status_poll_delay)
-
+        status = await self._http.poll_task(self.get_task_status, action_id, task_id)
         if status.task_state == "COMPLETE" and not status.result.successful:
             logger.error(f"Task '{task_id}' completed with errors: {status.result.error_message}")
             raise AnaplanActionError(f"Task '{task_id}' completed with errors.")

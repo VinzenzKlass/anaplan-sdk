@@ -1,5 +1,4 @@
 import logging
-from asyncio import sleep
 from typing import Literal, overload
 
 from anaplan_sdk._base import _AsyncHttpService
@@ -17,9 +16,8 @@ logger = logging.getLogger("anaplan_sdk")
 
 
 class _AsyncAlmClient:
-    def __init__(self, http: _AsyncHttpService, model_id: str, status_poll_delay: int) -> None:
+    def __init__(self, http: _AsyncHttpService, model_id: str) -> None:
         self._http = http
-        self.status_poll_delay = status_poll_delay
         self._model_id = model_id
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
 
@@ -129,8 +127,7 @@ class _AsyncAlmClient:
         )
         if not wait_for_completion:
             return task
-        while (task := await self.get_sync_task(task.id)).task_state != "COMPLETE":
-            await sleep(self.status_poll_delay)
+        task = await self._http.poll_task(self.get_sync_task, task.id)
         if not task.result.successful:
             msg = f"Sync task {task.id} completed with errors: {task.result.error}."
             logger.error(msg)
@@ -178,8 +175,7 @@ class _AsyncAlmClient:
         )
         if not wait_for_completion:
             return task
-        while (task := await self.get_comparison_report_task(task.id)).task_state != "COMPLETE":
-            await sleep(self.status_poll_delay)
+        task = await self._http.poll_task(self.get_comparison_report_task, task.id)
         if not task.result.successful:
             msg = f"Comparison Report task {task.id} completed with errors: {task.result.error}."
             logger.error(msg)
@@ -254,8 +250,7 @@ class _AsyncAlmClient:
         )
         if not wait_for_completion:
             return task
-        while (task := await self.get_comparison_summary_task(task.id)).task_state != "COMPLETE":
-            await sleep(self.status_poll_delay)
+        task = await self._http.poll_task(self.get_comparison_summary_task, task.id)
         if not task.result.successful:
             msg = f"Comparison Summary task {task.id} completed with errors: {task.result.error}."
             logger.error(msg)
