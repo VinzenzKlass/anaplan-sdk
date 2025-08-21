@@ -307,7 +307,7 @@ class _CloudWorksClient:
     ) -> None:
         """
         Update a notification configuration for an integration in CloudWorks. You cannot pass empty
-        values or nulls to any of the fields If you want to for e.g. override  an existing list of
+        values or nulls to any of the fields If you want to for e.g. override an existing list of
         users with an empty one, you must delete the notification configuration and create a new
         one with only the values you want to keep.
         :param notification_id: The ID of the notification configuration to update.

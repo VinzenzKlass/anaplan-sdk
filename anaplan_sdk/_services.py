@@ -106,12 +106,12 @@ class _HttpService:
 
     def _get_page(self, url: str, limit: int, offset: int, result_key: str, **kwargs) -> list:
         logger.debug(f"Fetching page: offset={offset}, limit={limit} from {url}.")
-        kwargs["params"] = kwargs.get("params") or {} | {"limit": limit, "offset": offset}
+        kwargs["params"] = (kwargs.get("params") or {}) | {"limit": limit, "offset": offset}
         return self.get(url, **kwargs).get(result_key, [])
 
     def _get_first_page(self, url: str, result_key: str, **kwargs) -> tuple[list, int, int]:
         logger.debug(f"Fetching first page with limit={self._page_size} from {url}.")
-        kwargs["params"] = kwargs.get("params") or {} | {"limit": self._page_size}
+        kwargs["params"] = (kwargs.get("params") or {}) | {"limit": self._page_size}
         res = self.get(url, **kwargs)
         total_items, first_page = res["meta"]["paging"]["totalSize"], res.get(result_key, [])
         actual_page_size = res["meta"]["paging"]["currentPageSize"]
@@ -213,12 +213,12 @@ class _AsyncHttpService:
 
     async def _get_page(self, url: str, limit: int, offset: int, result_key: str, **kwargs) -> list:
         logger.debug(f"Fetching page: offset={offset}, limit={limit} from {url}.")
-        kwargs["params"] = kwargs.get("params") or {} | {"limit": limit, "offset": offset}
+        kwargs["params"] = (kwargs.get("params") or {}) | {"limit": limit, "offset": offset}
         return (await self.get(url, **kwargs)).get(result_key, [])
 
     async def _get_first_page(self, url: str, result_key: str, **kwargs) -> tuple[list, int, int]:
         logger.debug(f"Fetching first page with limit={self._page_size} from {url}.")
-        kwargs["params"] = kwargs.get("params") or {} | {"limit": self._page_size}
+        kwargs["params"] = (kwargs.get("params") or {}) | {"limit": self._page_size}
         res = await self.get(url, **kwargs)
         total_items, first_page = res["meta"]["paging"]["totalSize"], res.get(result_key, [])
         actual_page_size = res["meta"]["paging"]["currentPageSize"]
