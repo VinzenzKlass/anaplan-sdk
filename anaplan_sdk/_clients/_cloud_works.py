@@ -331,7 +331,7 @@ class _CloudWorksClient:
         :param integration_id: The ID of the integration to delete the notification config of.
         """
         if not (notification_id or integration_id):
-            raise ValueError("Either notification_id or integration_id  must be specified.")
+            raise ValueError("Either notification_id or integration_id must be specified.")
         if integration_id:
             notification_id = (self.get_integration(integration_id)).notification_id
         self._http.delete(f"{self._url}/notification/{notification_id}")
