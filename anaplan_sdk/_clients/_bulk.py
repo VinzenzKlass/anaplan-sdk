@@ -50,6 +50,8 @@ class Client:
         auth: httpx.Auth | None = None,
         timeout: float | httpx.Timeout = 30,
         retry_count: int = 2,
+        backoff: float = 1.0,
+        backoff_factor: float = 2.0,
         page_size: int = 5_000,
         status_poll_delay: int = 1,
         upload_parallel: bool = True,
@@ -87,6 +89,11 @@ class Client:
                an instance of `httpx.Timeout` to set the timeout for the HTTP requests.
         :param retry_count: The number of times to retry an HTTP request if it fails. Set this to 0
                to never retry. Defaults to 2, meaning each HTTP Operation will be tried a total
+        :param backoff: The initial backoff time in seconds for the retry mechanism. This is the
+               time to wait before the first retry.
+        :param backoff_factor: The factor by which the backoff time is multiplied after each retry.
+               For example, if the initial backoff is 1 second and the factor is 2, the second
+               retry will wait 2 seconds, the third retry will wait 4 seconds, and so on.
                number of 2 times.
         :param page_size: The number of items to return per page when paginating through results.
                Defaults to 5000. This is the maximum number of items that can be returned per
@@ -113,7 +120,14 @@ class Client:
             private_key_password=private_key_password,
         )
         _client = httpx.Client(auth=auth, timeout=timeout, **httpx_kwargs)
-        self._http = _HttpService(_client, retry_count, page_size, status_poll_delay)
+        self._http = _HttpService(
+            _client,
+            retry_count=retry_count,
+            backoff=backoff,
+            backoff_factor=backoff_factor,
+            page_size=page_size,
+            poll_delay=status_poll_delay,
+        )
         self._retry_count = retry_count
         self._workspace_id = workspace_id
         self._model_id = model_id
