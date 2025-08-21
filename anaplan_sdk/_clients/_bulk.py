@@ -130,7 +130,6 @@ class Client:
         self.upload_parallel = upload_parallel
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
-        super().__init__(_client, self._retry_count, page_size)
 
     @classmethod
     def from_existing(
