@@ -122,6 +122,9 @@ class AsyncClient:
         self._cloud_works = _AsyncCloudWorksClient(self._http)
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
+        logger.debug(
+            f"Initialized AsyncClient with workspace_id={workspace_id}, model_id={model_id}"
+        )
 
     @classmethod
     def from_existing(
