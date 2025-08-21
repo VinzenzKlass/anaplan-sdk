@@ -1,7 +1,7 @@
 import logging
 from asyncio import gather
 from copy import copy
-from typing import AsyncIterator, Iterator
+from typing import AsyncIterator, Iterator, Literal
 
 import httpx
 from typing_extensions import Self
@@ -211,16 +211,23 @@ class AsyncClient:
             )
         return self._alm_client
 
-    async def get_workspaces(self, search_pattern: str | None = None) -> list[Workspace]:
+    async def get_workspaces(
+        self,
+        search_pattern: str | None = None,
+        sort_by: Literal["sizeAllowance", "name"] = "name",
+        descending: bool = False,
+    ) -> list[Workspace]:
         """
         Lists all the Workspaces the authenticated user has access to.
         :param search_pattern: Optionally filter for specific workspaces. When provided,
                case-insensitive matches workspaces with names containing this string.
                You can use the wildcards `%` for 0-n characters, and `_` for exactly 1 character.
                When None (default), returns all users.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Workspaces.
         """
-        params = {"tenantDetails": "true"}
+        params = {"tenantDetails": "true", "sort": f"{'-' if descending else '+'}{sort_by}"}
         if search_pattern:
             params["s"] = search_pattern
         return [
@@ -230,16 +237,23 @@ class AsyncClient:
             )
         ]
 
-    async def get_models(self, search_pattern: str | None = None) -> list[Model]:
+    async def get_models(
+        self,
+        search_pattern: str | None = None,
+        sort_by: Literal["activeState", "name"] = "name",
+        descending: bool = False,
+    ) -> list[Model]:
         """
         Lists all the Models the authenticated user has access to.
         :param search_pattern: Optionally filter for specific models. When provided,
                case-insensitive matches model names containing this string.
                You can use the wildcards `%` for 0-n characters, and `_` for exactly 1 character.
                When None (default), returns all models.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Models.
         """
-        params = {"modelDetails": "true"}
+        params = {"modelDetails": "true", "sort": f"{'-' if descending else '+'}{sort_by}"}
         if search_pattern:
             params["s"] = search_pattern
         return [
@@ -263,56 +277,89 @@ class AsyncClient:
         )
         return ModelDeletionResult.model_validate(res)
 
-    async def get_files(self) -> list[File]:
+    async def get_files(
+        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
+    ) -> list[File]:
         """
         Lists all the Files in the Model.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Files.
         """
+        params = {"sort": f"{'-' if descending else '+'}{sort_by}"}
         return [
             File.model_validate(e)
-            for e in await self._http.get_paginated(f"{self._url}/files", "files")
+            for e in await self._http.get_paginated(f"{self._url}/files", "files", params=params)
         ]
 
-    async def get_actions(self) -> list[Action]:
+    async def get_actions(
+        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
+    ) -> list[Action]:
         """
         Lists all the Actions in the Model. This will only return the Actions listed under
         `Other Actions` in Anaplan. For Imports, exports, and processes, see their respective
         methods instead.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Actions.
         """
+        params = {"sort": f"{'-' if descending else '+'}{sort_by}"}
         return [
             Action.model_validate(e)
-            for e in await self._http.get_paginated(f"{self._url}/actions", "actions")
+            for e in await self._http.get_paginated(
+                f"{self._url}/actions", "actions", params=params
+            )
         ]
 
-    async def get_processes(self) -> list[Process]:
+    async def get_processes(
+        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
+    ) -> list[Process]:
         """
         Lists all the Processes in the Model.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Processes.
         """
+        params = {"sort": f"{'-' if descending else '+'}{sort_by}"}
         return [
             Process.model_validate(e)
-            for e in await self._http.get_paginated(f"{self._url}/processes", "processes")
+            for e in await self._http.get_paginated(
+                f"{self._url}/processes", "processes", params=params
+            )
         ]
 
-    async def get_imports(self) -> list[Import]:
+    async def get_imports(
+        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
+    ) -> list[Import]:
         """
         Lists all the Imports in the Model.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Imports.
         """
+        params = {"sort": f"{'-' if descending else '+'}{sort_by}"}
         return [
             Import.model_validate(e)
-            for e in await self._http.get_paginated(f"{self._url}/imports", "imports")
+            for e in await self._http.get_paginated(
+                f"{self._url}/imports", "imports", params=params
+            )
         ]
 
-    async def get_exports(self) -> list[Export]:
+    async def get_exports(
+        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
+    ) -> list[Export]:
         """
         Lists all the Exports in the Model.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Exports.
         """
+        params = {"sort": f"{'-' if descending else '+'}{sort_by}"}
         return [
             Export.model_validate(e)
-            for e in await self._http.get_paginated(f"{self._url}/exports", "exports")
+            for e in await self._http.get_paginated(
+                f"{self._url}/exports", "exports", params=params
+            )
         ]
 
     async def run_action(self, action_id: int, wait_for_completion: bool = True) -> TaskStatus:
