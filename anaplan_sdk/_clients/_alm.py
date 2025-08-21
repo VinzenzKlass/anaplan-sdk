@@ -1,10 +1,7 @@
 import logging
-from time import sleep
 from typing import Literal, overload
 
-import httpx
-
-from anaplan_sdk._base import _BaseClient
+from anaplan_sdk._services import _HttpService
 from anaplan_sdk.exceptions import AnaplanActionError
 from anaplan_sdk.models import (
     ModelRevision,
@@ -18,19 +15,11 @@ from anaplan_sdk.models import (
 logger = logging.getLogger("anaplan_sdk")
 
 
-class _AlmClient(_BaseClient):
-    def __init__(
-        self,
-        client: httpx.Client,
-        model_id: str,
-        retry_count: int,
-        status_poll_delay: int,
-        page_size: int,
-    ) -> None:
-        self.status_poll_delay = status_poll_delay
+class _AlmClient:
+    def __init__(self, http: _HttpService, model_id: str) -> None:
+        self._http = http
         self._model_id = model_id
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
-        super().__init__(client, retry_count=retry_count, page_size=page_size)
 
     def change_model_status(self, status: Literal["online", "offline"]) -> None:
         """
@@ -38,14 +27,14 @@ class _AlmClient(_BaseClient):
         :param status: The status of the model. Can be either "online" or "offline".
         """
         logger.info(f"Changed model status to '{status}' for model {self._model_id}.")
-        self._put(f"{self._url}/onlineStatus", json={"status": status})
+        self._http.put(f"{self._url}/onlineStatus", json={"status": status})
 
     def get_revisions(self) -> list[Revision]:
         """
         Use this call to return a list of revisions for a specific model.
         :return: A list of revisions for a specific model.
         """
-        res = self._get(f"{self._url}/alm/revisions")
+        res = self._http.get(f"{self._url}/alm/revisions")
         return [Revision.model_validate(e) for e in res.get("revisions", [])]
 
     def get_latest_revision(self) -> Revision | None:
@@ -57,7 +46,7 @@ class _AlmClient(_BaseClient):
         latest revision.
         :return: The latest revision for a specific model, or None if no revisions exist.
         """
-        res = (self._get(f"{self._url}/alm/latestRevision")).get("revisions")
+        res = (self._http.get(f"{self._url}/alm/latestRevision")).get("revisions")
         return Revision.model_validate(res[0]) if res else None
 
     def get_syncable_revisions(self, source_model_id: str) -> list[Revision]:
@@ -70,7 +59,7 @@ class _AlmClient(_BaseClient):
         :param source_model_id: The ID of the source model.
         :return: A list of revisions that can be synchronized to the target model.
         """
-        res = self._get(f"{self._url}/alm/syncableRevisions?sourceModelId={source_model_id}")
+        res = self._http.get(f"{self._url}/alm/syncableRevisions?sourceModelId={source_model_id}")
         return [Revision.model_validate(e) for e in res.get("revisions", [])]
 
     def create_revision(self, name: str, description: str) -> Revision:
@@ -80,7 +69,7 @@ class _AlmClient(_BaseClient):
         :param description: The description of the revision.
         :return: The created Revision Info.
         """
-        res = self._post(
+        res = self._http.post(
             f"{self._url}/alm/revisions", json={"name": name, "description": description}
         )
         rev = Revision.model_validate(res["revision"])
@@ -93,7 +82,7 @@ class _AlmClient(_BaseClient):
         they completed within the last 48 hours.
         :return: A list of sync tasks in descending order of creation time.
         """
-        res = self._get(f"{self._url}/alm/syncTasks")
+        res = self._http.get(f"{self._url}/alm/syncTasks")
         return [TaskSummary.model_validate(e) for e in res.get("tasks", [])]
 
     def get_sync_task(self, task_id: str) -> SyncTask:
@@ -102,7 +91,7 @@ class _AlmClient(_BaseClient):
         :param task_id: The ID of the sync task.
         :return: The sync task information.
         """
-        res = self._get(f"{self._url}/alm/syncTasks/{task_id}")
+        res = self._http.get(f"{self._url}/alm/syncTasks/{task_id}")
         return SyncTask.model_validate(res["task"])
 
     def sync_models(
@@ -128,7 +117,7 @@ class _AlmClient(_BaseClient):
             "sourceModelId": source_model_id,
             "targetRevisionId": target_revision_id,
         }
-        res = self._post(f"{self._url}/alm/syncTasks", json=payload)
+        res = self._http.post(f"{self._url}/alm/syncTasks", json=payload)
         task = self.get_sync_task(res["task"]["taskId"])
         logger.info(
             f"Started sync task '{task.id}' from Model '{source_model_id}' "
@@ -136,8 +125,7 @@ class _AlmClient(_BaseClient):
         )
         if not wait_for_completion:
             return task
-        while (task := self.get_sync_task(task.id)).task_state != "COMPLETE":
-            sleep(self.status_poll_delay)
+        task = self._http.poll_task(self.get_sync_task, task.id)
         if not task.result.successful:
             msg = f"Sync task {task.id} completed with errors: {task.result.error}."
             logger.error(msg)
@@ -152,7 +140,7 @@ class _AlmClient(_BaseClient):
         :param revision_id: The ID of the revision.
         :return: A list of models that had a specific revision applied to them.
         """
-        res = self._get(f"{self._url}/alm/revisions/{revision_id}/appliedToModels")
+        res = self._http.get(f"{self._url}/alm/revisions/{revision_id}/appliedToModels")
         return [ModelRevision.model_validate(e) for e in res.get("appliedToModels", [])]
 
     def create_comparison_report(
@@ -177,7 +165,7 @@ class _AlmClient(_BaseClient):
             "sourceModelId": source_model_id,
             "targetRevisionId": target_revision_id,
         }
-        res = self._post(f"{self._url}/alm/comparisonReportTasks", json=payload)
+        res = self._http.post(f"{self._url}/alm/comparisonReportTasks", json=payload)
         task = self.get_comparison_report_task(res["task"]["taskId"])
         logger.info(
             f"Started Comparison Report task '{task.id}' between Model '{source_model_id}' "
@@ -185,8 +173,7 @@ class _AlmClient(_BaseClient):
         )
         if not wait_for_completion:
             return task
-        while (task := self.get_comparison_report_task(task.id)).task_state != "COMPLETE":
-            sleep(self.status_poll_delay)
+        task = self._http.poll_task(self.get_comparison_report_task, task.id)
         if not task.result.successful:
             msg = f"Comparison Report task {task.id} completed with errors: {task.result.error}."
             logger.error(msg)
@@ -200,7 +187,7 @@ class _AlmClient(_BaseClient):
         :param task_id: The ID of the comparison report task.
         :return: The report task information.
         """
-        res = self._get(f"{self._url}/alm/comparisonReportTasks/{task_id}")
+        res = self._http.get(f"{self._url}/alm/comparisonReportTasks/{task_id}")
         return ReportTask.model_validate(res["task"])
 
     def get_comparison_report(self, task: ReportTask) -> bytes:
@@ -209,7 +196,7 @@ class _AlmClient(_BaseClient):
         :param task: The report task object containing the task ID.
         :return: The binary content of the comparison report.
         """
-        return self._get_binary(
+        return self._http.get_binary(
             f"{self._url}/alm/comparisonReports/"
             f"{task.result.target_revision_id}/{task.result.source_revision_id}"
         )
@@ -253,7 +240,7 @@ class _AlmClient(_BaseClient):
             "sourceModelId": source_model_id,
             "targetRevisionId": target_revision_id,
         }
-        res = self._post(f"{self._url}/alm/summaryReportTasks", json=payload)
+        res = self._http.post(f"{self._url}/alm/summaryReportTasks", json=payload)
         task = self.get_comparison_summary_task(res["task"]["taskId"])
         logger.info(
             f"Started Comparison Summary task '{task.id}' between Model '{source_model_id}' "
@@ -261,8 +248,7 @@ class _AlmClient(_BaseClient):
         )
         if not wait_for_completion:
             return task
-        while (task := self.get_comparison_summary_task(task.id)).task_state != "COMPLETE":
-            sleep(self.status_poll_delay)
+        task = self._http.poll_task(self.get_comparison_summary_task, task.id)
         if not task.result.successful:
             msg = f"Comparison Summary task {task.id} completed with errors: {task.result.error}."
             logger.error(msg)
@@ -276,7 +262,7 @@ class _AlmClient(_BaseClient):
         :param task_id: The ID of the comparison summary task.
         :return: The report task information.
         """
-        res = self._get(f"{self._url}/alm/summaryReportTasks/{task_id}")
+        res = self._http.get(f"{self._url}/alm/summaryReportTasks/{task_id}")
         return ReportTask.model_validate(res["task"])
 
     def get_comparison_summary(self, task: ReportTask) -> SummaryReport:
@@ -285,7 +271,7 @@ class _AlmClient(_BaseClient):
         :param task: The summary task object containing the task ID.
         :return: The binary content of the comparison summary.
         """
-        res = self._get(
+        res = self._http.get(
             f"{self._url}/alm/summaryReports/"
             f"{task.result.target_revision_id}/{task.result.source_revision_id}"
         )

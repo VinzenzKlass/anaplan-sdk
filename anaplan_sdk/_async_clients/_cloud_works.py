@@ -1,10 +1,8 @@
 import logging
 from typing import Any, Literal
 
-import httpx
-
-from anaplan_sdk._base import (
-    _AsyncBaseClient,
+from anaplan_sdk._services import (
+    _AsyncHttpService,
     connection_body_payload,
     construct_payload,
     integration_payload,
@@ -31,11 +29,11 @@ from ._cw_flow import _AsyncFlowClient
 logger = logging.getLogger("anaplan_sdk")
 
 
-class _AsyncCloudWorksClient(_AsyncBaseClient):
-    def __init__(self, client: httpx.AsyncClient, retry_count: int, page_size: int) -> None:
+class _AsyncCloudWorksClient:
+    def __init__(self, http: _AsyncHttpService) -> None:
+        self._http = http
         self._url = "https://api.cloudworks.anaplan.com/2/0/integrations"
-        self._flow = _AsyncFlowClient(client, retry_count=retry_count, page_size=page_size)
-        super().__init__(client, retry_count=retry_count, page_size=page_size)
+        self._flow = _AsyncFlowClient(http)
 
     @property
     def flows(self) -> _AsyncFlowClient:
@@ -51,7 +49,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         """
         return [
             Connection.model_validate(e)
-            for e in await self._get_paginated(f"{self._url}/connections", "connections")
+            for e in await self._http.get_paginated(f"{self._url}/connections", "connections")
         ]
 
     async def create_connection(self, con_info: ConnectionInput | dict[str, Any]) -> str:
@@ -62,7 +60,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
                against the ConnectionInput model before sending the request.
         :return: The ID of the new connection.
         """
-        res = await self._post(
+        res = await self._http.post(
             f"{self._url}/connections", json=construct_payload(ConnectionInput, con_info)
         )
         connection_id = res["connections"]["connectionId"]
@@ -79,7 +77,9 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
                as when initially creating the connection again. If you want to update only some of
                the details, use the `patch_connection` method instead.
         """
-        await self._put(f"{self._url}/connections/{con_id}", json=connection_body_payload(con_info))
+        await self._http.put(
+            f"{self._url}/connections/{con_id}", json=connection_body_payload(con_info)
+        )
 
     async def patch_connection(self, con_id: str, body: dict[str, Any]) -> None:
         """
@@ -88,14 +88,14 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         :param body: The name and details of the connection. You can pass all the same details as
                when initially creating the connection again, or just any one of them.
         """
-        await self._patch(f"{self._url}/connections/{con_id}", json=body)
+        await self._http.patch(f"{self._url}/connections/{con_id}", json=body)
 
     async def delete_connection(self, con_id: str) -> None:
         """
         Delete an existing connection in CloudWorks.
         :param con_id: The ID of the connection to delete.
         """
-        await self._delete(f"{self._url}/connections/{con_id}")
+        await self._http.delete(f"{self._url}/connections/{con_id}")
         logger.info(f"Deleted connection '{con_id}'.")
 
     async def get_integrations(
@@ -109,7 +109,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         params = {"sortBy": "name" if sort_by_name == "ascending" else "-name"}
         return [
             Integration.model_validate(e)
-            for e in await self._get_paginated(f"{self._url}", "integrations", params=params)
+            for e in await self._http.get_paginated(f"{self._url}", "integrations", params=params)
         ]
 
     async def get_integration(self, integration_id: str) -> SingleIntegration:
@@ -122,7 +122,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         :return: The details of the integration, without the integration type.
         """
         return SingleIntegration.model_validate(
-            (await self._get(f"{self._url}/{integration_id}"))["integration"]
+            (await self._http.get(f"{self._url}/{integration_id}"))["integration"]
         )
 
     async def create_integration(
@@ -149,7 +149,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         :return: The ID of the new integration.
         """
         json = integration_payload(body)
-        res = await self._post(f"{self._url}", json=json)
+        res = await self._http.post(f"{self._url}", json=json)
         integration_id = res["integration"]["integrationId"]
         logger.info(f"Created integration '{integration_id}'.")
         return integration_id
@@ -165,7 +165,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
                of the details, use the `patch_integration` method instead.
         """
         json = integration_payload(body)
-        await self._put(f"{self._url}/{integration_id}", json=json)
+        await self._http.put(f"{self._url}/{integration_id}", json=json)
 
     async def run_integration(self, integration_id: str) -> str:
         """
@@ -173,7 +173,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         :param integration_id: The ID of the integration to run.
         :return: The ID of the run instance.
         """
-        run_id = (await self._post_empty(f"{self._url}/{integration_id}/run"))["run"]["id"]
+        run_id = (await self._http.post_empty(f"{self._url}/{integration_id}/run"))["run"]["id"]
         logger.info(f"Started integration run '{run_id}' for integration '{integration_id}'.")
         return run_id
 
@@ -182,7 +182,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         Delete an existing integration in CloudWorks.
         :param integration_id: The ID of the integration to delete.
         """
-        await self._delete(f"{self._url}/{integration_id}")
+        await self._http.delete(f"{self._url}/{integration_id}")
         logger.info(f"Deleted integration '{integration_id}'.")
 
     async def get_run_history(self, integration_id: str) -> list[RunSummary]:
@@ -193,9 +193,9 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         """
         return [
             RunSummary.model_validate(e)
-            for e in (await self._get(f"{self._url}/runs/{integration_id}"))["history_of_runs"].get(
-                "runs", []
-            )
+            for e in (await self._http.get(f"{self._url}/runs/{integration_id}"))[
+                "history_of_runs"
+            ].get("runs", [])
         ]
 
     async def get_run_status(self, run_id: str) -> RunStatus:
@@ -204,7 +204,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         :param run_id: The ID of the run to retrieve.
         :return: The details of the run.
         """
-        return RunStatus.model_validate((await self._get(f"{self._url}/run/{run_id}"))["run"])
+        return RunStatus.model_validate((await self._http.get(f"{self._url}/run/{run_id}"))["run"])
 
     async def get_run_error(self, run_id: str) -> RunError | None:
         """
@@ -213,7 +213,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         :param run_id: The ID of the run to retrieve.
         :return: The details of the run error.
         """
-        run = await self._get(f"{self._url}/runerror/{run_id}")
+        run = await self._http.get(f"{self._url}/runerror/{run_id}")
         return RunError.model_validate(run["runs"]) if run.get("runs") else None
 
     async def create_schedule(
@@ -226,7 +226,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
                dictionary as per the documentation. If a dictionary is passed, it will be validated
                against the ScheduleInput model before sending the request.
         """
-        await self._post(
+        await self._http.post(
             f"{self._url}/{integration_id}/schedule",
             json=schedule_payload(integration_id, schedule),
         )
@@ -242,7 +242,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
                dictionary as per the documentation. If a dictionary is passed, it will be validated
                against the ScheduleInput model before sending the request.
         """
-        await self._put(
+        await self._http.put(
             f"{self._url}/{integration_id}/schedule",
             json=schedule_payload(integration_id, schedule),
         )
@@ -255,14 +255,14 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         :param integration_id: The ID of the integration to schedule.
         :param status: The status of the schedule. This can be either "enabled" or "disabled".
         """
-        await self._post_empty(f"{self._url}/{integration_id}/schedule/status/{status}")
+        await self._http.post_empty(f"{self._url}/{integration_id}/schedule/status/{status}")
 
     async def delete_schedule(self, integration_id: str) -> None:
         """
         Delete an integration schedule in CloudWorks. A schedule must already exist.
         :param integration_id: The ID of the integration to schedule.
         """
-        await self._delete(f"{self._url}/{integration_id}/schedule")
+        await self._http.delete(f"{self._url}/{integration_id}/schedule")
         logger.info(f"Deleted schedule for integration '{integration_id}'.")
 
     async def get_notification_config(
@@ -282,7 +282,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         if integration_id:
             notification_id = (await self.get_integration(integration_id)).notification_id
         return NotificationConfig.model_validate(
-            (await self._get(f"{self._url}/notification/{notification_id}"))["notifications"]
+            (await self._http.get(f"{self._url}/notification/{notification_id}"))["notifications"]
         )
 
     async def create_notification_config(self, config: NotificationInput | dict[str, Any]) -> str:
@@ -296,7 +296,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
                validated against the NotificationConfig model before sending the request.
         :return: The ID of the new notification configuration.
         """
-        res = await self._post(
+        res = await self._http.post(
             f"{self._url}/notification", json=construct_payload(NotificationInput, config)
         )
         notification_id = res["notification"]["notificationId"]
@@ -316,7 +316,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
                a dictionary as per the documentation. If a dictionary is passed, it will be
                validated against the NotificationConfig model before sending the request.
         """
-        await self._put(
+        await self._http.put(
             f"{self._url}/notification/{notification_id}",
             json=construct_payload(NotificationInput, config),
         )
@@ -335,7 +335,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
             raise ValueError("Either notification_id or integration_id must be specified.")
         if integration_id:
             notification_id = (await self.get_integration(integration_id)).notification_id
-        await self._delete(f"{self._url}/notification/{notification_id}")
+        await self._http.delete(f"{self._url}/notification/{notification_id}")
         logger.info(f"Deleted notification configuration '{notification_id}'.")
 
     async def get_import_error_dump(self, run_id: str) -> bytes:
@@ -348,7 +348,7 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         :param run_id: The ID of the run to retrieve.
         :return: The error dump.
         """
-        return await self._get_binary(f"{self._url}/run/{run_id}/dump")
+        return await self._http.get_binary(f"{self._url}/run/{run_id}/dump")
 
     async def get_process_error_dump(self, run_id: str, action_id: int | str) -> bytes:
         """
@@ -358,4 +358,6 @@ class _AsyncCloudWorksClient(_AsyncBaseClient):
         :param action_id: The ID of the action to retrieve. This can be found in the RunError.
         :return: The error dump.
         """
-        return await self._get_binary(f"{self._url}/run/{run_id}/process/import/{action_id}/dumps")
+        return await self._http.get_binary(
+            f"{self._url}/run/{run_id}/process/import/{action_id}/dumps"
+        )

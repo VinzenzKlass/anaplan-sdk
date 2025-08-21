@@ -1,5 +1,5 @@
 import logging
-from asyncio import gather, sleep
+from asyncio import gather
 from copy import copy
 from typing import AsyncIterator, Iterator
 
@@ -7,7 +7,7 @@ import httpx
 from typing_extensions import Self
 
 from anaplan_sdk._auth import _create_auth
-from anaplan_sdk._base import _AsyncBaseClient, action_url
+from anaplan_sdk._services import _AsyncHttpService, action_url
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
 from anaplan_sdk.models import (
     Action,
@@ -30,7 +30,7 @@ from ._transactional import _AsyncTransactionalClient
 logger = logging.getLogger("anaplan_sdk")
 
 
-class AsyncClient(_AsyncBaseClient):
+class AsyncClient:
     """
     Asynchronous Anaplan Client. For guides and examples
     refer to https://vinzenzklass.github.io/anaplan-sdk.
@@ -101,41 +101,27 @@ class AsyncClient(_AsyncBaseClient):
                This can be used to set additional options such as proxies, headers, etc. See
                https://www.python-httpx.org/api/#asyncclient for the full list of arguments.
         """
-        _client = httpx.AsyncClient(
-            auth=(
-                auth
-                or _create_auth(
-                    token=token,
-                    user_email=user_email,
-                    password=password,
-                    certificate=certificate,
-                    private_key=private_key,
-                    private_key_password=private_key_password,
-                )
-            ),
-            timeout=timeout,
-            **httpx_kwargs,
+        _auth = auth or _create_auth(
+            token=token,
+            user_email=user_email,
+            password=password,
+            certificate=certificate,
+            private_key=private_key,
+            private_key_password=private_key_password,
         )
+        _client = httpx.AsyncClient(auth=_auth, timeout=timeout, **httpx_kwargs)
+        self._http = _AsyncHttpService(_client, retry_count, page_size, status_poll_delay)
         self._workspace_id = workspace_id
         self._model_id = model_id
-        self._retry_count = retry_count
         self._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
         self._transactional_client = (
-            _AsyncTransactionalClient(_client, model_id, retry_count, page_size)
-            if model_id
-            else None
+            _AsyncTransactionalClient(self._http, model_id) if model_id else None
         )
-        self._alm_client = (
-            _AsyncAlmClient(_client, model_id, self._retry_count, status_poll_delay, page_size)
-            if model_id
-            else None
-        )
-        self._audit = _AsyncAuditClient(_client, self._retry_count, page_size)
-        self._cloud_works = _AsyncCloudWorksClient(_client, self._retry_count, page_size)
-        self.status_poll_delay = status_poll_delay
+        self._alm_client = _AsyncAlmClient(self._http, model_id) if model_id else None
+        self._audit = _AsyncAuditClient(self._http)
+        self._cloud_works = _AsyncCloudWorksClient(self._http)
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
-        super().__init__(_client, retry_count, page_size)
 
     @classmethod
     def from_existing(
@@ -163,16 +149,8 @@ class AsyncClient(_AsyncBaseClient):
             f"with workspace_id={new_ws_id}, model_id={new_model_id}."
         )
         client._url = f"https://api.anaplan.com/2/0/workspaces/{new_ws_id}/models/{new_model_id}"
-        client._transactional_client = _AsyncTransactionalClient(
-            existing._client, new_model_id, existing._retry_count, existing._page_size
-        )
-        client._alm_client = _AsyncAlmClient(
-            existing._client,
-            new_model_id,
-            existing._retry_count,
-            existing.status_poll_delay,
-            existing._page_size,
-        )
+        client._transactional_client = _AsyncTransactionalClient(existing._http, new_model_id)
+        client._alm_client = _AsyncAlmClient(existing._http, new_model_id)
         return client
 
     @property
@@ -244,7 +222,7 @@ class AsyncClient(_AsyncBaseClient):
             params["s"] = search_pattern
         return [
             Workspace.model_validate(e)
-            for e in await self._get_paginated(
+            for e in await self._http.get_paginated(
                 "https://api.anaplan.com/2/0/workspaces", "workspaces", params=params
             )
         ]
@@ -263,7 +241,7 @@ class AsyncClient(_AsyncBaseClient):
             params["s"] = search_pattern
         return [
             Model.model_validate(e)
-            for e in await self._get_paginated(
+            for e in await self._http.get_paginated(
                 "https://api.anaplan.com/2/0/models", "models", params=params
             )
         ]
@@ -276,7 +254,7 @@ class AsyncClient(_AsyncBaseClient):
         :return:
         """
         logger.info(f"Deleting Models: {', '.join(model_ids)}.")
-        res = await self._post(
+        res = await self._http.post(
             f"https://api.anaplan.com/2/0/workspaces/{self._workspace_id}/bulkDeleteModels",
             json={"modelIdsToDelete": model_ids},
         )
@@ -288,7 +266,8 @@ class AsyncClient(_AsyncBaseClient):
         :return: The List of Files.
         """
         return [
-            File.model_validate(e) for e in await self._get_paginated(f"{self._url}/files", "files")
+            File.model_validate(e)
+            for e in await self._http.get_paginated(f"{self._url}/files", "files")
         ]
 
     async def get_actions(self) -> list[Action]:
@@ -300,7 +279,7 @@ class AsyncClient(_AsyncBaseClient):
         """
         return [
             Action.model_validate(e)
-            for e in await self._get_paginated(f"{self._url}/actions", "actions")
+            for e in await self._http.get_paginated(f"{self._url}/actions", "actions")
         ]
 
     async def get_processes(self) -> list[Process]:
@@ -310,7 +289,7 @@ class AsyncClient(_AsyncBaseClient):
         """
         return [
             Process.model_validate(e)
-            for e in await self._get_paginated(f"{self._url}/processes", "processes")
+            for e in await self._http.get_paginated(f"{self._url}/processes", "processes")
         ]
 
     async def get_imports(self) -> list[Import]:
@@ -320,7 +299,7 @@ class AsyncClient(_AsyncBaseClient):
         """
         return [
             Import.model_validate(e)
-            for e in await self._get_paginated(f"{self._url}/imports", "imports")
+            for e in await self._http.get_paginated(f"{self._url}/imports", "imports")
         ]
 
     async def get_exports(self) -> list[Export]:
@@ -330,7 +309,7 @@ class AsyncClient(_AsyncBaseClient):
         """
         return [
             Export.model_validate(e)
-            for e in await self._get_paginated(f"{self._url}/exports", "exports")
+            for e in await self._http.get_paginated(f"{self._url}/exports", "exports")
         ]
 
     async def run_action(self, action_id: int, wait_for_completion: bool = True) -> TaskStatus:
@@ -345,18 +324,17 @@ class AsyncClient(_AsyncBaseClient):
                until the task is complete. If False, it will spawn the task and return immediately.
         """
         body = {"localeName": "en_US"}
-        res = await self._post(f"{self._url}/{action_url(action_id)}/{action_id}/tasks", json=body)
+        res = await self._http.post(
+            f"{self._url}/{action_url(action_id)}/{action_id}/tasks", json=body
+        )
         task_id = res["task"]["taskId"]
         logger.info(f"Invoked Action '{action_id}', spawned Task: '{task_id}'.")
 
         if not wait_for_completion:
             return TaskStatus.model_validate(await self.get_task_status(action_id, task_id))
-
-        while (status := await self.get_task_status(action_id, task_id)).task_state != "COMPLETE":
-            await sleep(self.status_poll_delay)
-
+        status = await self._http.poll_task(self.get_task_status, action_id, task_id)
         if status.task_state == "COMPLETE" and not status.result.successful:
-            logger.error(f"Task '{task_id}' completed with errors: {status.result.error_message}")
+            logger.error(f"Task '{task_id}' completed with errors.")
             raise AnaplanActionError(f"Task '{task_id}' completed with errors.")
 
         logger.info(f"Task '{task_id}' of '{action_id}' completed successfully.")
@@ -371,11 +349,11 @@ class AsyncClient(_AsyncBaseClient):
         chunk_count = await self._file_pre_check(file_id)
         logger.info(f"File {file_id} has {chunk_count} chunks.")
         if chunk_count <= 1:
-            return await self._get_binary(f"{self._url}/files/{file_id}")
+            return await self._http.get_binary(f"{self._url}/files/{file_id}")
         return b"".join(
             await gather(
                 *(
-                    self._get_binary(f"{self._url}/files/{file_id}/chunks/{i}")
+                    self._http.get_binary(f"{self._url}/files/{file_id}/chunks/{i}")
                     for i in range(chunk_count)
                 )
             )
@@ -395,13 +373,13 @@ class AsyncClient(_AsyncBaseClient):
         chunk_count = await self._file_pre_check(file_id)
         logger.info(f"File {file_id} has {chunk_count} chunks.")
         if chunk_count <= 1:
-            yield await self._get_binary(f"{self._url}/files/{file_id}")
+            yield await self._http.get_binary(f"{self._url}/files/{file_id}")
             return
 
         for batch_start in range(0, chunk_count, batch_size):
             batch_chunks = await gather(
                 *(
-                    self._get_binary(f"{self._url}/files/{file_id}/chunks/{i}")
+                    self._http.get_binary(f"{self._url}/files/{file_id}/chunks/{i}")
                     for i in range(batch_start, min(batch_start + batch_size, chunk_count))
                 )
             )
@@ -477,7 +455,7 @@ class AsyncClient(_AsyncBaseClient):
             logger.info(
                 f"Completed final upload stream batch of size {len(tasks)} for file {file_id}."
             )
-        await self._post(f"{self._url}/files/{file_id}/complete", json={"id": file_id})
+        await self._http.post(f"{self._url}/files/{file_id}/complete", json={"id": file_id})
         logger.info(f"Completed upload stream for '{file_id}'.")
 
     async def upload_and_import(
@@ -516,7 +494,7 @@ class AsyncClient(_AsyncBaseClient):
         """
         return [
             TaskSummary.model_validate(e)
-            for e in await self._get_paginated(
+            for e in await self._http.get_paginated(
                 f"{self._url}/{action_url(action_id)}/{action_id}/tasks", "tasks"
             )
         ]
@@ -530,7 +508,9 @@ class AsyncClient(_AsyncBaseClient):
         """
         return TaskStatus.model_validate(
             (
-                await self._get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks/{task_id}")
+                await self._http.get(
+                    f"{self._url}/{action_url(action_id)}/{action_id}/tasks/{task_id}"
+                )
             ).get("task")
         )
 
@@ -541,7 +521,7 @@ class AsyncClient(_AsyncBaseClient):
         :param task_id: The Task identifier, sometimes also referred to as the Correlation Id.
         :return: The content of the solution logs.
         """
-        return await self._get_binary(
+        return await self._http.get_binary(
             f"{self._url}/optimizeActions/{action_id}/tasks/{task_id}/solutionLogs"
         )
 
@@ -552,7 +532,7 @@ class AsyncClient(_AsyncBaseClient):
         return file.chunk_count
 
     async def _upload_chunk(self, file_id: int, index: int, chunk: str | bytes) -> None:
-        await self._put_binary_gzip(f"{self._url}/files/{file_id}/chunks/{index}", chunk)
+        await self._http.put_binary_gzip(f"{self._url}/files/{file_id}/chunks/{index}", chunk)
         logger.debug(f"Chunk {index} loaded to file '{file_id}'.")
 
     async def _set_chunk_count(self, file_id: int, num_chunks: int) -> None:
@@ -562,7 +542,9 @@ class AsyncClient(_AsyncBaseClient):
                 "to avoid this error, set `allow_file_creation=True` on the calling instance. "
                 "Make sure you have understood the implications of this before doing so. "
             )
-        response = await self._post(f"{self._url}/files/{file_id}", json={"chunkCount": num_chunks})
+        response = await self._http.post(
+            f"{self._url}/files/{file_id}", json={"chunkCount": num_chunks}
+        )
         optionally_new_file = int(response.get("file").get("id"))
         if optionally_new_file != file_id:
             if self.allow_file_creation:

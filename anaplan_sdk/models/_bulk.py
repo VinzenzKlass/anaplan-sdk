@@ -1,7 +1,6 @@
 from typing import Literal, TypeAlias
 
-from pydantic import ConfigDict, Field, field_validator
-from pydantic.alias_generators import to_camel
+from pydantic import Field, field_validator
 
 from ._base import AnaplanModel
 
@@ -164,13 +163,7 @@ class TaskResult(AnaplanModel):
     )
 
 
-class TaskStatus(AnaplanModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
-    id: str = Field(validation_alias="taskId", description="The unique identifier of this task.")
-    task_state: Literal["NOT_STARTED", "IN_PROGRESS", "COMPLETE"] = Field(
-        description="The state of this task."
-    )
-    creation_time: int = Field(description="Unix timestamp of when this task was created.")
+class TaskStatus(TaskSummary):
     progress: float = Field(description="The progress of this task as a float between 0 and 1.")
     current_step: str | None = Field(None, description="The current step of this task.")
     result: TaskResult | None = Field(None)

@@ -2,14 +2,13 @@ import logging
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 from copy import copy
-from time import sleep
 from typing import Iterator
 
 import httpx
 from typing_extensions import Self
 
 from anaplan_sdk._auth import _create_auth
-from anaplan_sdk._base import _BaseClient, action_url
+from anaplan_sdk._services import _HttpService, action_url
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
 from anaplan_sdk.models import (
     Action,
@@ -32,7 +31,7 @@ from ._transactional import _TransactionalClient
 logger = logging.getLogger("anaplan_sdk")
 
 
-class Client(_BaseClient):
+class Client:
     """
     Synchronous Anaplan Client. For guides and examples
     refer to https://vinzenzklass.github.io/anaplan-sdk.
@@ -105,43 +104,31 @@ class Client(_BaseClient):
                This can be used to set additional options such as proxies, headers, etc. See
                https://www.python-httpx.org/api/#client for the full list of arguments.
         """
-        _client = httpx.Client(
-            auth=(
-                auth
-                or _create_auth(
-                    token=token,
-                    user_email=user_email,
-                    password=password,
-                    certificate=certificate,
-                    private_key=private_key,
-                    private_key_password=private_key_password,
-                )
-            ),
-            timeout=timeout,
-            **httpx_kwargs,
+        auth = auth or _create_auth(
+            token=token,
+            user_email=user_email,
+            password=password,
+            certificate=certificate,
+            private_key=private_key,
+            private_key_password=private_key_password,
         )
+        _client = httpx.Client(auth=auth, timeout=timeout, **httpx_kwargs)
+        self._http = _HttpService(_client, retry_count, page_size, status_poll_delay)
         self._retry_count = retry_count
         self._workspace_id = workspace_id
         self._model_id = model_id
         self._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
         self._transactional_client = (
-            _TransactionalClient(_client, model_id, self._retry_count, page_size)
-            if model_id
-            else None
+            _TransactionalClient(self._http, model_id) if model_id else None
         )
-        self._alm_client = (
-            _AlmClient(_client, model_id, self._retry_count, status_poll_delay, page_size)
-            if model_id
-            else None
-        )
-        self._cloud_works = _CloudWorksClient(_client, self._retry_count, page_size)
+        self._alm_client = _AlmClient(self._http, model_id) if model_id else None
+        self._cloud_works = _CloudWorksClient(self._http)
         self._thread_count = multiprocessing.cpu_count()
-        self._audit = _AuditClient(_client, self._retry_count, self._thread_count, page_size)
+        self._audit = _AuditClient(self._http)
         self.status_poll_delay = status_poll_delay
         self.upload_parallel = upload_parallel
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
-        super().__init__(_client, self._retry_count, page_size)
 
     @classmethod
     def from_existing(
@@ -169,16 +156,8 @@ class Client(_BaseClient):
             f"with workspace_id={new_ws_id}, model_id={new_model_id}."
         )
         client._url = f"https://api.anaplan.com/2/0/workspaces/{new_ws_id}/models/{new_model_id}"
-        client._transactional_client = _TransactionalClient(
-            existing._client, new_model_id, existing._retry_count, existing._page_size
-        )
-        client._alm_client = _AlmClient(
-            existing._client,
-            new_model_id,
-            existing._retry_count,
-            existing.status_poll_delay,
-            existing._page_size,
-        )
+        client._transactional_client = _TransactionalClient(existing._http, new_model_id)
+        client._alm_client = _AlmClient(existing._http, new_model_id)
         return client
 
     @property
@@ -249,7 +228,7 @@ class Client(_BaseClient):
             params["s"] = search_pattern
         return [
             Workspace.model_validate(e)
-            for e in self._get_paginated(
+            for e in self._http.get_paginated(
                 "https://api.anaplan.com/2/0/workspaces", "workspaces", params=params
             )
         ]
@@ -268,7 +247,7 @@ class Client(_BaseClient):
             params["s"] = search_pattern
         return [
             Model.model_validate(e)
-            for e in self._get_paginated(
+            for e in self._http.get_paginated(
                 "https://api.anaplan.com/2/0/models", "models", params=params
             )
         ]
@@ -281,7 +260,7 @@ class Client(_BaseClient):
         :return:
         """
         logger.info(f"Deleting Models: {', '.join(model_ids)}.")
-        res = self._post(
+        res = self._http.post(
             f"https://api.anaplan.com/2/0/workspaces/{self._workspace_id}/bulkDeleteModels",
             json={"modelIdsToDelete": model_ids},
         )
@@ -292,7 +271,9 @@ class Client(_BaseClient):
         Lists all the Files in the Model.
         :return: The List of Files.
         """
-        return [File.model_validate(e) for e in self._get_paginated(f"{self._url}/files", "files")]
+        return [
+            File.model_validate(e) for e in self._http.get_paginated(f"{self._url}/files", "files")
+        ]
 
     def get_actions(self) -> list[Action]:
         """
@@ -302,7 +283,8 @@ class Client(_BaseClient):
         :return: The List of Actions.
         """
         return [
-            Action.model_validate(e) for e in self._get_paginated(f"{self._url}/actions", "actions")
+            Action.model_validate(e)
+            for e in self._http.get_paginated(f"{self._url}/actions", "actions")
         ]
 
     def get_processes(self) -> list[Process]:
@@ -312,7 +294,7 @@ class Client(_BaseClient):
         """
         return [
             Process.model_validate(e)
-            for e in self._get_paginated(f"{self._url}/processes", "processes")
+            for e in self._http.get_paginated(f"{self._url}/processes", "processes")
         ]
 
     def get_imports(self) -> list[Import]:
@@ -321,7 +303,8 @@ class Client(_BaseClient):
         :return: The List of Imports.
         """
         return [
-            Import.model_validate(e) for e in self._get_paginated(f"{self._url}/imports", "imports")
+            Import.model_validate(e)
+            for e in self._http.get_paginated(f"{self._url}/imports", "imports")
         ]
 
     def get_exports(self) -> list[Export]:
@@ -330,7 +313,8 @@ class Client(_BaseClient):
         :return: The List of Exports.
         """
         return [
-            Export.model_validate(e) for e in (self._get(f"{self._url}/exports")).get("exports", [])
+            Export.model_validate(e)
+            for e in (self._http.get(f"{self._url}/exports")).get("exports", [])
         ]
 
     def run_action(self, action_id: int, wait_for_completion: bool = True) -> TaskStatus:
@@ -345,18 +329,15 @@ class Client(_BaseClient):
                until the task is complete. If False, it will spawn the task and return immediately.
         """
         body = {"localeName": "en_US"}
-        res = self._post(f"{self._url}/{action_url(action_id)}/{action_id}/tasks", json=body)
+        res = self._http.post(f"{self._url}/{action_url(action_id)}/{action_id}/tasks", json=body)
         task_id = res["task"]["taskId"]
         logger.info(f"Invoked Action '{action_id}', spawned Task: '{task_id}'.")
 
         if not wait_for_completion:
             return TaskStatus.model_validate(self.get_task_status(action_id, task_id))
-
-        while (status := self.get_task_status(action_id, task_id)).task_state != "COMPLETE":
-            sleep(self.status_poll_delay)
-
+        status = self._http.poll_task(self.get_task_status, action_id, task_id)
         if status.task_state == "COMPLETE" and not status.result.successful:
-            logger.error(f"Task '{task_id}' completed with errors: {status.result.error_message}")
+            logger.error(f"Task '{task_id}' completed with errors.")
             raise AnaplanActionError(f"Task '{task_id}' completed with errors.")
 
         logger.info(f"Task '{task_id}' of Action '{action_id}' completed successfully.")
@@ -371,10 +352,10 @@ class Client(_BaseClient):
         chunk_count = self._file_pre_check(file_id)
         logger.info(f"File {file_id} has {chunk_count} chunks.")
         if chunk_count <= 1:
-            return self._get_binary(f"{self._url}/files/{file_id}")
+            return self._http.get_binary(f"{self._url}/files/{file_id}")
         with ThreadPoolExecutor(max_workers=self._thread_count) as executor:
             chunks = executor.map(
-                self._get_binary,
+                self._http.get_binary,
                 (f"{self._url}/files/{file_id}/chunks/{i}" for i in range(chunk_count)),
             )
             return b"".join(chunks)
@@ -393,13 +374,13 @@ class Client(_BaseClient):
         chunk_count = self._file_pre_check(file_id)
         logger.info(f"File {file_id} has {chunk_count} chunks.")
         if chunk_count <= 1:
-            yield self._get_binary(f"{self._url}/files/{file_id}")
+            yield self._http.get_binary(f"{self._url}/files/{file_id}")
             return
 
         with ThreadPoolExecutor(max_workers=batch_size) as executor:
             for batch_start in range(0, chunk_count, batch_size):
                 batch_chunks = executor.map(
-                    self._get_binary,
+                    self._http.get_binary,
                     (
                         f"{self._url}/files/{file_id}/chunks/{i}"
                         for i in range(batch_start, min(batch_start + batch_size, chunk_count))
@@ -473,7 +454,7 @@ class Client(_BaseClient):
         logger.info(
             f"Completed final upload stream batch of size {len(indices)} for file {file_id}."
         )
-        self._post(f"{self._url}/files/{file_id}/complete", json={"id": file_id})
+        self._http.post(f"{self._url}/files/{file_id}/complete", json={"id": file_id})
         logger.info(f"Completed upload stream for '{file_id}'.")
 
     def upload_and_import(
@@ -512,7 +493,7 @@ class Client(_BaseClient):
         """
         return [
             TaskSummary.model_validate(e)
-            for e in self._get_paginated(
+            for e in self._http.get_paginated(
                 f"{self._url}/{action_url(action_id)}/{action_id}/tasks", "tasks"
             )
         ]
@@ -525,7 +506,7 @@ class Client(_BaseClient):
         :return: The status of the task.
         """
         return TaskStatus.model_validate(
-            self._get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks/{task_id}").get(
+            self._http.get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks/{task_id}").get(
                 "task"
             )
         )
@@ -537,7 +518,7 @@ class Client(_BaseClient):
         :param task_id: The Task identifier, sometimes also referred to as the Correlation Id.
         :return: The content of the solution logs.
         """
-        return self._get_binary(
+        return self._http.get_binary(
             f"{self._url}/optimizeActions/{action_id}/tasks/{task_id}/solutionLogs"
         )
 
@@ -548,7 +529,7 @@ class Client(_BaseClient):
         return file.chunk_count
 
     def _upload_chunk(self, file_id: int, index: int, chunk: str | bytes) -> None:
-        self._put_binary_gzip(f"{self._url}/files/{file_id}/chunks/{index}", chunk)
+        self._http.put_binary_gzip(f"{self._url}/files/{file_id}/chunks/{index}", chunk)
         logger.debug(f"Chunk {index} loaded to file '{file_id}'.")
 
     def _set_chunk_count(self, file_id: int, num_chunks: int) -> None:
@@ -559,7 +540,7 @@ class Client(_BaseClient):
                 "to avoid this error, set `allow_file_creation=True` on the calling instance. "
                 "Make sure you have understood the implications of this before doing so. "
             )
-        response = self._post(f"{self._url}/files/{file_id}", json={"chunkCount": num_chunks})
+        response = self._http.post(f"{self._url}/files/{file_id}", json={"chunkCount": num_chunks})
         optionally_new_file = int(response.get("file").get("id"))
         if optionally_new_file != file_id:
             if self.allow_file_creation:
