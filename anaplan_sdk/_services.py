@@ -44,6 +44,10 @@ Task = TypeVar("Task", bound=TaskSummary)
 
 class _HttpService:
     def __init__(self, client: httpx.Client, retry_count: int, page_size: int, poll_delay: int):
+        logger.debug(
+            f"Initializing HttpService with retry_count={retry_count}, "
+            f"page_size={page_size}, poll_delay={poll_delay}."
+        )
         self._client = client
         self._retry_count = retry_count
         self._poll_delay = poll_delay
@@ -141,6 +145,10 @@ class _AsyncHttpService:
     def __init__(
         self, client: httpx.AsyncClient, retry_count: int, page_size: int, poll_delay: int
     ):
+        logger.debug(
+            f"Initializing AsyncHttpService with retry_count={retry_count}, "
+            f"page_size={page_size}, poll_delay={poll_delay}."
+        )
         self._client = client
         self._retry_count = retry_count
         self._poll_delay = poll_delay
