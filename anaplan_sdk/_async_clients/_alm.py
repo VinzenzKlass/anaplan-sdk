@@ -20,12 +20,17 @@ logger = logging.getLogger("anaplan_sdk")
 
 class _AsyncAlmClient(_AsyncBaseClient):
     def __init__(
-        self, client: httpx.AsyncClient, model_id: str, retry_count: int, status_poll_delay: int
+        self,
+        client: httpx.AsyncClient,
+        model_id: str,
+        retry_count: int,
+        page_size: int,
+        status_poll_delay: int,
     ) -> None:
         self.status_poll_delay = status_poll_delay
         self._model_id = model_id
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
-        super().__init__(retry_count, client)
+        super().__init__(client, retry_count=retry_count, page_size=page_size)
 
     async def change_model_status(self, status: Literal["online", "offline"]) -> None:
         """
