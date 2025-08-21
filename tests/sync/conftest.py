@@ -13,6 +13,7 @@ def client() -> Client:
         certificate=getenv("ANAPLAN_SDK_TEST_CERT"),
         private_key=getenv("ANAPLAN_SDK_TEST_PK"),
         retry_count=3,
+        backoff=5,
         timeout=120,
     )
 

@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import random
 import time
 from asyncio import gather, sleep
 from concurrent.futures import ThreadPoolExecutor
@@ -43,13 +42,24 @@ Task = TypeVar("Task", bound=TaskSummary)
 
 
 class _HttpService:
-    def __init__(self, client: httpx.Client, retry_count: int, page_size: int, poll_delay: int):
+    def __init__(
+        self,
+        client: httpx.Client,
+        *,
+        retry_count: int,
+        backoff: float,
+        backoff_factor: float,
+        page_size: int,
+        poll_delay: int,
+    ):
         logger.debug(
             f"Initializing HttpService with retry_count={retry_count}, "
             f"page_size={page_size}, poll_delay={poll_delay}."
         )
         self._client = client
         self._retry_count = retry_count
+        self._backoff = backoff
+        self._backoff_factor = backoff_factor
         self._poll_delay = poll_delay
         self._page_size = min(page_size, 5_000)
 
@@ -130,7 +140,7 @@ class _HttpService:
                 if response.status_code == 429:
                     if i >= self._retry_count - 1:
                         raise AnaplanException("Rate limit exceeded.")
-                    backoff_time = max(i, 1) * random.randint(2, 5)
+                    backoff_time = self._backoff * (self._backoff_factor if i > 0 else 1)
                     logger.warning(f"Rate limited. Retrying in {backoff_time} seconds.")
                     time.sleep(backoff_time)
                     continue
@@ -147,7 +157,14 @@ class _HttpService:
 
 class _AsyncHttpService:
     def __init__(
-        self, client: httpx.AsyncClient, retry_count: int, page_size: int, poll_delay: int
+        self,
+        client: httpx.AsyncClient,
+        *,
+        retry_count: int,
+        backoff: float,
+        backoff_factor: float,
+        page_size: int,
+        poll_delay: int,
     ):
         logger.debug(
             f"Initializing AsyncHttpService with retry_count={retry_count}, "
@@ -155,6 +172,8 @@ class _AsyncHttpService:
         )
         self._client = client
         self._retry_count = retry_count
+        self._backoff = backoff
+        self._backoff_factor = backoff_factor
         self._poll_delay = poll_delay
         self._page_size = min(page_size, 5_000)
 
@@ -239,7 +258,7 @@ class _AsyncHttpService:
                 if response.status_code == 429:
                     if i >= self._retry_count - 1:
                         raise AnaplanException("Rate limit exceeded.")
-                    backoff_time = (i + 1) * random.randint(3, 5)
+                    backoff_time = self._backoff * (self._backoff_factor if i > 0 else 1)
                     logger.warning(f"Rate limited. Retrying in {backoff_time} seconds.")
                     await asyncio.sleep(backoff_time)
                     continue
