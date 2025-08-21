@@ -82,44 +82,46 @@ class _HttpService:
         content = compress(content.encode() if isinstance(content, str) else content)
         return self.__run_with_retry(self._client.put, url, headers=_gzip_header, content=content)
 
-    def get_paginated(self, url: str, result_key: str, **kwargs) -> Iterator[dict[str, Any]]:
-        logger.debug(f"Starting paginated fetch from {url} with page_size={self._page_size}.")
-        first_page, total_items = self._get_first_page(url, self._page_size, result_key, **kwargs)
-        if total_items <= self._page_size:
-            logger.debug("All items fit in first page, no additional requests needed.")
-            return iter(first_page)
-
-        pages_needed = ceil(total_items / self._page_size)
-        logger.debug(
-            f"Fetching {pages_needed - 1} additional pages with {self._page_size} items each."
-        )
-        with ThreadPoolExecutor() as executor:
-            pages = executor.map(
-                lambda n: self._get_page(
-                    url, self._page_size, n * self._page_size, result_key, **kwargs
-                ),
-                range(1, pages_needed),
-            )
-        logger.debug(f"Completed paginated fetch of {total_items} total items.")
-        return chain(first_page, *pages)
-
     def poll_task(self, func: Callable[..., Task], *args) -> Task:
         while (result := func(*args)).task_state != "COMPLETE":
             time.sleep(self._poll_delay)
         return result
+
+    def get_paginated(self, url: str, result_key: str, **kwargs) -> Iterator[dict[str, Any]]:
+        logger.debug(f"Starting paginated fetch from {url} with page_size={self._page_size}.")
+        first_page, total_items, actual_size = self._get_first_page(url, result_key, **kwargs)
+        if total_items <= self._page_size:
+            logger.debug("All items fit in first page, no additional requests needed.")
+            return iter(first_page)
+
+        pages_needed = ceil(total_items / actual_size)
+        logger.debug(f"Fetching {pages_needed - 1} additional pages with {actual_size} items each.")
+        with ThreadPoolExecutor() as executor:
+            pages = executor.map(
+                lambda n: self._get_page(url, actual_size, n * actual_size, result_key, **kwargs),
+                range(1, pages_needed),
+            )
+        logger.debug(f"Completed paginated fetch of {total_items} total items.")
+        return chain(first_page, *pages)
 
     def _get_page(self, url: str, limit: int, offset: int, result_key: str, **kwargs) -> list:
         logger.debug(f"Fetching page: offset={offset}, limit={limit} from {url}.")
         kwargs["params"] = kwargs.get("params") or {} | {"limit": limit, "offset": offset}
         return self.get(url, **kwargs).get(result_key, [])
 
-    def _get_first_page(self, url: str, limit: int, result_key: str, **kwargs) -> tuple[list, int]:
-        logger.debug(f"Fetching first page with limit={limit} from {url}.")
-        kwargs["params"] = kwargs.get("params") or {} | {"limit": limit}
+    def _get_first_page(self, url: str, result_key: str, **kwargs) -> tuple[list, int, int]:
+        logger.debug(f"Fetching first page with limit={self._page_size} from {url}.")
+        kwargs["params"] = kwargs.get("params") or {} | {"limit": self._page_size}
         res = self.get(url, **kwargs)
         total_items, first_page = res["meta"]["paging"]["totalSize"], res.get(result_key, [])
+        actual_page_size = res["meta"]["paging"]["currentPageSize"]
+        if actual_page_size < self._page_size and not actual_page_size == total_items:
+            logger.warning(
+                f"Page size {self._page_size} was silently truncated to {actual_page_size}."
+                f"Using the server-side enforced page size {actual_page_size} for further requests."
+            )
         logger.debug(f"Found {total_items} total items, retrieved {len(first_page)} in first page.")
-        return first_page, total_items
+        return first_page, total_items, actual_page_size
 
     def __run_with_retry(self, func: Callable[..., Response], *args, **kwargs) -> Response:
         for i in range(max(self._retry_count, 1)):
@@ -189,42 +191,44 @@ class _AsyncHttpService:
             self._client.put, url, headers=_gzip_header, content=content
         )
 
+    async def poll_task(self, func: Callable[..., Awaitable[Task]], *args) -> Task:
+        while (result := await func(*args)).task_state != "COMPLETE":
+            await sleep(self._poll_delay)
+        return result
+
     async def get_paginated(self, url: str, result_key: str, **kwargs) -> Iterator[dict[str, Any]]:
         logger.debug(f"Starting paginated fetch from {url} with page_size={self._page_size}.")
-        first_page, total_items = await self._get_first_page(
-            url, self._page_size, result_key, **kwargs
-        )
+        first_page, total_items, actual_size = await self._get_first_page(url, result_key, **kwargs)
         if total_items <= self._page_size:
             logger.debug("All items fit in first page, no additional requests needed.")
             return iter(first_page)
         pages = await gather(
             *(
-                self._get_page(url, self._page_size, n * self._page_size, result_key, **kwargs)
-                for n in range(1, ceil(total_items / self._page_size))
+                self._get_page(url, actual_size, n * actual_size, result_key, **kwargs)
+                for n in range(1, ceil(total_items / actual_size))
             )
         )
         logger.debug(f"Completed paginated fetch of {total_items} total items.")
         return chain(first_page, *pages)
-
-    async def poll_task(self, func: Callable[..., Awaitable[Task]], *args) -> Task:
-        while (result := await func(*args)).task_state != "COMPLETE":
-            await sleep(self._poll_delay)
-        return result
 
     async def _get_page(self, url: str, limit: int, offset: int, result_key: str, **kwargs) -> list:
         logger.debug(f"Fetching page: offset={offset}, limit={limit} from {url}.")
         kwargs["params"] = kwargs.get("params") or {} | {"limit": limit, "offset": offset}
         return (await self.get(url, **kwargs)).get(result_key, [])
 
-    async def _get_first_page(
-        self, url: str, limit: int, result_key: str, **kwargs
-    ) -> tuple[list, int]:
-        logger.debug(f"Fetching first page with limit={limit} from {url}.")
-        kwargs["params"] = kwargs.get("params") or {} | {"limit": limit}
+    async def _get_first_page(self, url: str, result_key: str, **kwargs) -> tuple[list, int, int]:
+        logger.debug(f"Fetching first page with limit={self._page_size} from {url}.")
+        kwargs["params"] = kwargs.get("params") or {} | {"limit": self._page_size}
         res = await self.get(url, **kwargs)
         total_items, first_page = res["meta"]["paging"]["totalSize"], res.get(result_key, [])
+        actual_page_size = res["meta"]["paging"]["currentPageSize"]
+        if actual_page_size < self._page_size and not actual_page_size == total_items:
+            logger.warning(
+                f"Page size {self._page_size} was silently truncated to {actual_page_size}."
+                f"Using the server-side enforced page size {actual_page_size} for further requests."
+            )
         logger.debug(f"Found {total_items} total items, retrieved {len(first_page)} in first page.")
-        return first_page, total_items
+        return first_page, total_items, actual_page_size
 
     async def _run_with_retry(
         self, func: Callable[..., Coroutine[Any, Any, Response]], *args, **kwargs

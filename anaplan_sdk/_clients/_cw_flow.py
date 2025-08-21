@@ -21,9 +21,7 @@ class _FlowClient:
         params = {"myIntegrations": 1 if current_user_only else 0}
         return [
             FlowSummary.model_validate(e)
-            for e in self._http.get_paginated(
-                self._url, "integrationFlows", page_size=25, params=params
-            )
+            for e in self._http.get_paginated(self._url, "integrationFlows", params=params)
         ]
 
     def get_flow(self, flow_id: str) -> Flow:

@@ -21,9 +21,7 @@ class _AsyncFlowClient:
         params = {"myIntegrations": 1 if current_user_only else 0}
         return [
             FlowSummary.model_validate(e)
-            for e in await self._http.get_paginated(
-                self._url, "integrationFlows", page_size=25, params=params
-            )
+            for e in await self._http.get_paginated(self._url, "integrationFlows", params=params)
         ]
 
     async def get_flow(self, flow_id: str) -> Flow:
