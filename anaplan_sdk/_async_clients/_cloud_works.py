@@ -32,10 +32,10 @@ logger = logging.getLogger("anaplan_sdk")
 
 
 class _AsyncCloudWorksClient(_AsyncBaseClient):
-    def __init__(self, client: httpx.AsyncClient, retry_count: int) -> None:
+    def __init__(self, client: httpx.AsyncClient, retry_count: int, page_size: int) -> None:
         self._url = "https://api.cloudworks.anaplan.com/2/0/integrations"
-        self._flow = _AsyncFlowClient(client, retry_count)
-        super().__init__(retry_count, client)
+        self._flow = _AsyncFlowClient(client, retry_count=retry_count, page_size=page_size)
+        super().__init__(client, retry_count=retry_count, page_size=page_size)
 
     @property
     def flows(self) -> _AsyncFlowClient:

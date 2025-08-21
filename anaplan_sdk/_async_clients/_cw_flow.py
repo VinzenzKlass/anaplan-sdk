@@ -10,9 +10,9 @@ logger = logging.getLogger("anaplan_sdk")
 
 
 class _AsyncFlowClient(_AsyncBaseClient):
-    def __init__(self, client: httpx.AsyncClient, retry_count: int) -> None:
+    def __init__(self, client: httpx.AsyncClient, retry_count: int, page_size: int) -> None:
         self._url = "https://api.cloudworks.anaplan.com/2/0/integrationflows"
-        super().__init__(retry_count, client)
+        super().__init__(client, retry_count=retry_count, page_size=page_size)
 
     async def get_flows(self, current_user_only: bool = False) -> list[FlowSummary]:
         """

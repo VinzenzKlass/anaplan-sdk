@@ -121,15 +121,17 @@ class AsyncClient(_AsyncBaseClient):
         self._retry_count = retry_count
         self._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
         self._transactional_client = (
-            _AsyncTransactionalClient(_client, model_id, retry_count) if model_id else None
-        )
-        self._alm_client = (
-            _AsyncAlmClient(_client, model_id, self._retry_count, status_poll_delay)
+            _AsyncTransactionalClient(_client, model_id, retry_count, page_size)
             if model_id
             else None
         )
-        self._audit = _AsyncAuditClient(_client, self._retry_count)
-        self._cloud_works = _AsyncCloudWorksClient(_client, self._retry_count)
+        self._alm_client = (
+            _AsyncAlmClient(_client, model_id, self._retry_count, status_poll_delay, page_size)
+            if model_id
+            else None
+        )
+        self._audit = _AsyncAuditClient(_client, self._retry_count, page_size)
+        self._cloud_works = _AsyncCloudWorksClient(_client, self._retry_count, page_size)
         self.status_poll_delay = status_poll_delay
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
@@ -162,10 +164,14 @@ class AsyncClient(_AsyncBaseClient):
         )
         client._url = f"https://api.anaplan.com/2/0/workspaces/{new_ws_id}/models/{new_model_id}"
         client._transactional_client = _AsyncTransactionalClient(
-            existing._client, new_model_id, existing._retry_count
+            existing._client, new_model_id, existing._retry_count, existing._page_size
         )
         client._alm_client = _AsyncAlmClient(
-            existing._client, new_model_id, existing._retry_count, existing.status_poll_delay
+            existing._client,
+            new_model_id,
+            existing._retry_count,
+            existing.status_poll_delay,
+            existing._page_size,
         )
         return client
 

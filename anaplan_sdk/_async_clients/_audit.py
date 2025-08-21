@@ -9,10 +9,10 @@ Event = Literal["all", "byok", "user_activity"]
 
 
 class _AsyncAuditClient(_AsyncBaseClient):
-    def __init__(self, client: httpx.AsyncClient, retry_count: int) -> None:
+    def __init__(self, client: httpx.AsyncClient, retry_count: int, page_size: int) -> None:
         self._limit = 10_000
         self._url = "https://audit.anaplan.com/audit/api/1/events"
-        super().__init__(retry_count, client)
+        super().__init__(client, retry_count=retry_count, page_size=page_size)
 
     async def get_users(self, search_pattern: str | None = None) -> list[User]:
         """

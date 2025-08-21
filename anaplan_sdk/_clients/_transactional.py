@@ -20,6 +20,7 @@ from anaplan_sdk.models import (
     InsertionResult,
     LineItem,
     List,
+    ListDeletionResult,
     ListItem,
     ListMetadata,
     Model,
@@ -29,16 +30,17 @@ from anaplan_sdk.models import (
     View,
     ViewInfo,
 )
-from anaplan_sdk.models._transactional import ListDeletionResult
 
 logger = logging.getLogger("anaplan_sdk")
 
 
 class _TransactionalClient(_BaseClient):
-    def __init__(self, client: httpx.Client, model_id: str, retry_count: int) -> None:
+    def __init__(
+        self, client: httpx.Client, model_id: str, retry_count: int, page_size: int
+    ) -> None:
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
         self._model_id = model_id
-        super().__init__(retry_count, client)
+        super().__init__(client, retry_count=retry_count, page_size=page_size)
 
     def get_model_details(self) -> Model:
         """

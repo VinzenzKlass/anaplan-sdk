@@ -125,16 +125,18 @@ class Client(_BaseClient):
         self._model_id = model_id
         self._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
         self._transactional_client = (
-            _TransactionalClient(_client, model_id, self._retry_count) if model_id else None
-        )
-        self._alm_client = (
-            _AlmClient(_client, model_id, self._retry_count, status_poll_delay)
+            _TransactionalClient(_client, model_id, self._retry_count, page_size)
             if model_id
             else None
         )
-        self._cloud_works = _CloudWorksClient(_client, self._retry_count)
+        self._alm_client = (
+            _AlmClient(_client, model_id, self._retry_count, status_poll_delay, page_size)
+            if model_id
+            else None
+        )
+        self._cloud_works = _CloudWorksClient(_client, self._retry_count, page_size)
         self._thread_count = multiprocessing.cpu_count()
-        self._audit = _AuditClient(_client, self._retry_count, self._thread_count)
+        self._audit = _AuditClient(_client, self._retry_count, self._thread_count, page_size)
         self.status_poll_delay = status_poll_delay
         self.upload_parallel = upload_parallel
         self.upload_chunk_size = upload_chunk_size
@@ -168,10 +170,14 @@ class Client(_BaseClient):
         )
         client._url = f"https://api.anaplan.com/2/0/workspaces/{new_ws_id}/models/{new_model_id}"
         client._transactional_client = _TransactionalClient(
-            existing._client, new_model_id, existing._retry_count
+            existing._client, new_model_id, existing._retry_count, existing._page_size
         )
         client._alm_client = _AlmClient(
-            existing._client, new_model_id, existing._retry_count, existing.status_poll_delay
+            existing._client,
+            new_model_id,
+            existing._retry_count,
+            existing.status_poll_delay,
+            existing._page_size,
         )
         return client
 

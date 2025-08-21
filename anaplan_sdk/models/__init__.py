@@ -34,6 +34,7 @@ from ._transactional import (
     FiscalYear,
     InsertionResult,
     LineItem,
+    ListDeletionResult,
     ListItem,
     ModelCalendar,
     ModelStatus,
@@ -91,4 +92,5 @@ __all__ = [
     "ModelCalendar",
     "ModelDeletionResult",
     "DimensionWithCode",
+    "ListDeletionResult",
 ]
