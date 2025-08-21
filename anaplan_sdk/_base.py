@@ -41,9 +41,10 @@ T = TypeVar("T", bound=AnaplanModel)
 
 
 class _BaseClient:
-    def __init__(self, retry_count: int, client: httpx.Client):
-        self._retry_count = retry_count
+    def __init__(self, client: httpx.Client, retry_count: int, page_size: int):
         self._client = client
+        self._retry_count = retry_count
+        self._page_size = min(page_size, 5_000)
 
     def _get(self, url: str, **kwargs) -> dict[str, Any]:
         return self.__run_with_retry(self._client.get, url, **kwargs).json()
@@ -129,9 +130,10 @@ class _BaseClient:
 
 
 class _AsyncBaseClient:
-    def __init__(self, retry_count: int, client: httpx.AsyncClient):
-        self._retry_count = retry_count
+    def __init__(self, client: httpx.AsyncClient, retry_count: int, page_size: int):
         self._client = client
+        self._retry_count = retry_count
+        self._page_size = min(page_size, 5_000)
 
     async def _get(self, url: str, **kwargs) -> dict[str, Any]:
         return (await self.__run_with_retry(self._client.get, url, **kwargs)).json()

@@ -51,6 +51,7 @@ class Client(_BaseClient):
         auth: httpx.Auth | None = None,
         timeout: float | httpx.Timeout = 30,
         retry_count: int = 2,
+        page_size: int = 5_000,
         status_poll_delay: int = 1,
         upload_parallel: bool = True,
         upload_chunk_size: int = 25_000_000,
@@ -88,6 +89,9 @@ class Client(_BaseClient):
         :param retry_count: The number of times to retry an HTTP request if it fails. Set this to 0
                to never retry. Defaults to 2, meaning each HTTP Operation will be tried a total
                number of 2 times.
+        :param page_size: The number of items to return per page when paginating through results.
+               Defaults to 5000. This is the maximum number of items that can be returned per
+               request. If you pass a value greater than 5000, it will be capped to 5000.
         :param status_poll_delay: The delay between polling the status of a task.
         :param upload_parallel: Whether to upload chunks in parallel when uploading files.
         :param upload_chunk_size: The size of the chunks to upload. This is the maximum size of
@@ -135,7 +139,7 @@ class Client(_BaseClient):
         self.upload_parallel = upload_parallel
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
-        super().__init__(self._retry_count, _client)
+        super().__init__(_client, self._retry_count, page_size)
 
     @classmethod
     def from_existing(
@@ -466,18 +470,23 @@ class Client(_BaseClient):
         self._post(f"{self._url}/files/{file_id}/complete", json={"id": file_id})
         logger.info(f"Completed upload stream for '{file_id}'.")
 
-    def upload_and_import(self, file_id: int, content: str | bytes, action_id: int) -> None:
+    def upload_and_import(
+        self, file_id: int, content: str | bytes, action_id: int, wait_for_completion: bool = True
+    ) -> TaskStatus:
         """
         Convenience wrapper around `upload_file()` and `run_action()` to upload content to a file
         and run an import action in one call.
         :param file_id: The identifier of the file to upload to.
         :param content: The content to upload. **This Content will be compressed before uploading.
-                        If you are passing the Input as bytes, pass it uncompressed to avoid
-                        redundant work.**
+               If you are passing the Input as bytes, pass it uncompressed to avoid redundant
+               work.**
         :param action_id: The identifier of the action to run after uploading the content.
+        :param wait_for_completion: If True, the method will poll the import task status and not
+               return until the task is complete. If False, it will spawn the import task and
+               return immediately.
         """
         self.upload_file(file_id, content)
-        self.run_action(action_id)
+        return self.run_action(action_id, wait_for_completion)
 
     def export_and_download(self, action_id: int) -> bytes:
         """

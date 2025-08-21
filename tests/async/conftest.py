@@ -18,6 +18,17 @@ def client() -> AsyncClient:
 
 
 @pytest.fixture(scope="session")
+def client_small_pages() -> AsyncClient:
+    return AsyncClient(
+        workspace_id=getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),
+        model_id=getenv("ANAPLAN_SDK_TEST_MODEL_ID"),
+        certificate=getenv("ANAPLAN_SDK_TEST_CERT"),
+        private_key=getenv("ANAPLAN_SDK_TEST_PK"),
+        page_size=10,
+    )
+
+
+@pytest.fixture(scope="session")
 def alm_src_client(client: AsyncClient, alm_src_model_id) -> AsyncClient:
     return AsyncClient.from_existing(client, model_id=alm_src_model_id)
 

@@ -1,9 +1,10 @@
 version = 1
+revision = 1
 requires-python = ">=3.10.4"
 
 [[package]]
 name = "anaplan-sdk"
-version = "0.5.0a1"
+version = "0.5.0a2"
 source = { editable = "." }
 dependencies = [
     { name = "httpx" },
@@ -50,6 +51,7 @@ requires-dist = [
     { name = "oauthlib", marker = "extra == 'oauth'", specifier = ">=3.0.0,<4.0.0" },
     { name = "pydantic", specifier = ">=2.7.2,<3.0.0" },
 ]
+provides-extras = ["cert", "oauth", "keyring"]
 
 [package.metadata.requires-dev]
 dev = [

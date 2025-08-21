@@ -18,6 +18,17 @@ def client() -> Client:
 
 
 @pytest.fixture(scope="session")
+def client_small_pages() -> Client:
+    return Client(
+        workspace_id=getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),
+        model_id=getenv("ANAPLAN_SDK_TEST_MODEL_ID"),
+        certificate=getenv("ANAPLAN_SDK_TEST_CERT"),
+        private_key=getenv("ANAPLAN_SDK_TEST_PK"),
+        page_size=10,
+    )
+
+
+@pytest.fixture(scope="session")
 def alm_src_client(client: Client, alm_src_model_id) -> Client:
     return Client.from_existing(client, model_id=alm_src_model_id)
 
