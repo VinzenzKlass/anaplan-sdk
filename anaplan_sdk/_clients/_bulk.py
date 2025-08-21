@@ -2,7 +2,6 @@ import logging
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 from copy import copy
-from time import sleep
 from typing import Iterator
 
 import httpx
@@ -336,12 +335,9 @@ class Client:
 
         if not wait_for_completion:
             return TaskStatus.model_validate(self.get_task_status(action_id, task_id))
-
-        while (status := self.get_task_status(action_id, task_id)).task_state != "COMPLETE":
-            sleep(self.status_poll_delay)
-
+        status = self._http.poll_task(self.get_task_status, action_id, task_id)
         if status.task_state == "COMPLETE" and not status.result.successful:
-            logger.error(f"Task '{task_id}' completed with errors: {status.result.error_message}")
+            logger.error(f"Task '{task_id}' completed with errors.")
             raise AnaplanActionError(f"Task '{task_id}' completed with errors.")
 
         logger.info(f"Task '{task_id}' of Action '{action_id}' completed successfully.")

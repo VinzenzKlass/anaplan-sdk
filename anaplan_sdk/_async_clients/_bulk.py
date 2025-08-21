@@ -334,7 +334,7 @@ class AsyncClient:
             return TaskStatus.model_validate(await self.get_task_status(action_id, task_id))
         status = await self._http.poll_task(self.get_task_status, action_id, task_id)
         if status.task_state == "COMPLETE" and not status.result.successful:
-            logger.error(f"Task '{task_id}' completed with errors: {status.result.error_message}")
+            logger.error(f"Task '{task_id}' completed with errors.")
             raise AnaplanActionError(f"Task '{task_id}' completed with errors.")
 
         logger.info(f"Task '{task_id}' of '{action_id}' completed successfully.")
