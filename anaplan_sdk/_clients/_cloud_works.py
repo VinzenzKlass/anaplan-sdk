@@ -1,10 +1,8 @@
 import logging
 from typing import Any, Literal
 
-import httpx
-
-from anaplan_sdk._base import (
-    _BaseClient,
+from anaplan_sdk._services import (
+    _HttpService,
     connection_body_payload,
     construct_payload,
     integration_payload,
@@ -31,11 +29,11 @@ from ._cw_flow import _FlowClient
 logger = logging.getLogger("anaplan_sdk")
 
 
-class _CloudWorksClient(_BaseClient):
-    def __init__(self, client: httpx.Client, retry_count: int, page_size: int) -> None:
+class _CloudWorksClient:
+    def __init__(self, http: _HttpService) -> None:
+        self._http = http
         self._url = "https://api.cloudworks.anaplan.com/2/0/integrations"
-        self._flow = _FlowClient(client, retry_count=retry_count, page_size=page_size)
-        super().__init__(client, retry_count=retry_count, page_size=page_size)
+        self._flow = _FlowClient(self._http)
 
     @property
     def flows(self) -> _FlowClient:
@@ -51,7 +49,7 @@ class _CloudWorksClient(_BaseClient):
         """
         return [
             Connection.model_validate(e)
-            for e in self._get_paginated(f"{self._url}/connections", "connections")
+            for e in self._http.get_paginated(f"{self._url}/connections", "connections")
         ]
 
     def create_connection(self, con_info: ConnectionInput | dict[str, Any]) -> str:
@@ -62,7 +60,7 @@ class _CloudWorksClient(_BaseClient):
                against the ConnectionInput model before sending the request.
         :return: The ID of the new connection.
         """
-        res = self._post(
+        res = self._http.post(
             f"{self._url}/connections", json=construct_payload(ConnectionInput, con_info)
         )
         connection_id = res["connections"]["connectionId"]
@@ -77,7 +75,7 @@ class _CloudWorksClient(_BaseClient):
                as when initially creating the connection again. If you want to update only some of
                the details, use the `patch_connection` method instead.
         """
-        self._put(f"{self._url}/connections/{con_id}", json=connection_body_payload(con_info))
+        self._http.put(f"{self._url}/connections/{con_id}", json=connection_body_payload(con_info))
 
     def patch_connection(self, con_id: str, body: dict[str, Any]) -> None:
         """
@@ -86,14 +84,14 @@ class _CloudWorksClient(_BaseClient):
         :param body: The name and details of the connection. You can pass all the same details as
                when initially creating the connection again, or just any one of them.
         """
-        self._patch(f"{self._url}/connections/{con_id}", json=body)
+        self._http.patch(f"{self._url}/connections/{con_id}", json=body)
 
     def delete_connection(self, con_id: str) -> None:
         """
         Delete an existing connection in CloudWorks.
         :param con_id: The ID of the connection to delete.
         """
-        self._delete(f"{self._url}/connections/{con_id}")
+        self._http.delete(f"{self._url}/connections/{con_id}")
         logger.info(f"Deleted connection '{con_id}'.")
 
     def get_integrations(
@@ -107,7 +105,7 @@ class _CloudWorksClient(_BaseClient):
         params = {"sortBy": "name" if sort_by_name == "ascending" else "-name"}
         return [
             Integration.model_validate(e)
-            for e in self._get_paginated(f"{self._url}", "integrations", params=params)
+            for e in self._http.get_paginated(f"{self._url}", "integrations", params=params)
         ]
 
     def get_integration(self, integration_id: str) -> SingleIntegration:
@@ -120,7 +118,7 @@ class _CloudWorksClient(_BaseClient):
         :return: The details of the integration, without the integration type.
         """
         return SingleIntegration.model_validate(
-            (self._get(f"{self._url}/{integration_id}"))["integration"]
+            (self._http.get(f"{self._url}/{integration_id}"))["integration"]
         )
 
     def create_integration(
@@ -147,7 +145,9 @@ class _CloudWorksClient(_BaseClient):
         :return: The ID of the new integration.
         """
         json = integration_payload(body)
-        integration_id = (self._post(f"{self._url}", json=json))["integration"]["integrationId"]
+        integration_id = (self._http.post(f"{self._url}", json=json))["integration"][
+            "integrationId"
+        ]
         logger.info(f"Created integration '{integration_id}'.")
         return integration_id
 
@@ -162,7 +162,7 @@ class _CloudWorksClient(_BaseClient):
                of the details, use the `patch_integration` method instead.
         """
         json = integration_payload(body)
-        self._put(f"{self._url}/{integration_id}", json=json)
+        self._http.put(f"{self._url}/{integration_id}", json=json)
 
     def run_integration(self, integration_id: str) -> str:
         """
@@ -170,7 +170,7 @@ class _CloudWorksClient(_BaseClient):
         :param integration_id: The ID of the integration to run.
         :return: The ID of the run instance.
         """
-        run_id = (self._post_empty(f"{self._url}/{integration_id}/run"))["run"]["id"]
+        run_id = (self._http.post_empty(f"{self._url}/{integration_id}/run"))["run"]["id"]
         logger.info(f"Started integration run '{run_id}' for integration '{integration_id}'.")
         return run_id
 
@@ -179,7 +179,7 @@ class _CloudWorksClient(_BaseClient):
         Delete an existing integration in CloudWorks.
         :param integration_id: The ID of the integration to delete.
         """
-        self._delete(f"{self._url}/{integration_id}")
+        self._http.delete(f"{self._url}/{integration_id}")
         logger.info(f"Deleted integration '{integration_id}'.")
 
     def get_run_history(self, integration_id: str) -> list[RunSummary]:
@@ -190,7 +190,7 @@ class _CloudWorksClient(_BaseClient):
         """
         return [
             RunSummary.model_validate(e)
-            for e in (self._get(f"{self._url}/runs/{integration_id}"))["history_of_runs"].get(
+            for e in (self._http.get(f"{self._url}/runs/{integration_id}"))["history_of_runs"].get(
                 "runs", []
             )
         ]
@@ -201,7 +201,7 @@ class _CloudWorksClient(_BaseClient):
         :param run_id: The ID of the run to retrieve.
         :return: The details of the run.
         """
-        return RunStatus.model_validate((self._get(f"{self._url}/run/{run_id}"))["run"])
+        return RunStatus.model_validate((self._http.get(f"{self._url}/run/{run_id}"))["run"])
 
     def get_run_error(self, run_id: str) -> RunError | None:
         """
@@ -210,7 +210,7 @@ class _CloudWorksClient(_BaseClient):
         :param run_id: The ID of the run to retrieve.
         :return: The details of the run error.
         """
-        run = self._get(f"{self._url}/runerror/{run_id}")
+        run = self._http.get(f"{self._url}/runerror/{run_id}")
         return RunError.model_validate(run["runs"]) if run.get("runs") else None
 
     def create_schedule(
@@ -223,7 +223,7 @@ class _CloudWorksClient(_BaseClient):
                dictionary as per the documentation. If a dictionary is passed, it will be validated
                against the ScheduleInput model before sending the request.
         """
-        self._post(
+        self._http.post(
             f"{self._url}/{integration_id}/schedule",
             json=schedule_payload(integration_id, schedule),
         )
@@ -239,7 +239,7 @@ class _CloudWorksClient(_BaseClient):
                dictionary as per the documentation. If a dictionary is passed, it will be validated
                against the ScheduleInput model before sending the request.
         """
-        self._put(
+        self._http.put(
             f"{self._url}/{integration_id}/schedule",
             json=schedule_payload(integration_id, schedule),
         )
@@ -253,7 +253,7 @@ class _CloudWorksClient(_BaseClient):
         :param integration_id: The ID of the integration to schedule.
         :param status: The status of the schedule. This can be either "enabled" or "disabled".
         """
-        self._post_empty(f"{self._url}/{integration_id}/schedule/status/{status}")
+        self._http.post_empty(f"{self._url}/{integration_id}/schedule/status/{status}")
         logger.info(f"Set schedule status to '{status}' for integration '{integration_id}'.")
 
     def delete_schedule(self, integration_id: str) -> None:
@@ -261,7 +261,7 @@ class _CloudWorksClient(_BaseClient):
         Delete an integration schedule in CloudWorks. A schedule must already exist.
         :param integration_id: The ID of the integration to schedule.
         """
-        self._delete(f"{self._url}/{integration_id}/schedule")
+        self._http.delete(f"{self._url}/{integration_id}/schedule")
         logger.info(f"Deleted schedule for integration '{integration_id}'.")
 
     def get_notification_config(
@@ -281,7 +281,7 @@ class _CloudWorksClient(_BaseClient):
         if integration_id:
             notification_id = (self.get_integration(integration_id)).notification_id
         return NotificationConfig.model_validate(
-            (self._get(f"{self._url}/notification/{notification_id}"))["notifications"]
+            (self._http.get(f"{self._url}/notification/{notification_id}"))["notifications"]
         )
 
     def create_notification_config(self, config: NotificationInput | dict[str, Any]) -> str:
@@ -295,7 +295,7 @@ class _CloudWorksClient(_BaseClient):
                validated against the NotificationConfig model before sending the request.
         :return: The ID of the new notification configuration.
         """
-        res = self._post(
+        res = self._http.post(
             f"{self._url}/notification", json=construct_payload(NotificationInput, config)
         )
         notification_id = res["notification"]["notificationId"]
@@ -315,7 +315,7 @@ class _CloudWorksClient(_BaseClient):
                a dictionary as per the documentation. If a dictionary is passed, it will be
                validated against the NotificationConfig model before sending the request.
         """
-        self._put(
+        self._http.put(
             f"{self._url}/notification/{notification_id}",
             json=construct_payload(NotificationInput, config),
         )
@@ -334,7 +334,7 @@ class _CloudWorksClient(_BaseClient):
             raise ValueError("Either notification_id or integration_id must be specified.")
         if integration_id:
             notification_id = (self.get_integration(integration_id)).notification_id
-        self._delete(f"{self._url}/notification/{notification_id}")
+        self._http.delete(f"{self._url}/notification/{notification_id}")
         logger.info(f"Deleted notification configuration '{notification_id}'.")
 
     def get_import_error_dump(self, run_id: str) -> bytes:
@@ -347,7 +347,7 @@ class _CloudWorksClient(_BaseClient):
         :param run_id: The ID of the run to retrieve.
         :return: The error dump.
         """
-        return self._get_binary(f"{self._url}/run/{run_id}/dump")
+        return self._http.get_binary(f"{self._url}/run/{run_id}/dump")
 
     def get_process_error_dump(self, run_id: str, action_id: int | str) -> bytes:
         """
@@ -357,4 +357,4 @@ class _CloudWorksClient(_BaseClient):
         :param action_id: The ID of the action to retrieve. This can be found in the RunError.
         :return: The error dump.
         """
-        return self._get_binary(f"{self._url}/run/{run_id}/process/import/{action_id}/dumps")
+        return self._http.get_binary(f"{self._url}/run/{run_id}/process/import/{action_id}/dumps")

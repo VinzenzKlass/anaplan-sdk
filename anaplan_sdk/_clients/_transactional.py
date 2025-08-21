@@ -3,10 +3,8 @@ from concurrent.futures import ThreadPoolExecutor
 from itertools import chain
 from typing import Any, Literal, overload
 
-import httpx
-
-from anaplan_sdk._base import (
-    _BaseClient,
+from anaplan_sdk._services import (
+    _HttpService,
     parse_calendar_response,
     parse_insertion_response,
     validate_dimension_id,
@@ -34,36 +32,38 @@ from anaplan_sdk.models import (
 logger = logging.getLogger("anaplan_sdk")
 
 
-class _TransactionalClient(_BaseClient):
-    def __init__(
-        self, client: httpx.Client, model_id: str, retry_count: int, page_size: int
-    ) -> None:
+class _TransactionalClient:
+    def __init__(self, http: _HttpService, model_id: str) -> None:
+        self._http = http
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
         self._model_id = model_id
-        super().__init__(client, retry_count=retry_count, page_size=page_size)
 
     def get_model_details(self) -> Model:
         """
         Retrieves the Model details for the current Model.
         :return: The Model details.
         """
-        return Model.model_validate(self._get(self._url, params={"modelDetails": "true"})["model"])
+        return Model.model_validate(
+            self._http.get(self._url, params={"modelDetails": "true"})["model"]
+        )
 
     def get_model_status(self) -> ModelStatus:
         """
         Gets the current status of the Model.
         :return: The current status of the Mode.
         """
-        return ModelStatus.model_validate(self._get(f"{self._url}/status").get("requestStatus"))
+        return ModelStatus.model_validate(
+            self._http.get(f"{self._url}/status").get("requestStatus")
+        )
 
     def wake_model(self) -> None:
         """Wake up the current model."""
-        self._post_empty(f"{self._url}/open", headers={"Content-Type": "application/text"})
+        self._http.post_empty(f"{self._url}/open", headers={"Content-Type": "application/text"})
         logger.info(f"Woke up model '{self._model_id}'.")
 
     def close_model(self) -> None:
         """Close the current model."""
-        self._post_empty(f"{self._url}/close", headers={"Content-Type": "application/text"})
+        self._http.post_empty(f"{self._url}/close", headers={"Content-Type": "application/text"})
         logger.info(f"Closed model '{self._model_id}'.")
 
     def get_modules(self) -> list[Module]:
@@ -72,7 +72,8 @@ class _TransactionalClient(_BaseClient):
         :return: The List of Modules.
         """
         return [
-            Module.model_validate(e) for e in self._get_paginated(f"{self._url}/modules", "modules")
+            Module.model_validate(e)
+            for e in self._http.get_paginated(f"{self._url}/modules", "modules")
         ]
 
     def get_views(self) -> list[View]:
@@ -81,7 +82,9 @@ class _TransactionalClient(_BaseClient):
         views.
         :return: The List of Views.
         """
-        return [View.model_validate(e) for e in self._get_paginated(f"{self._url}/views", "views")]
+        return [
+            View.model_validate(e) for e in self._http.get_paginated(f"{self._url}/views", "views")
+        ]
 
     def get_view_info(self, view_id: int) -> ViewInfo:
         """
@@ -89,7 +92,7 @@ class _TransactionalClient(_BaseClient):
         :param view_id: The ID of the View.
         :return: The information about the View.
         """
-        return ViewInfo.model_validate(self._get(f"{self._url}/views/{view_id}"))
+        return ViewInfo.model_validate(self._http.get(f"{self._url}/views/{view_id}"))
 
     def get_line_items(self, only_module_id: int | None = None) -> list[LineItem]:
         """
@@ -102,14 +105,16 @@ class _TransactionalClient(_BaseClient):
             if only_module_id
             else f"{self._url}/lineItems?includeAll=true"
         )
-        return [LineItem.model_validate(e) for e in self._get(url).get("items", [])]
+        return [LineItem.model_validate(e) for e in self._http.get(url).get("items", [])]
 
     def get_lists(self) -> list[List]:
         """
         Lists all the Lists in the Model.
         :return: All Lists on this model.
         """
-        return [List.model_validate(e) for e in self._get_paginated(f"{self._url}/lists", "lists")]
+        return [
+            List.model_validate(e) for e in self._http.get_paginated(f"{self._url}/lists", "lists")
+        ]
 
     def get_list_metadata(self, list_id: int) -> ListMetadata:
         """
@@ -118,7 +123,7 @@ class _TransactionalClient(_BaseClient):
         :return: The Metadata for the List.
         """
         return ListMetadata.model_validate(
-            self._get(f"{self._url}/lists/{list_id}").get("metadata")
+            self._http.get(f"{self._url}/lists/{list_id}").get("metadata")
         )
 
     @overload
@@ -142,7 +147,7 @@ class _TransactionalClient(_BaseClient):
                data, you will want to set this to avoid unnecessary (de-)serialization.
         :return: All items in the List.
         """
-        res = self._get(f"{self._url}/lists/{list_id}/items?includeAll=true")
+        res = self._http.get(f"{self._url}/lists/{list_id}/items?includeAll=true")
         if return_raw:
             return res.get("listItems", [])
         return [ListItem.model_validate(e) for e in res.get("listItems", [])]
@@ -171,7 +176,9 @@ class _TransactionalClient(_BaseClient):
             return InsertionResult(added=0, ignored=0, failures=[], total=0)
         if len(items) <= 100_000:
             result = InsertionResult.model_validate(
-                self._post(f"{self._url}/lists/{list_id}/items?action=add", json={"items": items})
+                self._http.post(
+                    f"{self._url}/lists/{list_id}/items?action=add", json={"items": items}
+                )
             )
             logger.info(f"Inserted {result.added} items into list '{list_id}'.")
             return result
@@ -179,7 +186,7 @@ class _TransactionalClient(_BaseClient):
         with ThreadPoolExecutor() as executor:
             responses = list(
                 executor.map(
-                    lambda chunk: self._post(
+                    lambda chunk: self._http.post(
                         f"{self._url}/lists/{list_id}/items?action=add", json={"items": chunk}
                     ),
                     [items[i : i + 100_000] for i in range(0, len(items), 100_000)],
@@ -211,7 +218,7 @@ class _TransactionalClient(_BaseClient):
         if not items:
             return ListDeletionResult(deleted=0, failures=[])
         if len(items) <= 100_000:
-            res = self._post(
+            res = self._http.post(
                 f"{self._url}/lists/{list_id}/items?action=delete", json={"items": items}
             )
             info = ListDeletionResult.model_validate(res)
@@ -221,7 +228,7 @@ class _TransactionalClient(_BaseClient):
         with ThreadPoolExecutor() as executor:
             responses = list(
                 executor.map(
-                    lambda chunk: self._post(
+                    lambda chunk: self._http.post(
                         f"{self._url}/lists/{list_id}/items?action=delete", json={"items": chunk}
                     ),
                     [items[i : i + 100_000] for i in range(0, len(items), 100_000)],
@@ -239,7 +246,7 @@ class _TransactionalClient(_BaseClient):
         Resets the index of a List. The List must be empty to do so.
         :param list_id: The ID of the List.
         """
-        self._post_empty(f"{self._url}/lists/{list_id}/resetIndex")
+        self._http.post_empty(f"{self._url}/lists/{list_id}/resetIndex")
         logger.info(f"Reset index for list '{list_id}'.")
 
     def update_module_data(
@@ -259,7 +266,7 @@ class _TransactionalClient(_BaseClient):
         :param data: The data to write to the Module.
         :return: The number of cells changed or the response with the according error details.
         """
-        res = self._post(f"{self._url}/modules/{module_id}/data", json=data)
+        res = self._http.post(f"{self._url}/modules/{module_id}/data", json=data)
         if "failures" not in res:
             logger.info(f"Updated {res['numberOfCellsChanged']} cells in module '{module_id}'.")
         return res if "failures" in res else res["numberOfCellsChanged"]
@@ -269,7 +276,7 @@ class _TransactionalClient(_BaseClient):
         Gets the current period of the model.
         :return: The current period of the model.
         """
-        res = self._get(f"{self._url}/currentPeriod")
+        res = self._http.get(f"{self._url}/currentPeriod")
         return CurrentPeriod.model_validate(res["currentPeriod"])
 
     def set_current_period(self, date: str) -> CurrentPeriod:
@@ -278,7 +285,7 @@ class _TransactionalClient(_BaseClient):
         :param date: The date to set the current period to, in the format 'YYYY-MM-DD'.
         :return: The updated current period of the model.
         """
-        res = self._put(f"{self._url}/currentPeriod", {"date": date})
+        res = self._http.put(f"{self._url}/currentPeriod", {"date": date})
         logger.info(f"Set current period to '{date}'.")
         return CurrentPeriod.model_validate(res["currentPeriod"])
 
@@ -288,7 +295,7 @@ class _TransactionalClient(_BaseClient):
         :param year: The fiscal year to set, in the format specified in the model, e.g. FY24.
         :return: The updated fiscal year of the model.
         """
-        res = self._put(f"{self._url}/modelCalendar/fiscalYear", {"year": year})
+        res = self._http.put(f"{self._url}/modelCalendar/fiscalYear", {"year": year})
         logger.info(f"Set current fiscal year to '{year}'.")
         return FiscalYear.model_validate(res["modelCalendar"]["fiscalYear"])
 
@@ -297,7 +304,7 @@ class _TransactionalClient(_BaseClient):
         Get the calendar settings of the model.
         :return: The calendar settings of the model.
         """
-        return parse_calendar_response(self._get(f"{self._url}/modelCalendar"))
+        return parse_calendar_response(self._http.get(f"{self._url}/modelCalendar"))
 
     def get_dimension_items(self, dimension_id: int) -> list[DimensionWithCode]:
         """
@@ -313,7 +320,7 @@ class _TransactionalClient(_BaseClient):
         :param dimension_id: The ID of the dimension to list items for.
         :return: A list of Dimension items.
         """
-        res = self._get(f"{self._url}/dimensions/{validate_dimension_id(dimension_id)}/items")
+        res = self._http.get(f"{self._url}/dimensions/{validate_dimension_id(dimension_id)}/items")
         return [DimensionWithCode.model_validate(e) for e in res.get("items", [])]
 
     def lookup_dimension_items(
@@ -345,7 +352,7 @@ class _TransactionalClient(_BaseClient):
                 "Invalid dimension_id. Must be a List (101xxxxxxxxx), Time (20000000003), "
                 "Version (20000000020), or Users (101999999999)."
             )
-        res = self._post(
+        res = self._http.post(
             f"{self._url}/dimensions/{dimension_id}/items", json={"codes": codes, "names": names}
         )
         return [DimensionWithCode.model_validate(e) for e in res.get("items", [])]
@@ -362,7 +369,7 @@ class _TransactionalClient(_BaseClient):
         :param dimension_id: The ID of the Dimension to get items for.
         :return: A list of Dimensions used in the View.
         """
-        res = self._get(f"{self._url}/views/{view_id}/dimensions/{dimension_id}/items")
+        res = self._http.get(f"{self._url}/views/{view_id}/dimensions/{dimension_id}/items")
         return [Dimension.model_validate(e) for e in res.get("items", [])]
 
     def get_line_item_dimensions(self, line_item_id: int) -> list[Dimension]:
@@ -372,5 +379,5 @@ class _TransactionalClient(_BaseClient):
         :param line_item_id: The ID of the Line Item.
         :return: A list of Dimensions used in the Line Item.
         """
-        res = self._get(f"{self._url}/lineItems/{line_item_id}/dimensions")
+        res = self._http.get(f"{self._url}/lineItems/{line_item_id}/dimensions")
         return [Dimension.model_validate(e) for e in res.get("dimensions", [])]

@@ -1,21 +1,16 @@
 from typing import Any, Literal
 
-import httpx
-
-from anaplan_sdk._base import _BaseClient
+from anaplan_sdk._services import _HttpService
 from anaplan_sdk.models import User
 
 Event = Literal["all", "byok", "user_activity"]
 
 
-class _AuditClient(_BaseClient):
-    def __init__(
-        self, client: httpx.Client, retry_count: int, thread_count: int, page_size: int
-    ) -> None:
+class _AuditClient:
+    def __init__(self, http: _HttpService) -> None:
+        self._http = http
         self._limit = 10_000
-        self._thread_count = thread_count
         self._url = "https://audit.anaplan.com/audit/api/1/events"
-        super().__init__(client, retry_count=retry_count, page_size=page_size)
 
     def get_users(self, search_pattern: str | None = None) -> list[User]:
         """
@@ -27,7 +22,7 @@ class _AuditClient(_BaseClient):
         params = {"s": search_pattern} if search_pattern else None
         return [
             User.model_validate(e)
-            for e in self._get_paginated(
+            for e in self._http.get_paginated(
                 "https://api.anaplan.com/2/0/users", "users", params=params
             )
         ]
@@ -38,7 +33,7 @@ class _AuditClient(_BaseClient):
         :return: The requested or currently authenticated User.
         """
         return User.model_validate(
-            self._get(f"https://api.anaplan.com/2/0/users/{user_id}").get("user")
+            self._http.get(f"https://api.anaplan.com/2/0/users/{user_id}").get("user")
         )
 
     def get_events(
@@ -52,7 +47,7 @@ class _AuditClient(_BaseClient):
         :return: A list of log entries, each containing a dictionary with event details.
         """
         return list(
-            self._get_paginated(
+            self._http.get_paginated(
                 self._url,
                 "response",
                 params={"type": event_type, "intervalInHours": days_into_past * 24},

@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from anaplan_sdk._base import _AsyncHttpService, construct_payload
+from anaplan_sdk._services import _AsyncHttpService, construct_payload
 from anaplan_sdk.models.flows import Flow, FlowInput, FlowSummary
 
 logger = logging.getLogger("anaplan_sdk")

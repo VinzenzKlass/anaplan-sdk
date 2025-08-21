@@ -1,7 +1,7 @@
 import logging
 from typing import Literal, overload
 
-from anaplan_sdk._base import _AsyncHttpService
+from anaplan_sdk._services import _AsyncHttpService
 from anaplan_sdk.exceptions import AnaplanActionError
 from anaplan_sdk.models import (
     ModelRevision,
