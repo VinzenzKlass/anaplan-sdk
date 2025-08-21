@@ -170,6 +170,27 @@ class AsyncClient:
         client._alm_client = _AsyncAlmClient(existing._http, new_model_id)
         return client
 
+    def switch_model(self, model_id: str | None = None, workspace_id: str | None = None) -> Self:
+        """
+        Creates a new instance of the Client with the given model and workspace Ids. **This creates
+        a copy of the current client. Do not expect the current instance to reference to new model
+        after calling this method.**
+        :param workspace_id: The workspace Id to use or None to use the existing workspace Id.
+        :param model_id: The model Id to use or None to use the existing model Id.
+        :return: A new instance of the Client.
+        """
+        client = copy(self)
+        new_ws_id = workspace_id or self._workspace_id
+        new_model_id = model_id or self._model_id
+        logger.debug(
+            f"Creating a new AsyncClient from existing instance "
+            f"with workspace_id={new_ws_id}, model_id={new_model_id}."
+        )
+        client._url = f"https://api.anaplan.com/2/0/workspaces/{new_ws_id}/models/{new_model_id}"
+        client._transactional_client = _AsyncTransactionalClient(self._http, new_model_id)
+        client._alm_client = _AsyncAlmClient(self._http, new_model_id)
+        return client
+
     @property
     def audit(self) -> _AsyncAuditClient:
         """
