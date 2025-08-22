@@ -113,7 +113,7 @@ class _HttpService:
         if total_items <= self._page_size:
             logger.debug("All items fit in first page, no additional requests needed.")
             return iter(first_page)
-        if kwargs.get("params", {}).get("sort", None):
+        if kwargs and (kwargs.get("params") or {}).get("sort", None):
             logger.warning(SORT_WARNING)
         pages_needed = ceil(total_items / actual_size)
         logger.debug(f"Fetching {pages_needed - 1} additional pages with {actual_size} items each.")
@@ -232,7 +232,7 @@ class _AsyncHttpService:
         if total_items <= self._page_size:
             logger.debug("All items fit in first page, no additional requests needed.")
             return iter(first_page)
-        if kwargs.get("params", {}).get("sort", None):
+        if kwargs and (kwargs.get("params") or {}).get("sort", None):
             logger.warning(SORT_WARNING)
         pages = await gather(
             *(
