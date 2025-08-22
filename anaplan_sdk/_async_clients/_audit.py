@@ -16,7 +16,7 @@ class _AsyncAuditClient:
     async def get_users(
         self,
         search_pattern: str | None = None,
-        sort_by: UserSortBy = "applied_on",
+        sort_by: UserSortBy = "last_login_date",
         descending: bool = True,
     ) -> list[User]:
         """
