@@ -286,6 +286,20 @@ class _AsyncHttpService:
         raise AnaplanException("Exhausted all retries without a successful response or Error.")
 
 
+def models_url(only_in_workspace: bool | str, workspace_id: str | None) -> str:
+    if isinstance(only_in_workspace, bool) and only_in_workspace:
+        if not workspace_id:
+            raise ValueError(
+                "Cannot list models in the current workspace, since no workspace Id was "
+                "provided when instantiating the client. Either provide a workspace Id when "
+                "instantiating the client, or pass a specific workspace Id to this method."
+            )
+        return f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models"
+    if isinstance(only_in_workspace, str):
+        return f"https://api.anaplan.com/2/0/workspaces/{only_in_workspace}/models"
+    return "https://api.anaplan.com/2/0/models"
+
+
 def sort_params(sort_by: str | None, descending: bool) -> dict[str, str | bool]:
     """
     Construct search parameters for sorting. This also converts snake_case to camelCase.
