@@ -103,7 +103,7 @@ class _CloudWorksClient:
         :param descending: If True, the results will be sorted in descending order.
         :return: A list of integrations.
         """
-        params = {"sortBy": f"{'-' if descending else ''}{sort_by}"}
+        params = {"sortBy": f"{'-' if descending else ''}{sort_by}"} if sort_by else None
         return [
             Integration.model_validate(e)
             for e in self._http.get_paginated(f"{self._url}", "integrations", params=params)
