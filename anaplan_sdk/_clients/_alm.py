@@ -31,18 +31,19 @@ class _AlmClient:
 
     def get_revisions(
         self,
-        sort_by: Literal["id", "name", "applied_on", "created_on"] = "applied_on",
-        descending: bool = True,
+        sort_by: Literal["id", "name", "applied_on", "created_on"] | None = None,
+        descending: bool = False,
     ) -> list[Revision]:
         """
-        Use this call to return a list of revisions for a specific model. By default, the results
-        are returned from the most recently created revision to the oldest revision.
+        Use this call to return a list of revisions for a specific model.
         :param sort_by: The field to sort the results by.
         :param descending: If True, the results will be sorted in descending order.
         :return: A list of revisions for a specific model.
         """
-        res = self._http.get(f"{self._url}/alm/revisions", params=sort_params(sort_by, descending))
-        return [Revision.model_validate(e) for e in res.get("revisions", [])]
+        res = self._http.get_paginated(
+            f"{self._url}/alm/revisions", "revisions", params=sort_params(sort_by, descending)
+        )
+        return [Revision.model_validate(e) for e in res]
 
     def get_latest_revision(self) -> Revision | None:
         """

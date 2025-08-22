@@ -28,6 +28,8 @@ from ._audit import _AuditClient
 from ._cloud_works import _CloudWorksClient
 from ._transactional import _TransactionalClient
 
+SortBy = Literal["id", "name"] | None
+
 logger = logging.getLogger("anaplan_sdk")
 
 
@@ -233,7 +235,7 @@ class Client:
     def get_workspaces(
         self,
         search_pattern: str | None = None,
-        sort_by: Literal["size_allowance", "name"] = "name",
+        sort_by: Literal["size_allowance", "name"] | None = None,
         descending: bool = False,
     ) -> list[Workspace]:
         """
@@ -257,7 +259,7 @@ class Client:
     def get_models(
         self,
         search_pattern: str | None = None,
-        sort_by: Literal["active_state", "name"] = "name",
+        sort_by: Literal["active_state", "name"] | None = None,
         descending: bool = False,
     ) -> list[Model]:
         """
@@ -306,9 +308,7 @@ class Client:
         )
         return [File.model_validate(e) for e in res]
 
-    def get_actions(
-        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
-    ) -> list[Action]:
+    def get_actions(self, sort_by: SortBy = None, descending: bool = False) -> list[Action]:
         """
         Lists all the Actions in the Model. This will only return the Actions listed under
         `Other Actions` in Anaplan. For Imports, exports, and processes, see their respective
@@ -322,9 +322,7 @@ class Client:
         )
         return [Action.model_validate(e) for e in res]
 
-    def get_processes(
-        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
-    ) -> list[Process]:
+    def get_processes(self, sort_by: SortBy = None, descending: bool = False) -> list[Process]:
         """
         Lists all the Processes in the Model.
         :param sort_by: The field to sort the results by.
@@ -336,9 +334,7 @@ class Client:
         )
         return [Process.model_validate(e) for e in res]
 
-    def get_imports(
-        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
-    ) -> list[Import]:
+    def get_imports(self, sort_by: SortBy = None, descending: bool = False) -> list[Import]:
         """
         Lists all the Imports in the Model.
         :param sort_by: The field to sort the results by.
@@ -350,9 +346,7 @@ class Client:
         )
         return [Import.model_validate(e) for e in res]
 
-    def get_exports(
-        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
-    ) -> list[Export]:
+    def get_exports(self, sort_by: SortBy = None, descending: bool = False) -> list[Export]:
         """
         Lists all the Exports in the Model.
         :param sort_by: The field to sort the results by.
