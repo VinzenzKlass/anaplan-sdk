@@ -30,6 +30,8 @@ from anaplan_sdk.models import (
     ViewInfo,
 )
 
+SortBy = Literal["id", "name"] | None
+
 logger = logging.getLogger("anaplan_sdk")
 
 
@@ -67,9 +69,7 @@ class _TransactionalClient:
         self._http.post_empty(f"{self._url}/close", headers={"Content-Type": "application/text"})
         logger.info(f"Closed model '{self._model_id}'.")
 
-    def get_modules(
-        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
-    ) -> list[Module]:
+    def get_modules(self, sort_by: SortBy = None, descending: bool = False) -> list[Module]:
         """
         Lists all the Modules in the Model.
         :param sort_by: The field to sort the results by.
@@ -82,7 +82,7 @@ class _TransactionalClient:
         return [Module.model_validate(e) for e in res]
 
     def get_views(
-        self, sort_by: Literal["id", "module_id", "name"] = "id", descending: bool = False
+        self, sort_by: Literal["id", "module_id", "name"] | None = None, descending: bool = False
     ) -> list[View]:
         """
         Lists all the Views in the Model. This will include all Modules and potentially other saved
@@ -118,9 +118,7 @@ class _TransactionalClient:
         )
         return [LineItem.model_validate(e) for e in self._http.get(url).get("items", [])]
 
-    def get_lists(
-        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
-    ) -> list[List]:
+    def get_lists(self, sort_by: SortBy = None, descending: bool = False) -> list[List]:
         """
         Lists all the Lists in the Model.
         :param sort_by: The field to sort the results by.

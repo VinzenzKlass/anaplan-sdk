@@ -27,6 +27,8 @@ from ._audit import _AsyncAuditClient
 from ._cloud_works import _AsyncCloudWorksClient
 from ._transactional import _AsyncTransactionalClient
 
+SortBy = Literal["id", "name"] | None
+
 logger = logging.getLogger("anaplan_sdk")
 
 
@@ -228,7 +230,7 @@ class AsyncClient:
     async def get_workspaces(
         self,
         search_pattern: str | None = None,
-        sort_by: Literal["size_allowance", "name"] = "name",
+        sort_by: Literal["size_allowance", "name"] | None = None,
         descending: bool = False,
     ) -> list[Workspace]:
         """
@@ -252,7 +254,7 @@ class AsyncClient:
     async def get_models(
         self,
         search_pattern: str | None = None,
-        sort_by: Literal["active_state", "name"] = "name",
+        sort_by: Literal["active_state", "name"] | None = None,
         descending: bool = False,
     ) -> list[Model]:
         """
@@ -287,9 +289,7 @@ class AsyncClient:
         )
         return ModelDeletionResult.model_validate(res)
 
-    async def get_files(
-        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
-    ) -> list[File]:
+    async def get_files(self, sort_by: SortBy = None, descending: bool = False) -> list[File]:
         """
         Lists all the Files in the Model.
         :param sort_by: The field to sort the results by.
@@ -301,9 +301,7 @@ class AsyncClient:
         )
         return [File.model_validate(e) for e in res]
 
-    async def get_actions(
-        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
-    ) -> list[Action]:
+    async def get_actions(self, sort_by: SortBy = None, descending: bool = False) -> list[Action]:
         """
         Lists all the Actions in the Model. This will only return the Actions listed under
         `Other Actions` in Anaplan. For Imports, exports, and processes, see their respective
@@ -318,7 +316,7 @@ class AsyncClient:
         return [Action.model_validate(e) for e in res]
 
     async def get_processes(
-        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
+        self, sort_by: SortBy = None, descending: bool = False
     ) -> list[Process]:
         """
         Lists all the Processes in the Model.
@@ -331,9 +329,7 @@ class AsyncClient:
         )
         return [Process.model_validate(e) for e in res]
 
-    async def get_imports(
-        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
-    ) -> list[Import]:
+    async def get_imports(self, sort_by: SortBy = None, descending: bool = False) -> list[Import]:
         """
         Lists all the Imports in the Model.
         :param sort_by: The field to sort the results by.
@@ -345,9 +341,7 @@ class AsyncClient:
         )
         return [Import.model_validate(e) for e in res]
 
-    async def get_exports(
-        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
-    ) -> list[Export]:
+    async def get_exports(self, sort_by: SortBy = None, descending: bool = False) -> list[Export]:
         """
         Lists all the Exports in the Model.
         :param sort_by: The field to sort the results by.

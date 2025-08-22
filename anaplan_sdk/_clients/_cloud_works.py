@@ -95,14 +95,15 @@ class _CloudWorksClient:
         logger.info(f"Deleted connection '{con_id}'.")
 
     def get_integrations(
-        self, sort_by_name: Literal["ascending", "descending"] = "ascending"
+        self, sort_by: Literal["name"] | None = None, descending: bool = False
     ) -> list[Integration]:
         """
         List all integrations in CloudWorks.
-        :param sort_by_name: Sort the integrations by name in ascending or descending order.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: A list of integrations.
         """
-        params = {"sortBy": "name" if sort_by_name == "ascending" else "-name"}
+        params = {"sortBy": f"{'-' if descending else ''}{sort_by}"} if sort_by else None
         return [
             Integration.model_validate(e)
             for e in self._http.get_paginated(f"{self._url}", "integrations", params=params)

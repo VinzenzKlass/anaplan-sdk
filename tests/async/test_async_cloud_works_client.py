@@ -51,7 +51,7 @@ async def test_list_integrations(client):
 
 
 async def test_list_integrations_desc(client):
-    integrations_desc = await client.cw.get_integrations(sort_by_name="descending")
+    integrations_desc = await client.cw.get_integrations(sort_by="name", descending=True)
     assert isinstance(integrations_desc, list)
     assert all(isinstance(i, Integration) for i in integrations_desc)
 

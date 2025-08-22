@@ -4,7 +4,7 @@ from anaplan_sdk._services import _HttpService, sort_params
 from anaplan_sdk.models import User
 
 Event = Literal["all", "byok", "user_activity"]
-UserSortBy = Literal["first_name", "last_name", "email", "active", "last_login_date"]
+UserSortBy = Literal["first_name", "last_name", "email", "active", "last_login_date"] | None
 
 
 class _AuditClient:
@@ -16,8 +16,8 @@ class _AuditClient:
     def get_users(
         self,
         search_pattern: str | None = None,
-        sort_by: UserSortBy = "last_login_date",
-        descending: bool = True,
+        sort_by: UserSortBy = None,
+        descending: bool = False,
     ) -> list[User]:
         """
         Lists all the Users in the authenticated users default tenant.
