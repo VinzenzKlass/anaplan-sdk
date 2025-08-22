@@ -25,7 +25,10 @@ def client_small_pages() -> Client:
         model_id=getenv("ANAPLAN_SDK_TEST_MODEL_ID"),
         certificate=getenv("ANAPLAN_SDK_TEST_CERT"),
         private_key=getenv("ANAPLAN_SDK_TEST_PK"),
-        page_size=10,
+        page_size=100,
+        retry_count=3,
+        backoff=5,
+        timeout=120,
     )
 
 
