@@ -49,6 +49,8 @@ class AsyncClient:
         auth: httpx.Auth | None = None,
         timeout: float | httpx.Timeout = 30,
         retry_count: int = 2,
+        backoff: float = 1.0,
+        backoff_factor: float = 2.0,
         page_size: int = 5_000,
         status_poll_delay: int = 1,
         upload_chunk_size: int = 25_000_000,
@@ -86,6 +88,11 @@ class AsyncClient:
         :param retry_count: The number of times to retry an HTTP request if it fails. Set this to 0
                to never retry. Defaults to 2, meaning each HTTP Operation will be tried a total
                number of 2 times.
+        :param backoff: The initial backoff time in seconds for the retry mechanism. This is the
+               time to wait before the first retry.
+        :param backoff_factor: The factor by which the backoff time is multiplied after each retry.
+               For example, if the initial backoff is 1 second and the factor is 2, the second
+               retry will wait 2 seconds, the third retry will wait 4 seconds, and so on.
         :param page_size: The number of items to return per page when paginating through results.
                Defaults to 5000. This is the maximum number of items that can be returned per
                request. If you pass a value greater than 5000, it will be capped to 5000.
@@ -110,7 +117,14 @@ class AsyncClient:
             private_key_password=private_key_password,
         )
         _client = httpx.AsyncClient(auth=_auth, timeout=timeout, **httpx_kwargs)
-        self._http = _AsyncHttpService(_client, retry_count, page_size, status_poll_delay)
+        self._http = _AsyncHttpService(
+            _client,
+            retry_count=retry_count,
+            backoff=backoff,
+            backoff_factor=backoff_factor,
+            page_size=page_size,
+            poll_delay=status_poll_delay,
+        )
         self._workspace_id = workspace_id
         self._model_id = model_id
         self._url = f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models/{model_id}"
