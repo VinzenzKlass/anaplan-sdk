@@ -47,13 +47,14 @@ async def test_file_creation_raises_exception(client: AsyncClient):
 
 
 async def test_list_models(client: AsyncClient):
-    models, search = await gather(client.get_models(), client.get_models("Demo"))
+    models, current_only, search = await gather(
+        client.get_models(), client.get_models(True), client.get_models(search_pattern="Demo")
+    )
     assert isinstance(models, list)
     assert all(isinstance(model, Model) for model in models)
+    assert all(isinstance(model, Model) for model in current_only)
     assert all(isinstance(model, Model) for model in search)
-    assert len(models) > 0
-    assert len(search) > 0
-    assert len(search) < len(models)
+    assert len(models) > len(current_only) > len(search) > 0
 
 
 async def test_list_models_multi_page(client_small_pages: AsyncClient):

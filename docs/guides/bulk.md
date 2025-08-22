@@ -55,6 +55,8 @@ provide the workspace and model IDs.
     # Globals, this will work on an instance with auth info only
     workspaces = anaplan.get_workspaces()
     models = anaplan.get_models()
+    models_in_current_ws = anaplan.get_models(True) # This requires a workspace_id
+    models_in_other_ws = anaplan.get_models("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
     
     # These require an instance with workspace and model info
     imports = anaplan.get_imports()
@@ -64,8 +66,11 @@ provide the workspace and model IDs.
     ```
 === "Asynchronous"
     ```python
-    workspaces, models = await gather(
-        anaplan.get_workspaces(), anaplan.get_models()
+    workspaces, models, models_in_current_ws, models_in_other_ws = await gather(
+        anaplan.get_workspaces(), 
+        anaplan.get_models(),
+        anaplan.get_models(True), # This requires a workspace_id in
+        anaplan.get_models("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB")
     ) # Globals, this will work on an instance with auth info only
     
     imports, exports, actions, processes = await gather(
