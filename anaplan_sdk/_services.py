@@ -11,6 +11,7 @@ from typing import Any, Awaitable, Callable, Coroutine, Iterator, Literal, Type,
 
 import httpx
 from httpx import HTTPError, Response
+from pydantic.alias_generators import to_camel
 
 from .exceptions import AnaplanException, AnaplanTimeoutException, InvalidIdentifierException
 from .models import (
@@ -252,6 +253,16 @@ class _AsyncHttpService:
                 logger.info(f"Retrying for: {url}")
 
         raise AnaplanException("Exhausted all retries without a successful response or Error.")
+
+
+def sort_params(sort_by: str, descending: bool) -> dict[str, str | bool]:
+    """
+    Construct search parameters for sorting. This also converts snake_case to camelCase.
+    :param sort_by: The field to sort by, optionally in snake_case.
+    :param descending: Whether to sort in descending order.
+    :return: A dictionary of search parameters in Anaplan's expected format.
+    """
+    return {"sort": f"{'-' if descending else '+'}{to_camel(sort_by)}"}
 
 
 def construct_payload(model: Type[T], body: T | dict[str, Any]) -> dict[str, Any]:

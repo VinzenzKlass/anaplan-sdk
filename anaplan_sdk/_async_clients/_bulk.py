@@ -7,7 +7,7 @@ import httpx
 from typing_extensions import Self
 
 from anaplan_sdk._auth import _create_auth
-from anaplan_sdk._services import _AsyncHttpService, action_url
+from anaplan_sdk._services import _AsyncHttpService, action_url, sort_params
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
 from anaplan_sdk.models import (
     Action,
@@ -214,7 +214,7 @@ class AsyncClient:
     async def get_workspaces(
         self,
         search_pattern: str | None = None,
-        sort_by: Literal["sizeAllowance", "name"] = "name",
+        sort_by: Literal["size_allowance", "name"] = "name",
         descending: bool = False,
     ) -> list[Workspace]:
         """
@@ -227,7 +227,7 @@ class AsyncClient:
         :param descending: If True, the results will be sorted in descending order.
         :return: The List of Workspaces.
         """
-        params = {"tenantDetails": "true", "sort": f"{'-' if descending else '+'}{sort_by}"}
+        params = {"tenantDetails": "true"} | sort_params(sort_by, descending)
         if search_pattern:
             params["s"] = search_pattern
         return [
@@ -240,7 +240,7 @@ class AsyncClient:
     async def get_models(
         self,
         search_pattern: str | None = None,
-        sort_by: Literal["activeState", "name"] = "name",
+        sort_by: Literal["active_state", "name"] = "name",
         descending: bool = False,
     ) -> list[Model]:
         """
@@ -253,7 +253,7 @@ class AsyncClient:
         :param descending: If True, the results will be sorted in descending order.
         :return: The List of Models.
         """
-        params = {"modelDetails": "true", "sort": f"{'-' if descending else '+'}{sort_by}"}
+        params = {"modelDetails": "true"} | sort_params(sort_by, descending)
         if search_pattern:
             params["s"] = search_pattern
         return [
@@ -286,11 +286,10 @@ class AsyncClient:
         :param descending: If True, the results will be sorted in descending order.
         :return: The List of Files.
         """
-        params = {"sort": f"{'-' if descending else '+'}{sort_by}"}
-        return [
-            File.model_validate(e)
-            for e in await self._http.get_paginated(f"{self._url}/files", "files", params=params)
-        ]
+        res = await self._http.get_paginated(
+            f"{self._url}/files", "files", params=sort_params(sort_by, descending)
+        )
+        return [File.model_validate(e) for e in res]
 
     async def get_actions(
         self, sort_by: Literal["id", "name"] = "id", descending: bool = False
@@ -303,13 +302,10 @@ class AsyncClient:
         :param descending: If True, the results will be sorted in descending order.
         :return: The List of Actions.
         """
-        params = {"sort": f"{'-' if descending else '+'}{sort_by}"}
-        return [
-            Action.model_validate(e)
-            for e in await self._http.get_paginated(
-                f"{self._url}/actions", "actions", params=params
-            )
-        ]
+        res = await self._http.get_paginated(
+            f"{self._url}/actions", "actions", params=sort_params(sort_by, descending)
+        )
+        return [Action.model_validate(e) for e in res]
 
     async def get_processes(
         self, sort_by: Literal["id", "name"] = "id", descending: bool = False
@@ -320,13 +316,10 @@ class AsyncClient:
         :param descending: If True, the results will be sorted in descending order.
         :return: The List of Processes.
         """
-        params = {"sort": f"{'-' if descending else '+'}{sort_by}"}
-        return [
-            Process.model_validate(e)
-            for e in await self._http.get_paginated(
-                f"{self._url}/processes", "processes", params=params
-            )
-        ]
+        res = await self._http.get_paginated(
+            f"{self._url}/processes", "processes", params=sort_params(sort_by, descending)
+        )
+        return [Process.model_validate(e) for e in res]
 
     async def get_imports(
         self, sort_by: Literal["id", "name"] = "id", descending: bool = False
@@ -337,13 +330,10 @@ class AsyncClient:
         :param descending: If True, the results will be sorted in descending order.
         :return: The List of Imports.
         """
-        params = {"sort": f"{'-' if descending else '+'}{sort_by}"}
-        return [
-            Import.model_validate(e)
-            for e in await self._http.get_paginated(
-                f"{self._url}/imports", "imports", params=params
-            )
-        ]
+        res = await self._http.get_paginated(
+            f"{self._url}/imports", "imports", params=sort_params(sort_by, descending)
+        )
+        return [Import.model_validate(e) for e in res]
 
     async def get_exports(
         self, sort_by: Literal["id", "name"] = "id", descending: bool = False
@@ -354,13 +344,10 @@ class AsyncClient:
         :param descending: If True, the results will be sorted in descending order.
         :return: The List of Exports.
         """
-        params = {"sort": f"{'-' if descending else '+'}{sort_by}"}
-        return [
-            Export.model_validate(e)
-            for e in await self._http.get_paginated(
-                f"{self._url}/exports", "exports", params=params
-            )
-        ]
+        res = await self._http.get_paginated(
+            f"{self._url}/exports", "exports", params=sort_params(sort_by, descending)
+        )
+        return [Export.model_validate(e) for e in res]
 
     async def run_action(self, action_id: int, wait_for_completion: bool = True) -> TaskStatus:
         """
