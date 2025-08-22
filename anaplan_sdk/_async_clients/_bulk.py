@@ -244,12 +244,10 @@ class AsyncClient:
         params = {"tenantDetails": "true"} | sort_params(sort_by, descending)
         if search_pattern:
             params["s"] = search_pattern
-        return [
-            Workspace.model_validate(e)
-            for e in await self._http.get_paginated(
-                "https://api.anaplan.com/2/0/workspaces", "workspaces", params=params
-            )
-        ]
+        res = await self._http.get_paginated(
+            "https://api.anaplan.com/2/0/workspaces", "workspaces", params=params
+        )
+        return [Workspace.model_validate(e) for e in res]
 
     async def get_models(
         self,
@@ -270,12 +268,10 @@ class AsyncClient:
         params = {"modelDetails": "true"} | sort_params(sort_by, descending)
         if search_pattern:
             params["s"] = search_pattern
-        return [
-            Model.model_validate(e)
-            for e in await self._http.get_paginated(
-                "https://api.anaplan.com/2/0/models", "models", params=params
-            )
-        ]
+        res = await self._http.get_paginated(
+            "https://api.anaplan.com/2/0/models", "models", params=params
+        )
+        return [Model.model_validate(e) for e in res]
 
     async def delete_models(self, model_ids: list[str]) -> ModelDeletionResult:
         """
