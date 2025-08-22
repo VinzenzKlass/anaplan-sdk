@@ -44,14 +44,15 @@ def test_file_creation_raises_exception(client: Client):
         client.upload_file(115000000000, b"")
 
 
-def test_list_models(client):
-    models, search = client.get_models(), client.get_models("Demo")
+def test_list_models(client: Client):
+    models = client.get_models()
+    current_only = client.get_models(True)
+    search = client.get_models(search_pattern="Demo")
     assert isinstance(models, list)
     assert all(isinstance(model, Model) for model in models)
+    assert all(isinstance(model, Model) for model in current_only)
     assert all(isinstance(model, Model) for model in search)
-    assert len(models) > 0
-    assert len(search) > 0
-    assert len(search) < len(models)
+    assert len(models) > len(current_only) > len(search) > 0
 
 
 def test_list_models_multi_page(client_small_pages: Client):

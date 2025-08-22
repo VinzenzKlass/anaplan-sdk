@@ -1,6 +1,6 @@
 [project]
 name = "anaplan-sdk"
-version = "0.5.0a3"
+version = "0.5.0a4"
 description = "Streamlined Python Interface for the Anaplan API."
 license = "Apache-2.0"
 authors = [{ name = "Vinzenz Klass", email = "vinzenz.klass@valantic.com" }]

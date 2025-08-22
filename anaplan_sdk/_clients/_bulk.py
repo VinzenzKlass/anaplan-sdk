@@ -8,7 +8,7 @@ import httpx
 from typing_extensions import Self
 
 from anaplan_sdk._auth import _create_auth
-from anaplan_sdk._services import _HttpService, action_url, sort_params
+from anaplan_sdk._services import _HttpService, action_url, models_url, sort_params
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
 from anaplan_sdk.models import (
     Action,
@@ -258,12 +258,16 @@ class Client:
 
     def get_models(
         self,
+        only_in_workspace: bool | str = False,
         search_pattern: str | None = None,
         sort_by: Literal["active_state", "name"] | None = None,
         descending: bool = False,
     ) -> list[Model]:
         """
         Lists all the Models the authenticated user has access to.
+        :param only_in_workspace: If True, only lists models in the workspace provided when
+               instantiating the client. If a string is provided, only lists models in the workspace
+               with the given Id. If False (default), lists models in all workspaces the user
         :param search_pattern: Optionally filter for specific models. When provided,
                case-insensitive matches model names containing this string.
                You can use the wildcards `%` for 0-n characters, and `_` for exactly 1 character.
@@ -276,7 +280,7 @@ class Client:
         if search_pattern:
             params["s"] = search_pattern
         res = self._http.get_paginated(
-            "https://api.anaplan.com/2/0/models", "models", params=params
+            models_url(only_in_workspace, self._workspace_id), "models", params=params
         )
         return [Model.model_validate(e) for e in res]
 
