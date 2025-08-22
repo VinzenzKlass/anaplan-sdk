@@ -1,9 +1,10 @@
 from typing import Any, Literal
 
-from anaplan_sdk._services import _AsyncHttpService
+from anaplan_sdk._services import _AsyncHttpService, sort_params
 from anaplan_sdk.models import User
 
 Event = Literal["all", "byok", "user_activity"]
+UserSortBy = Literal["first_name", "last_name", "email", "active", "last_login_date"]
 
 
 class _AsyncAuditClient:
@@ -12,22 +13,29 @@ class _AsyncAuditClient:
         self._limit = 10_000
         self._url = "https://audit.anaplan.com/audit/api/1/events"
 
-    async def get_users(self, search_pattern: str | None = None) -> list[User]:
+    async def get_users(
+        self,
+        search_pattern: str | None = None,
+        sort_by: UserSortBy = "last_login_date",
+        descending: bool = True,
+    ) -> list[User]:
         """
         Lists all the Users in the authenticated users default tenant.
         :param search_pattern: Optionally filter for specific users. When provided,
                case-insensitive matches users with emails or names containing this string.
                You can use the wildcards `%` for 0-n characters, and `_` for exactly 1 character.
                When None (default), returns all users.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Users.
         """
-        params = {"s": search_pattern} if search_pattern else None
-        return [
-            User.model_validate(e)
-            for e in await self._http.get_paginated(
-                "https://api.anaplan.com/2/0/users", "users", params=params
-            )
-        ]
+        params = sort_params(sort_by, descending)
+        if search_pattern:
+            params["s"] = search_pattern
+        res = await self._http.get_paginated(
+            "https://api.anaplan.com/2/0/users", "users", params=params
+        )
+        return [User.model_validate(e) for e in res]
 
     async def get_user(self, user_id: str = "me") -> User:
         """

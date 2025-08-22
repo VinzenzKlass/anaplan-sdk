@@ -7,6 +7,7 @@ from anaplan_sdk._services import (
     _AsyncHttpService,
     parse_calendar_response,
     parse_insertion_response,
+    sort_params,
     validate_dimension_id,
 )
 from anaplan_sdk.exceptions import InvalidIdentifierException
@@ -68,23 +69,31 @@ class _AsyncTransactionalClient:
         )
         logger.info(f"Closed model '{self._model_id}'.")
 
-    async def get_modules(self) -> list[Module]:
+    async def get_modules(
+        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
+    ) -> list[Module]:
         """
         Lists all the Modules in the Model.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Modules.
         """
-        return [
-            Module.model_validate(e)
-            for e in await self._http.get_paginated(f"{self._url}/modules", "modules")
-        ]
+        res = await self._http.get_paginated(
+            f"{self._url}/modules", "modules", params=sort_params(sort_by, descending)
+        )
+        return [Module.model_validate(e) for e in res]
 
-    async def get_views(self) -> list[View]:
+    async def get_views(
+        self, sort_by: Literal["id", "module_id", "name"] = "id", descending: bool = False
+    ) -> list[View]:
         """
         Lists all the Views in the Model. This will include all Modules and potentially other saved
         views.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Views.
         """
-        params = {"includesubsidiaryviews": True}
+        params = {"includesubsidiaryviews": True} | sort_params(sort_by, descending)
         return [
             View.model_validate(e)
             for e in await self._http.get_paginated(f"{self._url}/views", "views", params=params)
@@ -111,15 +120,19 @@ class _AsyncTransactionalClient:
         )
         return [LineItem.model_validate(e) for e in res.get("items", [])]
 
-    async def get_lists(self) -> list[List]:
+    async def get_lists(
+        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
+    ) -> list[List]:
         """
         Lists all the Lists in the Model.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: All Lists on this model.
         """
-        return [
-            List.model_validate(e)
-            for e in await self._http.get_paginated(f"{self._url}/lists", "lists")
-        ]
+        res = await self._http.get_paginated(
+            f"{self._url}/lists", "lists", params=sort_params(sort_by, descending)
+        )
+        return [List.model_validate(e) for e in res]
 
     async def get_list_metadata(self, list_id: int) -> ListMetadata:
         """

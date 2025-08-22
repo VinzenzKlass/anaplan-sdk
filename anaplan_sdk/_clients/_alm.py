@@ -1,7 +1,7 @@
 import logging
 from typing import Literal, overload
 
-from anaplan_sdk._services import _HttpService
+from anaplan_sdk._services import _HttpService, sort_params
 from anaplan_sdk.exceptions import AnaplanActionError
 from anaplan_sdk.models import (
     ModelRevision,
@@ -29,12 +29,19 @@ class _AlmClient:
         logger.info(f"Changed model status to '{status}' for model {self._model_id}.")
         self._http.put(f"{self._url}/onlineStatus", json={"status": status})
 
-    def get_revisions(self) -> list[Revision]:
+    def get_revisions(
+        self,
+        sort_by: Literal["id", "name", "applied_on", "created_on"] = "applied_on",
+        descending: bool = True,
+    ) -> list[Revision]:
         """
-        Use this call to return a list of revisions for a specific model.
+        Use this call to return a list of revisions for a specific model. By default, the results
+        are returned from the most recently created revision to the oldest revision.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: A list of revisions for a specific model.
         """
-        res = self._http.get(f"{self._url}/alm/revisions")
+        res = self._http.get(f"{self._url}/alm/revisions", params=sort_params(sort_by, descending))
         return [Revision.model_validate(e) for e in res.get("revisions", [])]
 
     def get_latest_revision(self) -> Revision | None:
