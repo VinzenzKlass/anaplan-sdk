@@ -225,7 +225,9 @@ class AsyncClient:
     ) -> list[Workspace]:
         """
         Lists all the Workspaces the authenticated user has access to.
-        :param search_pattern: Optionally filter for specific workspaces. When provided,
+        :param search_pattern: **Caution: This is an undocumented Feature and may behave
+               unpredictably. It requires the Tenant Admin role. For non-admin users, it is
+               ignored.** Optionally filter for specific workspaces. When provided,
                case-insensitive matches workspaces with names containing this string.
                You can use the wildcards `%` for 0-n characters, and `_` for exactly 1 character.
                When None (default), returns all users.
@@ -253,7 +255,9 @@ class AsyncClient:
         :param only_in_workspace: If True, only lists models in the workspace provided when
                instantiating the client. If a string is provided, only lists models in the workspace
                with the given Id. If False (default), lists models in all workspaces the user
-        :param search_pattern: Optionally filter for specific models. When provided,
+        :param search_pattern:  **Caution: This is an undocumented Feature and may behave
+               unpredictably. It requires the Tenant Admin role. For non-admin users, it is
+               ignored.** Optionally filter for specific models. When provided,
                case-insensitive matches model names containing this string.
                You can use the wildcards `%` for 0-n characters, and `_` for exactly 1 character.
                When None (default), returns all models.

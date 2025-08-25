@@ -21,7 +21,9 @@ class _AsyncAuditClient:
     ) -> list[User]:
         """
         Lists all the Users in the authenticated users default tenant.
-        :param search_pattern: Optionally filter for specific users. When provided,
+        :param search_pattern: **Caution: This is an undocumented Feature and may behave
+               unpredictably. It requires the Tenant Admin role. For non-admin users, it is
+               ignored.** Optionally filter for specific users. When provided,
                case-insensitive matches users with emails or names containing this string.
                You can use the wildcards `%` for 0-n characters, and `_` for exactly 1 character.
                When None (default), returns all users.
