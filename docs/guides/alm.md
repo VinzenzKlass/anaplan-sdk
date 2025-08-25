@@ -245,9 +245,7 @@ Here's an example of a complete deployment pipeline that creates a revision, syn
             certificate="~/certs/anaplan.pem",
             private_key="~/keys/anaplan.pem",
         )
-        target_client = anaplan_sdk.Client.from_existing(
-            source_client, model_id=target_model_id
-        )
+        target_client = source_client.with_model(target_model_id)
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         source_revision = source_client.alm.create_revision(
             name=f"Production Deploy {now}",
@@ -273,9 +271,7 @@ Here's an example of a complete deployment pipeline that creates a revision, syn
             certificate="~/certs/anaplan.pem",
             private_key="~/keys/anaplan.pem",
         )
-        target_client = anaplan_sdk.AsyncClient.from_existing(
-            source_client, model_id=target_model_id
-        )
+        target_client = source_client.with_model(target_model_id)
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         source_revision, target_revision = await gather(
             source_client.alm.create_revision(

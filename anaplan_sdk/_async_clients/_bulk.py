@@ -142,34 +142,24 @@ class AsyncClient:
             f"Initialized AsyncClient with workspace_id={workspace_id}, model_id={model_id}"
         )
 
-    @classmethod
-    def from_existing(
-        cls, existing: Self, *, workspace_id: str | None = None, model_id: str | None = None
-    ) -> Self:
+    def with_model(self, model_id: str | None = None, workspace_id: str | None = None) -> Self:
         """
-        Create a new instance of the Client from an existing instance. This is useful if you want
-        to interact with multiple models or workspaces in the same script but share the same
-        authentication and configuration. This creates a shallow copy of the existing client and
-        optionally updates the relevant attributes to the new workspace and model. You can provide
-        either a new workspace Id or a new model Id, or both. If you do not provide one of them,
-        the existing value will be used. If you omit both, the new instance will be an identical
-        copy of the existing instance.
-
-        :param existing: The existing instance to copy.
+        Create a new instance of the Client with the given model and workspace Ids. **This creates
+        a copy of the current client. The current instance remains unchanged.**
         :param workspace_id: The workspace Id to use or None to use the existing workspace Id.
         :param model_id: The model Id to use or None to use the existing model Id.
         :return: A new instance of the Client.
         """
-        client = copy(existing)
-        new_ws_id = workspace_id or existing._workspace_id
-        new_model_id = model_id or existing._model_id
+        client = copy(self)
+        new_ws_id = workspace_id or self._workspace_id
+        new_model_id = model_id or self._model_id
         logger.debug(
             f"Creating a new AsyncClient from existing instance "
             f"with workspace_id={new_ws_id}, model_id={new_model_id}."
         )
         client._url = f"https://api.anaplan.com/2/0/workspaces/{new_ws_id}/models/{new_model_id}"
-        client._transactional_client = _AsyncTransactionalClient(existing._http, new_model_id)
-        client._alm_client = _AsyncAlmClient(existing._http, new_model_id)
+        client._transactional_client = _AsyncTransactionalClient(self._http, new_model_id)
+        client._alm_client = _AsyncAlmClient(self._http, new_model_id)
         return client
 
     @property

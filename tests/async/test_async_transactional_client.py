@@ -24,8 +24,7 @@ async def test_wake_model(client: AsyncClient):
 
 
 async def test_close_model(client: AsyncClient):
-    other = AsyncClient.from_existing(client, model_id="C87EBE934BD442B1A798540E0CA5A877")
-    await other.tr.close_model()
+    await client.with_model("C87EBE934BD442B1A798540E0CA5A877").tr.close_model()
 
 
 async def test_get_model(client: AsyncClient):
