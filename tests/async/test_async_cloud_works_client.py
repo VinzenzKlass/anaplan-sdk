@@ -11,7 +11,7 @@ from anaplan_sdk.models.cloud_works import (
 
 
 async def test_list_connections(client):
-    connections = await client.cw.list_connections()
+    connections = await client.cw.get_connections()
     assert isinstance(connections, list)
     assert all(isinstance(c, Connection) for c in connections)
 
@@ -45,13 +45,13 @@ async def test_get_integration(client, registry, test_integration):
 
 
 async def test_list_integrations(client):
-    integrations_asc = await client.cw.list_integrations()
+    integrations_asc = await client.cw.get_integrations()
     assert isinstance(integrations_asc, list)
     assert all(isinstance(i, Integration) for i in integrations_asc)
 
 
 async def test_list_integrations_desc(client):
-    integrations_desc = await client.cw.list_integrations(sort_by_name="descending")
+    integrations_desc = await client.cw.get_integrations(sort_by="name", descending=True)
     assert isinstance(integrations_desc, list)
     assert all(isinstance(i, Integration) for i in integrations_desc)
 

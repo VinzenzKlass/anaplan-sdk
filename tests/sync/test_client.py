@@ -6,11 +6,11 @@ from anaplan_sdk.exceptions import (
     InvalidCredentialsException,
     InvalidIdentifierException,
 )
-from anaplan_sdk.models import Model, TaskStatus, Workspace
+from anaplan_sdk.models import Model, TaskStatus, TaskSummary, Workspace
 
 
 def test_list_workspaces(client):
-    workspaces, search = client.list_workspaces(), client.list_workspaces("Demo")
+    workspaces, search = client.get_workspaces(), client.get_workspaces("Demo")
     assert isinstance(workspaces, list)
     assert all(isinstance(workspace, Workspace) for workspace in workspaces)
     assert all(isinstance(workspace, Workspace) for workspace in search)
@@ -21,7 +21,7 @@ def test_list_workspaces(client):
 
 def test_broken_list_files_raises_invalid_identifier_error(broken_client):
     with pytest.raises(InvalidIdentifierException):
-        broken_client.list_files()
+        broken_client.get_files()
 
 
 def unauthenticated_client_raises_exception():
@@ -29,42 +29,66 @@ def unauthenticated_client_raises_exception():
         _ = Client(user_email="invalid_email", password="pass")
 
 
-def test_list_models(client):
-    models, search = client.list_models(), client.list_models("Demo")
+def test_broken_client_alm_raises(broken_client: Client):
+    with pytest.raises(ValueError):
+        _ = broken_client.alm
+
+
+def test_broken_client_transactional_raises(broken_client: Client):
+    with pytest.raises(ValueError):
+        _ = broken_client.tr
+
+
+def test_file_creation_raises_exception(client: Client):
+    with pytest.raises(InvalidIdentifierException):
+        client.upload_file(115000000000, b"")
+
+
+def test_list_models(client: Client):
+    models = client.get_models()
+    current_only = client.get_models(True)
+    search = client.get_models(search_pattern="Demo")
     assert isinstance(models, list)
     assert all(isinstance(model, Model) for model in models)
+    assert all(isinstance(model, Model) for model in current_only)
     assert all(isinstance(model, Model) for model in search)
+    assert len(models) > len(current_only) > len(search) > 0
+
+
+def test_list_models_multi_page(client_small_pages: Client):
+    models = client_small_pages.get_models()
+    assert isinstance(models, list)
     assert len(models) > 0
-    assert len(search) > 0
-    assert len(search) < len(models)
+    assert all(isinstance(model, Model) for model in models)
+    assert len(models) == len(set(m.id for m in models))  # Ensure no duplicates when paginating
 
 
 def test_list_actions(client: Client):
-    actions = client.list_actions()
+    actions = client.get_actions()
     assert isinstance(actions, list)
     assert len(actions) > 0
 
 
 def test_list_files(client: Client):
-    files = client.list_files()
+    files = client.get_files()
     assert isinstance(files, list)
     assert len(files) > 0
 
 
 def test_list_processes(client: Client):
-    processes = client.list_processes()
+    processes = client.get_processes()
     assert isinstance(processes, list)
     assert len(processes) > 0
 
 
 def test_list_imports(client: Client):
-    imports = client.list_imports()
+    imports = client.get_imports()
     assert isinstance(imports, list)
     assert len(imports) > 0
 
 
 def test_list_exports(client: Client):
-    exports = client.list_exports()
+    exports = client.get_exports()
     assert isinstance(exports, list)
     assert len(exports) > 0
 
@@ -90,14 +114,15 @@ def test_run_process(client: Client, test_action):
     client.run_action(test_action)
 
 
-def test_invoke_action(client: Client, test_action):
-    task_id = client.invoke_action(test_action)
-    assert isinstance(task_id, str)
-    assert len(task_id) == 32
+def test_list_task_statuses(client: Client, test_action):
+    task_statuses = client.get_task_summaries(test_action)
+    assert isinstance(task_statuses, list)
+    assert all(isinstance(status, TaskSummary) for status in task_statuses)
+    assert len(task_statuses) > 0
 
 
 def test_get_task_status(client: Client, test_action):
-    task_status = client.get_task_status(test_action, client.invoke_action(test_action))
+    task_status = client.get_task_status(test_action, client.run_action(test_action, False).id)
     assert isinstance(task_status, TaskStatus)
 
 

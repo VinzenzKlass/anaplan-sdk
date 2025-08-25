@@ -1,10 +1,13 @@
 ---
+title: Guides
+description: Anaplan API & SDK Guides
 hide:
   - toc
 ---
 
+# Guides
 
-Anaplan provides various [APIs](https://help.anaplan.com/anaplan-api-844c6d40-a21c-423d-8435-ebaaa0372b76) to interact
+The Anaplan API provides various [APIs](https://help.anaplan.com/anaplan-api-844c6d40-a21c-423d-8435-ebaaa0372b76) to interact
 with the Anaplan platform. This SDK supports all of them and their respective domains and use cases. Refer to the
 respective Guides to get started with each API.
 

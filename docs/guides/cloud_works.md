@@ -12,18 +12,18 @@ through the `flows` property of the cloud works namespace.
 
 === "Synchronous"
     ```python
-    connections = anaplan.cw.list_connections()
-    integrations = anaplan.cw.list_integrations()
-    flows = anaplan.cw.flows.list_flows()
+    connections = anaplan.cw.get_connections()
+    integrations = anaplan.cw.get_integrations()
+    flows = anaplan.cw.flows.get_flows()
     ```
 === "Asynchronous"
     ```python
     from asyncio import gather
 
     connections, integrations, flows = await gather(
-        anaplan.cw.list_connections(),
-        anaplan.cw.list_integrations(),
-        anaplan.cw.flows.list_flows(),
+        anaplan.cw.get_connections(),
+        anaplan.cw.get_integrations(),
+        anaplan.cw.flows.get_flows(),
     )
     ```
 

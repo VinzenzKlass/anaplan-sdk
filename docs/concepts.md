@@ -1,4 +1,7 @@
-# Anaplan Basics
+---
+title: Anaplan API Concepts
+description: Anaplan API concepts explained for developers working with the Bulk API.
+---
 
 This guide explains key Anaplan concepts for developers working with the Bulk API. You can think of the flow of uploading data to Anaplan with the Bulk API like so:
 
@@ -18,8 +21,8 @@ This guide explains key Anaplan concepts for developers working with the Bulk AP
 
 ## Files
 
-- All data exchange happens through files (referenced by ID (113000000000), not SFTP/FTP)
-- Files have a 48-hour lifetime
+- Files are user-specific. Your colleagues will see the same files as you, and - if the setting is enabled - the **default** content of the file. If they upload content to that same file, they will see their content under that file, and you will still see your content under that file. This means that the role used to upload must also be the role to run imports against that file. Using a different role will result in an error or wrong data being imported.
+- Files have a 48-hour lifetime. After this period, files will show the default content set for the file if given, else nothing.
 - Files are **not safe for concurrent access**. You can override the content of a file while another import is reading
   from it. Anaplan does not acquire locks and will not queue the task.
 

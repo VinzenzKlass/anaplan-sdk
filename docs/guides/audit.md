@@ -34,14 +34,14 @@ the `.get_events()` method like so:
     events = await anaplan.audit.get_events()
     ```
 
-The Audit API also exposes the `list_users()` method to get a list of all users in the workspace. You can for e.g. use
+The Audit API also exposes the `get_users()` method to get a list of all users in the workspace. You can for e.g. use
 the two methods in combination to get a list of events with the username using [polars](https://docs.pola.rs):
 
 === "Synchronous"
     ```python
     import polars as pl
     
-    events, users = anaplan.audit.get_events(14), anaplan.audit.list_users()
+    events, users = anaplan.audit.get_events(14), anaplan.audit.get_users()
     df = pl.DataFrame(events, orient="row", infer_schema_length=1_000).join(
         pl.DataFrame(users, orient="row").select(
             pl.col("id").alias("userId"), "first_name", "last_name"
@@ -55,7 +55,7 @@ the two methods in combination to get a list of events with the username using [
     import polars as pl
     
     events, users = await gather(
-        anaplan.audit.get_events(14), anaplan.audit.list_users()
+        anaplan.audit.get_events(14), anaplan.audit.get_users()
     )
     df = pl.DataFrame(events, orient="row", infer_schema_length=1_000).join(
         pl.DataFrame(users, orient="row").select(

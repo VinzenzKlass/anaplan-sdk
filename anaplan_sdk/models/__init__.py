@@ -1,4 +1,12 @@
-from ._alm import ModelRevision, Revision, SyncTask
+from ._alm import (
+    ModelRevision,
+    ReportTask,
+    ReportTaskResult,
+    Revision,
+    SummaryReport,
+    SyncTask,
+    SyncTaskResult,
+)
 from ._base import AnaplanModel
 from ._bulk import (
     Action,
@@ -10,6 +18,7 @@ from ._bulk import (
     List,
     ListMetadata,
     Model,
+    ModelDeletionResult,
     Process,
     TaskResult,
     TaskResultDetail,
@@ -17,7 +26,27 @@ from ._bulk import (
     TaskSummary,
     Workspace,
 )
-from ._transactional import Failure, InsertionResult, LineItem, ListItem, ModelStatus, Module, User
+from ._transactional import (
+    CurrentPeriod,
+    Dimension,
+    DimensionWithCode,
+    Failure,
+    FiscalYear,
+    InsertionResult,
+    LineItem,
+    ListDeletionResult,
+    ListItem,
+    ModelCalendar,
+    ModelStatus,
+    Module,
+    MonthsQuartersYearsCalendar,
+    User,
+    View,
+    ViewInfo,
+    WeeksGeneralCalendar,
+    WeeksGroupingCalendar,
+    WeeksPeriodsCalendar,
+)
 
 __all__ = [
     "AnaplanModel",
@@ -41,9 +70,27 @@ __all__ = [
     "TaskResult",
     "TaskResultDetail",
     "TaskStatus",
+    "TaskSummary",
+    "SyncTaskResult",
+    "ReportTask",
+    "ReportTaskResult",
+    "SummaryReport",
     "SyncTask",
     "User",
     "Failure",
     "InsertionResult",
     "Revision",
+    "CurrentPeriod",
+    "FiscalYear",
+    "MonthsQuartersYearsCalendar",
+    "WeeksGeneralCalendar",
+    "WeeksGroupingCalendar",
+    "WeeksPeriodsCalendar",
+    "Dimension",
+    "View",
+    "ViewInfo",
+    "ModelCalendar",
+    "ModelDeletionResult",
+    "DimensionWithCode",
+    "ListDeletionResult",
 ]

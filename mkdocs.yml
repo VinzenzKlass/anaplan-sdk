@@ -1,5 +1,5 @@
 site_name: Anaplan SDK
-site_description: Streamlined Python Interface for Anaplan
+site_description: Streamlined Python Interface for the Anaplan API. Get up and running with the Anaplan API in minutes.
 site_url: https://vinzenzklass.github.io/anaplan-sdk/
 repo_name: VinzenzKlass/anaplan-sdk
 repo_url: https://github.com/VinzenzKlass/anaplan-sdk
@@ -46,8 +46,12 @@ nav:
       - CloudWorks API: 'guides/cloud_works.md'
       - ALM API: 'guides/alm.md'
       - Audit API: 'guides/audit.md'
+      - Sorting: 'guides/sorting.md'
       - Multiple Models: 'guides/multiple_models.md'
       - Logging: 'guides/logging.md'
+  - Concepts:
+      - Anaplan Basics: 'concepts.md'
+      - Bulk vs Transactional: 'guides/bulk_vs_transactional.md'
   - API Reference:
       - Asynchronous:
           - Bulk: 'api/async/async_client.md'
@@ -74,13 +78,12 @@ nav:
           - Flows: 'api/models/flows.md'
           - Transactional: 'api/models/transactional.md'
       - Exceptions: 'api/exceptions.md'
-  - Concepts:
-      - Anaplan Basics: 'anaplan_explained.md'
-      - Bulk vs Transactional: 'guides/bulk_vs_transactional.md'
 
 plugins:
   - search:
       lang: en
+  - minify:
+      minify_html: true
   - mkdocstrings:
       handlers:
         python:
@@ -94,8 +97,8 @@ plugins:
             show_source: false
             show_bases: false
             extensions:
-            - griffe_fieldz:
-                include_inherited: true
+              - griffe_fieldz:
+                  include_inherited: true
 
 watch:
   - "anaplan_sdk"
@@ -116,3 +119,10 @@ markdown_extensions:
   - pymdownx.tabbed:
       alternate_style: true
   - admonition
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/VinzenzKlass/anaplan-sdk
+    - icon: fontawesome/brands/python
+      link: https://pypi.org/project/anaplan-sdk/

@@ -141,7 +141,9 @@ class ConnectionInput(AnaplanModel):
 
 
 class Connection(_VersionedBaseModel):
-    connection_id: str = Field(description="The unique identifier of this connection.")
+    id: str = Field(
+        validation_alias="connectionId", description="The unique identifier of this connection."
+    )
     connection_type: ConnectionType = Field(description="The type of this connection.")
     body: AzureBlobConnectionInfo | AmazonS3ConnectionInfo | GoogleBigQueryConnectionInfo = Field(
         description="Connection information."
@@ -237,7 +239,9 @@ class _BaseIntegration(_VersionedBaseModel):
 
 
 class Integration(_BaseIntegration):
-    integration_id: str = Field(description="The unique identifier of this integration.")
+    id: str = Field(
+        validation_alias="integrationId", description="The unique identifier of this integration."
+    )
     integration_type: Literal["Import", "Export", "Process"] = Field(
         description="The type of this integration."
     )
