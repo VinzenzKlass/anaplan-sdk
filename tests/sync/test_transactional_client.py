@@ -24,8 +24,7 @@ def test_wake_model(client: Client):
 
 
 def test_close_model(client: Client):
-    other = Client.from_existing(client, model_id="C87EBE934BD442B1A798540E0CA5A877")
-    other.tr.close_model()
+    client.with_model("C87EBE934BD442B1A798540E0CA5A877").tr.close_model()
 
 
 def test_get_model(client: Client):

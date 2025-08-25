@@ -34,12 +34,12 @@ def client_small_pages() -> Client:
 
 @pytest.fixture(scope="session")
 def alm_src_client(client: Client, alm_src_model_id) -> Client:
-    return Client.from_existing(client, model_id=alm_src_model_id)
+    return client.with_model(alm_src_model_id)
 
 
 @pytest.fixture(scope="session")
 def alm_client(client: Client, alm_model_id) -> Client:
-    return Client.from_existing(client, model_id=alm_model_id)
+    return client.with_model(alm_model_id)
 
 
 @pytest.fixture(scope="session")

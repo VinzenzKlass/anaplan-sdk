@@ -34,12 +34,12 @@ def client_small_pages() -> AsyncClient:
 
 @pytest.fixture(scope="session")
 def alm_src_client(client: AsyncClient, alm_src_model_id) -> AsyncClient:
-    return AsyncClient.from_existing(client, model_id=alm_src_model_id)
+    return client.with_model(alm_src_model_id)
 
 
 @pytest.fixture(scope="session")
 def alm_client(client: AsyncClient, alm_model_id) -> AsyncClient:
-    return AsyncClient.from_existing(client, model_id=alm_model_id)
+    return client.with_model(alm_model_id)
 
 
 @pytest.fixture(scope="session")
