@@ -170,11 +170,10 @@ class AsyncClient:
         client._alm_client = _AsyncAlmClient(existing._http, new_model_id)
         return client
 
-    def switch_model(self, model_id: str | None = None, workspace_id: str | None = None) -> Self:
+    def with_model(self, model_id: str | None = None, workspace_id: str | None = None) -> Self:
         """
-        Creates a new instance of the Client with the given model and workspace Ids. **This creates
-        a copy of the current client. Do not expect the current instance to reference to new model
-        after calling this method.**
+        Create a new instance of the Client with the given model and workspace Ids. **This creates
+        a copy of the current client. The current instance remains unchanged.**
         :param workspace_id: The workspace Id to use or None to use the existing workspace Id.
         :param model_id: The model Id to use or None to use the existing model Id.
         :return: A new instance of the Client.
