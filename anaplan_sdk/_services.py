@@ -10,6 +10,7 @@ from typing import Any, Awaitable, Callable, Coroutine, Iterator, Literal, Type,
 
 import httpx
 from httpx import HTTPError, Response
+from pydantic.alias_generators import to_camel
 
 from .exceptions import AnaplanException, AnaplanTimeoutException, InvalidIdentifierException
 from .models import (
@@ -30,6 +31,15 @@ from .models.cloud_works import (
     IntegrationInput,
     IntegrationProcessInput,
     ScheduleInput,
+)
+
+SORT_WARNING = (
+    "If you are sorting by a field that is potentially ambiguous (e.g., name), the order of "
+    "results is not guaranteed to be internally consistent across multiple requests. This will "
+    "lead to wrong results when paginating through result sets where the ambiguous order can cause "
+    "records to slip between pages or be duplicated on multiple pages. The only way to ensure "
+    "correct results when sorting is to make sure the entire result set fits in one page, or to "
+    "sort by a field that is guaranteed to be unique (e.g., id)."
 )
 
 logger = logging.getLogger("anaplan_sdk")
@@ -103,7 +113,8 @@ class _HttpService:
         if total_items <= self._page_size:
             logger.debug("All items fit in first page, no additional requests needed.")
             return iter(first_page)
-
+        if kwargs and (kwargs.get("params") or {}).get("sort", None):
+            logger.warning(SORT_WARNING)
         pages_needed = ceil(total_items / actual_size)
         logger.debug(f"Fetching {pages_needed - 1} additional pages with {actual_size} items each.")
         with ThreadPoolExecutor() as executor:
@@ -221,6 +232,8 @@ class _AsyncHttpService:
         if total_items <= self._page_size:
             logger.debug("All items fit in first page, no additional requests needed.")
             return iter(first_page)
+        if kwargs and (kwargs.get("params") or {}).get("sort", None):
+            logger.warning(SORT_WARNING)
         pages = await gather(
             *(
                 self._get_page(url, actual_size, n * actual_size, result_key, **kwargs)
@@ -271,6 +284,32 @@ class _AsyncHttpService:
                 logger.info(f"Retrying for: {url}")
 
         raise AnaplanException("Exhausted all retries without a successful response or Error.")
+
+
+def models_url(only_in_workspace: bool | str, workspace_id: str | None) -> str:
+    if isinstance(only_in_workspace, bool) and only_in_workspace:
+        if not workspace_id:
+            raise ValueError(
+                "Cannot list models in the current workspace, since no workspace Id was "
+                "provided when instantiating the client. Either provide a workspace Id when "
+                "instantiating the client, or pass a specific workspace Id to this method."
+            )
+        return f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models"
+    if isinstance(only_in_workspace, str):
+        return f"https://api.anaplan.com/2/0/workspaces/{only_in_workspace}/models"
+    return "https://api.anaplan.com/2/0/models"
+
+
+def sort_params(sort_by: str | None, descending: bool) -> dict[str, str | bool]:
+    """
+    Construct search parameters for sorting. This also converts snake_case to camelCase.
+    :param sort_by: The field to sort by, optionally in snake_case.
+    :param descending: Whether to sort in descending order.
+    :return: A dictionary of search parameters in Anaplan's expected format.
+    """
+    if not sort_by:
+        return {}
+    return {"sort": f"{'-' if descending else '+'}{to_camel(sort_by)}"}
 
 
 def construct_payload(model: Type[T], body: T | dict[str, Any]) -> dict[str, Any]:

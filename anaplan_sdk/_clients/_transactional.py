@@ -7,6 +7,7 @@ from anaplan_sdk._services import (
     _HttpService,
     parse_calendar_response,
     parse_insertion_response,
+    sort_params,
     validate_dimension_id,
 )
 from anaplan_sdk.exceptions import InvalidIdentifierException
@@ -28,6 +29,8 @@ from anaplan_sdk.models import (
     View,
     ViewInfo,
 )
+
+SortBy = Literal["id", "name"] | None
 
 logger = logging.getLogger("anaplan_sdk")
 
@@ -66,24 +69,32 @@ class _TransactionalClient:
         self._http.post_empty(f"{self._url}/close", headers={"Content-Type": "application/text"})
         logger.info(f"Closed model '{self._model_id}'.")
 
-    def get_modules(self) -> list[Module]:
+    def get_modules(self, sort_by: SortBy = None, descending: bool = False) -> list[Module]:
         """
         Lists all the Modules in the Model.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Modules.
         """
-        return [
-            Module.model_validate(e)
-            for e in self._http.get_paginated(f"{self._url}/modules", "modules")
-        ]
+        res = self._http.get_paginated(
+            f"{self._url}/modules", "modules", params=sort_params(sort_by, descending)
+        )
+        return [Module.model_validate(e) for e in res]
 
-    def get_views(self) -> list[View]:
+    def get_views(
+        self, sort_by: Literal["id", "module_id", "name"] | None = None, descending: bool = False
+    ) -> list[View]:
         """
         Lists all the Views in the Model. This will include all Modules and potentially other saved
         views.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Views.
         """
+        params = {"includesubsidiaryviews": True} | sort_params(sort_by, descending)
         return [
-            View.model_validate(e) for e in self._http.get_paginated(f"{self._url}/views", "views")
+            View.model_validate(e)
+            for e in self._http.get_paginated(f"{self._url}/views", "views", params=params)
         ]
 
     def get_view_info(self, view_id: int) -> ViewInfo:
@@ -107,14 +118,17 @@ class _TransactionalClient:
         )
         return [LineItem.model_validate(e) for e in self._http.get(url).get("items", [])]
 
-    def get_lists(self) -> list[List]:
+    def get_lists(self, sort_by: SortBy = None, descending: bool = False) -> list[List]:
         """
         Lists all the Lists in the Model.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: All Lists on this model.
         """
-        return [
-            List.model_validate(e) for e in self._http.get_paginated(f"{self._url}/lists", "lists")
-        ]
+        res = self._http.get_paginated(
+            f"{self._url}/lists", "lists", params=sort_params(sort_by, descending)
+        )
+        return [List.model_validate(e) for e in res]
 
     def get_list_metadata(self, list_id: int) -> ListMetadata:
         """

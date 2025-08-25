@@ -2,13 +2,13 @@ import logging
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 from copy import copy
-from typing import Iterator
+from typing import Iterator, Literal
 
 import httpx
 from typing_extensions import Self
 
 from anaplan_sdk._auth import _create_auth
-from anaplan_sdk._services import _HttpService, action_url
+from anaplan_sdk._services import _HttpService, action_url, models_url, sort_params
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
 from anaplan_sdk.models import (
     Action,
@@ -27,6 +27,8 @@ from ._alm import _AlmClient
 from ._audit import _AuditClient
 from ._cloud_works import _CloudWorksClient
 from ._transactional import _TransactionalClient
+
+SortBy = Literal["id", "name"] | None
 
 logger = logging.getLogger("anaplan_sdk")
 
@@ -250,42 +252,57 @@ class Client:
             )
         return self._alm_client
 
-    def get_workspaces(self, search_pattern: str | None = None) -> list[Workspace]:
+    def get_workspaces(
+        self,
+        search_pattern: str | None = None,
+        sort_by: Literal["size_allowance", "name"] | None = None,
+        descending: bool = False,
+    ) -> list[Workspace]:
         """
         Lists all the Workspaces the authenticated user has access to.
-        :param search_pattern: Optional filter for workspaces. When provided, case-insensitive
-               matches workspaces with names containing this string. When None (default),
-               returns all workspaces.
+        :param search_pattern: Optionally filter for specific workspaces. When provided,
+               case-insensitive matches workspaces with names containing this string.
+               You can use the wildcards `%` for 0-n characters, and `_` for exactly 1 character.
+               When None (default), returns all users.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Workspaces.
         """
-        params = {"tenantDetails": "true"}
+        params = {"tenantDetails": "true"} | sort_params(sort_by, descending)
         if search_pattern:
             params["s"] = search_pattern
-        return [
-            Workspace.model_validate(e)
-            for e in self._http.get_paginated(
-                "https://api.anaplan.com/2/0/workspaces", "workspaces", params=params
-            )
-        ]
+        res = self._http.get_paginated(
+            "https://api.anaplan.com/2/0/workspaces", "workspaces", params=params
+        )
+        return [Workspace.model_validate(e) for e in res]
 
-    def get_models(self, search_pattern: str | None = None) -> list[Model]:
+    def get_models(
+        self,
+        only_in_workspace: bool | str = False,
+        search_pattern: str | None = None,
+        sort_by: Literal["active_state", "name"] | None = None,
+        descending: bool = False,
+    ) -> list[Model]:
         """
         Lists all the Models the authenticated user has access to.
+        :param only_in_workspace: If True, only lists models in the workspace provided when
+               instantiating the client. If a string is provided, only lists models in the workspace
+               with the given Id. If False (default), lists models in all workspaces the user
         :param search_pattern: Optionally filter for specific models. When provided,
                case-insensitive matches model names containing this string.
                You can use the wildcards `%` for 0-n characters, and `_` for exactly 1 character.
                When None (default), returns all models.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Models.
         """
-        params = {"modelDetails": "true"}
+        params = {"modelDetails": "true"} | sort_params(sort_by, descending)
         if search_pattern:
             params["s"] = search_pattern
-        return [
-            Model.model_validate(e)
-            for e in self._http.get_paginated(
-                "https://api.anaplan.com/2/0/models", "models", params=params
-            )
-        ]
+        res = self._http.get_paginated(
+            models_url(only_in_workspace, self._workspace_id), "models", params=params
+        )
+        return [Model.model_validate(e) for e in res]
 
     def delete_models(self, model_ids: list[str]) -> ModelDeletionResult:
         """
@@ -301,56 +318,69 @@ class Client:
         )
         return ModelDeletionResult.model_validate(res)
 
-    def get_files(self) -> list[File]:
+    def get_files(
+        self, sort_by: Literal["id", "name"] = "id", descending: bool = False
+    ) -> list[File]:
         """
         Lists all the Files in the Model.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Files.
         """
-        return [
-            File.model_validate(e) for e in self._http.get_paginated(f"{self._url}/files", "files")
-        ]
+        res = self._http.get_paginated(
+            f"{self._url}/files", "files", params=sort_params(sort_by, descending)
+        )
+        return [File.model_validate(e) for e in res]
 
-    def get_actions(self) -> list[Action]:
+    def get_actions(self, sort_by: SortBy = None, descending: bool = False) -> list[Action]:
         """
         Lists all the Actions in the Model. This will only return the Actions listed under
         `Other Actions` in Anaplan. For Imports, exports, and processes, see their respective
         methods instead.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Actions.
         """
-        return [
-            Action.model_validate(e)
-            for e in self._http.get_paginated(f"{self._url}/actions", "actions")
-        ]
+        res = self._http.get_paginated(
+            f"{self._url}/actions", "actions", params=sort_params(sort_by, descending)
+        )
+        return [Action.model_validate(e) for e in res]
 
-    def get_processes(self) -> list[Process]:
+    def get_processes(self, sort_by: SortBy = None, descending: bool = False) -> list[Process]:
         """
         Lists all the Processes in the Model.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Processes.
         """
-        return [
-            Process.model_validate(e)
-            for e in self._http.get_paginated(f"{self._url}/processes", "processes")
-        ]
+        res = self._http.get_paginated(
+            f"{self._url}/processes", "processes", params=sort_params(sort_by, descending)
+        )
+        return [Process.model_validate(e) for e in res]
 
-    def get_imports(self) -> list[Import]:
+    def get_imports(self, sort_by: SortBy = None, descending: bool = False) -> list[Import]:
         """
         Lists all the Imports in the Model.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Imports.
         """
-        return [
-            Import.model_validate(e)
-            for e in self._http.get_paginated(f"{self._url}/imports", "imports")
-        ]
+        res = self._http.get_paginated(
+            f"{self._url}/imports", "imports", params=sort_params(sort_by, descending)
+        )
+        return [Import.model_validate(e) for e in res]
 
-    def get_exports(self) -> list[Export]:
+    def get_exports(self, sort_by: SortBy = None, descending: bool = False) -> list[Export]:
         """
         Lists all the Exports in the Model.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: The List of Exports.
         """
-        return [
-            Export.model_validate(e)
-            for e in (self._http.get(f"{self._url}/exports")).get("exports", [])
-        ]
+        res = self._http.get_paginated(
+            f"{self._url}/exports", "exports", params=sort_params(sort_by, descending)
+        )
+        return [Export.model_validate(e) for e in res]
 
     def run_action(self, action_id: int, wait_for_completion: bool = True) -> TaskStatus:
         """

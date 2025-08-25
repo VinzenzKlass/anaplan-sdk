@@ -1,7 +1,7 @@
 import logging
 from typing import Literal, overload
 
-from anaplan_sdk._services import _AsyncHttpService
+from anaplan_sdk._services import _AsyncHttpService, sort_params
 from anaplan_sdk.exceptions import AnaplanActionError
 from anaplan_sdk.models import (
     ModelRevision,
@@ -29,13 +29,21 @@ class _AsyncAlmClient:
         logger.info(f"Changed model status to '{status}' for model {self._model_id}.")
         await self._http.put(f"{self._url}/onlineStatus", json={"status": status})
 
-    async def get_revisions(self) -> list[Revision]:
+    async def get_revisions(
+        self,
+        sort_by: Literal["id", "name", "applied_on", "created_on"] | None = None,
+        descending: bool = False,
+    ) -> list[Revision]:
         """
         Use this call to return a list of revisions for a specific model.
+        :param sort_by: The field to sort the results by.
+        :param descending: If True, the results will be sorted in descending order.
         :return: A list of revisions for a specific model.
         """
-        res = await self._http.get(f"{self._url}/alm/revisions")
-        return [Revision.model_validate(e) for e in res.get("revisions", [])]
+        res = await self._http.get_paginated(
+            f"{self._url}/alm/revisions", "revisions", params=sort_params(sort_by, descending)
+        )
+        return [Revision.model_validate(e) for e in res]
 
     async def get_latest_revision(self) -> Revision | None:
         """

@@ -46,6 +46,7 @@ nav:
       - CloudWorks API: 'guides/cloud_works.md'
       - ALM API: 'guides/alm.md'
       - Audit API: 'guides/audit.md'
+      - Sorting: 'guides/sorting.md'
       - Multiple Models: 'guides/multiple_models.md'
       - Logging: 'guides/logging.md'
   - Concepts:

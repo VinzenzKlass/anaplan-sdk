@@ -39,11 +39,13 @@ class Model(AnaplanModel):
         description="The unique identifier of the user who last modified this model."
     )
     memory_usage: int = Field(0, description="The memory usage of this model in bytes.")
-    current_workspace_id: str = Field(
-        description="The unique identifier of the workspace that this model is currently in."
+    workspace_id: str = Field(
+        validation_alias="currentWorkspaceId",
+        description="The unique identifier of the workspace that this model is currently in.",
     )
-    current_workspace_name: str = Field(
-        description="The name of the workspace that this model is currently in."
+    workspace_name: str = Field(
+        validation_alias="currentWorkspaceName",
+        description="The name of the workspace that this model is currently in.",
     )
     url: str = Field(validation_alias="modelUrl", description="The current URL of this model.")
     category_values: list = Field(description="The category values of this model.")
