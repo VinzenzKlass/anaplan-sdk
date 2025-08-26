@@ -7,7 +7,8 @@ import httpx
 from typing_extensions import Self
 
 from anaplan_sdk._auth import _create_auth
-from anaplan_sdk._services import _AsyncHttpService, action_url, models_url, sort_params
+from anaplan_sdk._services import _AsyncHttpService
+from anaplan_sdk._utils import action_url, models_url, sort_params
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
 from anaplan_sdk.models import (
     Action,

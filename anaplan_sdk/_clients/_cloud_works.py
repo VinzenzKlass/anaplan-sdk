@@ -1,8 +1,8 @@
 import logging
 from typing import Any, Literal
 
-from anaplan_sdk._services import (
-    _HttpService,
+from anaplan_sdk._services import _HttpService
+from anaplan_sdk._utils import (
     connection_body_payload,
     construct_payload,
     integration_payload,

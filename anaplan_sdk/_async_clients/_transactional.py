@@ -3,8 +3,8 @@ from asyncio import gather
 from itertools import chain
 from typing import Any, Literal, overload
 
-from anaplan_sdk._services import (
-    _AsyncHttpService,
+from anaplan_sdk._services import _AsyncHttpService
+from anaplan_sdk._utils import (
     parse_calendar_response,
     parse_insertion_response,
     sort_params,

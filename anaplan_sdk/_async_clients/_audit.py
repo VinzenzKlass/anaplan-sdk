@@ -1,6 +1,7 @@
 from typing import Any, Literal
 
-from anaplan_sdk._services import _AsyncHttpService, sort_params
+from anaplan_sdk._services import _AsyncHttpService
+from anaplan_sdk._utils import sort_params
 from anaplan_sdk.models import User
 
 Event = Literal["all", "byok", "user_activity"]
