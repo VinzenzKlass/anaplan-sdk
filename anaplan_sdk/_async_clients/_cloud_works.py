@@ -2,6 +2,12 @@ import logging
 from typing import Any, Literal
 
 from anaplan_sdk._services import _AsyncHttpService
+from anaplan_sdk._utils import (
+    connection_body_payload,
+    construct_payload,
+    integration_payload,
+    schedule_payload,
+)
 from anaplan_sdk.models.cloud_works import (
     Connection,
     ConnectionBody,
@@ -18,12 +24,6 @@ from anaplan_sdk.models.cloud_works import (
     SingleIntegration,
 )
 
-from .._utils import (
-    connection_body_payload,
-    construct_payload,
-    integration_payload,
-    schedule_payload,
-)
 from ._cw_flow import _AsyncFlowClient
 
 logger = logging.getLogger("anaplan_sdk")
