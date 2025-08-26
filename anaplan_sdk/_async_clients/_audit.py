@@ -11,7 +11,6 @@ UserSortBy = Literal["first_name", "last_name", "email", "active", "last_login_d
 class _AsyncAuditClient:
     def __init__(self, http: _AsyncHttpService) -> None:
         self._http = http
-        self._limit = 10_000
         self._url = "https://audit.anaplan.com/audit/api/1/events"
 
     async def get_users(

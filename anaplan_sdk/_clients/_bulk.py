@@ -140,8 +140,8 @@ class Client:
         )
         self._alm_client = _AlmClient(self._http, model_id) if model_id else None
         self._cloud_works = _CloudWorksClient(self._http)
+        self._audit_client = _AuditClient(self._http)
         self._thread_count = multiprocessing.cpu_count()
-        self._audit = _AuditClient(self._http)
         self.status_poll_delay = status_poll_delay
         self.upload_parallel = upload_parallel
         self.upload_chunk_size = upload_chunk_size
@@ -174,7 +174,7 @@ class Client:
         The Audit Client provides access to the Anaplan Audit API.
         For details, see https://vinzenzklass.github.io/anaplan-sdk/guides/audit/.
         """
-        return self._audit
+        return self._audit_client
 
     @property
     def cw(self) -> _CloudWorksClient:
