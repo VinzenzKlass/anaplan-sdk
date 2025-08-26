@@ -6,32 +6,13 @@ from concurrent.futures import ThreadPoolExecutor
 from gzip import compress
 from itertools import chain
 from math import ceil
-from typing import Any, Awaitable, Callable, Coroutine, Iterator, Literal, Type, TypeVar
+from typing import Any, Awaitable, Callable, Coroutine, Iterator, TypeVar
 
 import httpx
 from httpx import HTTPError, Response
-from pydantic.alias_generators import to_camel
 
 from .exceptions import AnaplanException, AnaplanTimeoutException, InvalidIdentifierException
-from .models import (
-    AnaplanModel,
-    InsertionResult,
-    ModelCalendar,
-    MonthsQuartersYearsCalendar,
-    TaskSummary,
-    WeeksGeneralCalendar,
-    WeeksGroupingCalendar,
-    WeeksPeriodsCalendar,
-)
-from .models.cloud_works import (
-    AmazonS3ConnectionInput,
-    AzureBlobConnectionInput,
-    ConnectionBody,
-    GoogleBigQueryConnectionInput,
-    IntegrationInput,
-    IntegrationProcessInput,
-    ScheduleInput,
-)
+from .models import TaskSummary
 
 SORT_WARNING = (
     "If you are sorting by a field that is potentially ambiguous (e.g., name), the order of "
@@ -47,7 +28,6 @@ logger = logging.getLogger("anaplan_sdk")
 _json_header = {"Content-Type": "application/json"}
 _gzip_header = {"Content-Type": "application/x-gzip"}
 
-T = TypeVar("T", bound=AnaplanModel)
 Task = TypeVar("Task", bound=TaskSummary)
 
 
@@ -134,15 +114,7 @@ class _HttpService:
         logger.debug(f"Fetching first page with limit={self._page_size} from {url}.")
         kwargs["params"] = (kwargs.get("params") or {}) | {"limit": self._page_size}
         res = self.get(url, **kwargs)
-        total_items, first_page = res["meta"]["paging"]["totalSize"], res.get(result_key, [])
-        actual_page_size = res["meta"]["paging"]["currentPageSize"]
-        if actual_page_size < self._page_size and not actual_page_size == total_items:
-            logger.warning(
-                f"Page size {self._page_size} was silently truncated to {actual_page_size}."
-                f"Using the server-side enforced page size {actual_page_size} for further requests."
-            )
-        logger.debug(f"Found {total_items} total items, retrieved {len(first_page)} in first page.")
-        return first_page, total_items, actual_page_size
+        return _extract_first_page(res, result_key, self._page_size)
 
     def __run_with_retry(self, func: Callable[..., Response], *args, **kwargs) -> Response:
         for i in range(max(self._retry_count, 1)):
@@ -159,7 +131,7 @@ class _HttpService:
                 return response
             except HTTPError as error:
                 if i >= self._retry_count - 1:
-                    raise_error(error)
+                    _raise_error(error)
                 url = args[0] or kwargs.get("url")
                 logger.info(f"Retrying for: {url}")
 
@@ -252,15 +224,7 @@ class _AsyncHttpService:
         logger.debug(f"Fetching first page with limit={self._page_size} from {url}.")
         kwargs["params"] = (kwargs.get("params") or {}) | {"limit": self._page_size}
         res = await self.get(url, **kwargs)
-        total_items, first_page = res["meta"]["paging"]["totalSize"], res.get(result_key, [])
-        actual_page_size = res["meta"]["paging"]["currentPageSize"]
-        if actual_page_size < self._page_size and not actual_page_size == total_items:
-            logger.warning(
-                f"Page size {self._page_size} was silently truncated to {actual_page_size}."
-                f"Using the server-side enforced page size {actual_page_size} for further requests."
-            )
-        logger.debug(f"Found {total_items} total items, retrieved {len(first_page)} in first page.")
-        return first_page, total_items, actual_page_size
+        return _extract_first_page(res, result_key, self._page_size)
 
     async def _run_with_retry(
         self, func: Callable[..., Coroutine[Any, Any, Response]], *args, **kwargs
@@ -279,123 +243,28 @@ class _AsyncHttpService:
                 return response
             except HTTPError as error:
                 if i >= self._retry_count - 1:
-                    raise_error(error)
+                    _raise_error(error)
                 url = args[0] or kwargs.get("url")
                 logger.info(f"Retrying for: {url}")
 
         raise AnaplanException("Exhausted all retries without a successful response or Error.")
 
 
-def models_url(only_in_workspace: bool | str, workspace_id: str | None) -> str:
-    if isinstance(only_in_workspace, bool) and only_in_workspace:
-        if not workspace_id:
-            raise ValueError(
-                "Cannot list models in the current workspace, since no workspace Id was "
-                "provided when instantiating the client. Either provide a workspace Id when "
-                "instantiating the client, or pass a specific workspace Id to this method."
-            )
-        return f"https://api.anaplan.com/2/0/workspaces/{workspace_id}/models"
-    if isinstance(only_in_workspace, str):
-        return f"https://api.anaplan.com/2/0/workspaces/{only_in_workspace}/models"
-    return "https://api.anaplan.com/2/0/models"
-
-
-def sort_params(sort_by: str | None, descending: bool) -> dict[str, str | bool]:
-    """
-    Construct search parameters for sorting. This also converts snake_case to camelCase.
-    :param sort_by: The field to sort by, optionally in snake_case.
-    :param descending: Whether to sort in descending order.
-    :return: A dictionary of search parameters in Anaplan's expected format.
-    """
-    if not sort_by:
-        return {}
-    return {"sort": f"{'-' if descending else '+'}{to_camel(sort_by)}"}
-
-
-def construct_payload(model: Type[T], body: T | dict[str, Any]) -> dict[str, Any]:
-    """
-    Construct a payload for the given model and body.
-    :param model: The model class to use for validation.
-    :param body: The body to validate and optionally convert to a dictionary.
-    :return: A dictionary representation of the validated body.
-    """
-    if isinstance(body, dict):
-        body = model.model_validate(body)
-    return body.model_dump(exclude_none=True, by_alias=True)
-
-
-def connection_body_payload(body: ConnectionBody | dict[str, Any]) -> dict[str, Any]:
-    """
-    Construct a payload for the given integration body.
-    :param body: The body to validate and optionally convert to a dictionary.
-    :return: A dictionary representation of the validated body.
-    """
-    if isinstance(body, dict):
-        if "sasToken" in body:
-            body = AzureBlobConnectionInput.model_validate(body)
-        elif "secretAccessKey" in body:
-            body = AmazonS3ConnectionInput.model_validate(body)
-        else:
-            body = GoogleBigQueryConnectionInput.model_validate(body)
-    return body.model_dump(exclude_none=True, by_alias=True)
-
-
-def integration_payload(
-    body: IntegrationInput | IntegrationProcessInput | dict[str, Any],
-) -> dict[str, Any]:
-    """
-    Construct a payload for the given integration body.
-    :param body: The body to validate and optionally convert to a dictionary.
-    :return: A dictionary representation of the validated body.
-    """
-    if isinstance(body, dict):
-        body = (
-            IntegrationInput.model_validate(body)
-            if "jobs" in body
-            else IntegrationProcessInput.model_validate(body)
+def _extract_first_page(
+    res: dict[str, Any], result_key: str, page_size: int
+) -> tuple[list[dict[str, Any]], int, int]:
+    total_items, first_page = res["meta"]["paging"]["totalSize"], res.get(result_key, [])
+    actual_page_size = res["meta"]["paging"]["currentPageSize"]
+    if actual_page_size < page_size and not actual_page_size == total_items:
+        logger.warning(
+            f"Page size {page_size} was silently truncated to {actual_page_size}."
+            f"Using the server-side enforced page size {actual_page_size} for further requests."
         )
-    return body.model_dump(exclude_none=True, by_alias=True)
+    logger.debug(f"Found {total_items} total items, retrieved {len(first_page)} in first page.")
+    return first_page, total_items, actual_page_size
 
 
-def schedule_payload(
-    integration_id: str, schedule: ScheduleInput | dict[str, Any]
-) -> dict[str, Any]:
-    """
-    Construct a payload for the given integration ID and schedule.
-    :param integration_id: The ID of the integration.
-    :param schedule: The schedule to validate and optionally convert to a dictionary.
-    :return: A dictionary representation of the validated schedule.
-    """
-    if isinstance(schedule, dict):
-        schedule = ScheduleInput.model_validate(schedule)
-    return {
-        "integrationId": integration_id,
-        "schedule": schedule.model_dump(exclude_none=True, by_alias=True),
-    }
-
-
-def action_url(action_id: int) -> Literal["imports", "exports", "actions", "processes"]:
-    """
-    Determine the type of action based on its identifier.
-    :param action_id: The identifier of the action.
-    :return: The type of action.
-    """
-    if 12000000000 <= action_id < 113000000000:
-        return "imports"
-    if 116000000000 <= action_id < 117000000000:
-        return "exports"
-    if 117000000000 <= action_id < 118000000000:
-        return "actions"
-    if 118000000000 <= action_id < 119000000000:
-        return "processes"
-    raise InvalidIdentifierException(f"Action '{action_id}' is not a valid identifier.")
-
-
-def raise_error(error: HTTPError) -> None:
-    """
-    Raise an appropriate exception based on the error.
-    :param error: The error to raise an exception for.
-    """
+def _raise_error(error: HTTPError) -> None:
     if isinstance(error, httpx.TimeoutException):
         raise AnaplanTimeoutException from error
     if isinstance(error, httpx.HTTPStatusError):
@@ -406,59 +275,3 @@ def raise_error(error: HTTPError) -> None:
 
     logger.error(f"Error: {error}")
     raise AnaplanException from error
-
-
-def parse_calendar_response(data: dict) -> ModelCalendar:
-    """
-    Parse calendar response and return appropriate calendar model.
-    :param data: The calendar data from the API response.
-    :return: The calendar settings of the model based on calendar type.
-    """
-    calendar_data = data["modelCalendar"]
-    cal_type = calendar_data["calendarType"]
-    if cal_type == "Calendar Months/Quarters/Years":
-        return MonthsQuartersYearsCalendar.model_validate(calendar_data)
-    if cal_type == "Weeks: 4-4-5, 4-5-4 or 5-4-4":
-        return WeeksGroupingCalendar.model_validate(calendar_data)
-    if cal_type == "Weeks: General":
-        return WeeksGeneralCalendar.model_validate(calendar_data)
-    if cal_type == "Weeks: 13 4-week Periods":
-        return WeeksPeriodsCalendar.model_validate(calendar_data)
-    raise AnaplanException(
-        "Unknown calendar type encountered. Please report this issue: "
-        "https://github.com/VinzenzKlass/anaplan-sdk/issues/new"
-    )
-
-
-def parse_insertion_response(data: list[dict]) -> InsertionResult:
-    failures, added, ignored, total = [], 0, 0, 0
-    for res in data:
-        failures.append(res.get("failures", []))
-        added += res.get("added", 0)
-        total += res.get("total", 0)
-        ignored += res.get("ignored", 0)
-    return InsertionResult(
-        added=added, ignored=ignored, total=total, failures=list(chain.from_iterable(failures))
-    )
-
-
-def validate_dimension_id(dimension_id: int) -> int:
-    if not (
-        dimension_id == 101999999999
-        or 101_000_000_000 <= dimension_id < 102_000_000_000
-        or 109_000_000_000 <= dimension_id < 110_000_000_000
-        or 114_000_000_000 <= dimension_id < 115_000_000_000
-    ):
-        raise InvalidIdentifierException(
-            "Invalid dimension_id. Must be a List (101xxxxxxxxx), List Subset (109xxxxxxxxx), "
-            "Line Item Subset (114xxxxxxxxx), or Users (101999999999)."
-        )
-    msg = (
-        "Using `get_dimension_items` for {} is discouraged. "
-        "Prefer `{}` for better performance and more details on the members."
-    )
-    if dimension_id == 101999999999:
-        logger.warning(msg.format("Users", "get_users"))
-    if 101000000000 <= dimension_id < 102000000000:
-        logger.warning(msg.format("Lists", "get_list_items"))
-    return dimension_id
