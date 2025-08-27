@@ -1,18 +1,18 @@
 from asyncio import gather
 from itertools import chain
-from typing import Any, Literal
+from typing import Any
 
 from anaplan_sdk._services import _AsyncHttpService
-from anaplan_sdk._utils import construct_payload, parse_scim_filters
+from anaplan_sdk._utils import construct_payload
 from anaplan_sdk.models.scim import (
     Operation,
     ReplaceUserInput,
     Resource,
     Schema,
-    ScimFilters,
     ServiceProviderConfig,
     User,
     UserInput,
+    field,
 )
 
 
@@ -33,20 +33,19 @@ class _AsyncScimClient:
         res = await self._http.get(f"{self._url}/Schemas")
         return [Schema.model_validate(e) for e in res.get("Resources", [])]
 
-    async def get_users(
-        self,
-        filters: ScimFilters = None,
-        conditions: list[Literal["and", "or"]] | None = None,
-        page_size: int = 100,
-    ) -> list[User]:
-        params = {"startIndex": 1, "count": page_size} | parse_scim_filters(filters, conditions)
+    async def get_users(self, predicates: field = None, page_size: int = 100) -> list[User]:
+        params: dict[str, int | str] = {"startIndex": 1, "count": page_size}
+        if predicates is not None:
+            params["filter"] = str(predicates)
         res = await self._http.get(f"{self._url}/Users", params=params)
         users = [User.model_validate(e) for e in res.get("Resources", [])]
         if (total := res["totalResults"]) <= page_size:
             return users
         pages = await gather(
             *(
-                self._http.get(f"{self._url}/Users", params={"startIndex": i, "count": page_size})
+                self._http.get(
+                    f"{self._url}/Users", params=(params | {"startIndex": i, "count": page_size})
+                )
                 for i in range(page_size + 1, total + 1, page_size)
             )
         )

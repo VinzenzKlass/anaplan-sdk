@@ -1,20 +1,85 @@
-from typing import Any, Literal, TypeAlias
+from typing import Any, Literal, Self
 
 from pydantic import Field
 
 from anaplan_sdk.models import AnaplanModel
 
-FilterOpsWithValue = Literal["eq", "ne", "gt", "ge", "lt", "le"]
+Ops = Literal["eq", "ne", "gt", "ge", "lt", "le", "pr"]
 AnaplanFilterFields = Literal[
     "id", "externalId", "userName", "name.familyName", "name.givenName", "active"
 ]
-ScimFilters: TypeAlias = (
-    list[
-        tuple[AnaplanFilterFields, FilterOpsWithValue, str]
-        | tuple[AnaplanFilterFields, Literal["pr"]]
-    ]
-    | None
-)
+
+
+class _FilterExpression:
+    def __init__(self, _field: AnaplanFilterFields) -> None:
+        self._field: AnaplanFilterFields = _field
+        self._exprs: list[str] = []
+        self._operators = []
+
+    def __str__(self) -> str:
+        parts = []
+        for i, expr in enumerate(self._exprs):
+            if i > 0:
+                parts.append(self._operators[i - 1])
+            parts.append(expr)
+        return " ".join(parts)
+
+    def __bool__(self):
+        raise ValueError("Filter expressions cannot be evaluated directly.")
+
+    def __invert__(self) -> Self:
+        if self._field != "active":
+            raise ValueError(
+                "Anaplan does not support the 'not' operator. Only 'active' can be falsy evaluated."
+                "This is equivalent to 'active eq false'."
+            )
+        self._exprs.append("active eq false")
+        return self
+
+    def __and__(self, other: Self) -> Self:
+        self._operators.append("and")
+        if not self._exprs:
+            self._exprs.append("active eq true")  # If no expression, evaluate to == true
+        self._exprs.append(f"({str(other)})") if other._operators else self._exprs.extend(
+            other._exprs
+        )
+        return self
+
+    def __or__(self, other: Self) -> Self:
+        self._operators.append("or")
+        if not self._exprs:
+            self._exprs.append("active eq true")  # If no expression, evaluate to == true
+        self._exprs.append(f"({str(other)})") if other._operators else self._exprs.extend(
+            other._exprs
+        )
+        return self
+
+    def __eq__(self, other: Any) -> Self:
+        self._exprs.append(f'{self._field} eq "{other}"')
+        return self
+
+    def __gt__(self, other: Any) -> Self:
+        self._exprs.append(f'{self._field} gt "{other}"')
+        return self
+
+    def __ge__(self, other: Any) -> Self:
+        self._exprs.append(f'{self._field} ge "{other}"')
+        return self
+
+    def __lt__(self, other: Any) -> Self:
+        self._exprs.append(f'{self._field} lt "{other}"')
+        return self
+
+    def __le__(self, other: Any) -> Self:
+        self._exprs.append(f'{self._field} le "{other}"')
+        return self
+
+    def is_not_null(self):
+        self._exprs.append(f"{self._field} pr")
+        return self
+
+
+field = _FilterExpression
 
 
 class NameInput(AnaplanModel):

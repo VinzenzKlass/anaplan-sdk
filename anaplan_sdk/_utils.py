@@ -23,7 +23,6 @@ from anaplan_sdk.models.cloud_works import (
     IntegrationProcessInput,
     ScheduleInput,
 )
-from anaplan_sdk.models.scim import ScimFilters
 
 T = TypeVar("T", bound=AnaplanModel)
 
@@ -187,27 +186,3 @@ def validate_dimension_id(dimension_id: int) -> int:
     if 101000000000 <= dimension_id < 102000000000:
         logger.warning(msg.format("Lists", "get_list_items"))
     return dimension_id
-
-
-def parse_scim_filters(
-    filters: ScimFilters = None, conditions: list[Literal["and", "or"]] | None = None
-) -> dict[str, str]:
-    if not filters:
-        return {}
-    if len(filters) > 1 and (not conditions or len(conditions) != len(filters) - 1):
-        raise ValueError("Conditions must be provided for all but the last filter.")
-    filter_parts = []
-    for i, f in enumerate(filters):
-        if len(f) == 2 and f[1] != "pr":
-            raise ValueError("Filter operation must be 'pr' when no value is provided.")
-        if len(f) == 3 and f[1] == "pr":
-            raise ValueError("Filter operation cannot be 'pr' when a value is provided.")
-        if len(f) == 2:
-            filter_parts.append(f"{f[0]} {f[1]}")
-        else:
-            filter_parts.append(f'{f[0]} {f[1]} "{f[2]}"')
-        if conditions and i < len(conditions):
-            filter_parts.append(conditions[i])
-    filter_str = " ".join(filter_parts)
-    logger.debug(f"Constructed SCIM filter: '{filter_str}'.")
-    return {"filter": filter_str}
