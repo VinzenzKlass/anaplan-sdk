@@ -129,8 +129,8 @@ class User(_BaseUser):
     active: bool = Field(description="Indicating the User's active status.")
     emails: list[Email] = Field(default=[], description="Email addresses for the user.")
     display_name: str = Field(description="Display Name for the User.")
-    entitlements: list[Entitlement] | None = Field(
-        default=None, description="A list of entitlements (Workspaces) the User has."
+    entitlements: list[Entitlement] = Field(
+        default=[], description="A list of entitlements (Workspaces) the User has."
     )
 
 
