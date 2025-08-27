@@ -19,7 +19,6 @@ class _AsyncScimClient:
     def __init__(self, http: _AsyncHttpService) -> None:
         self._http = http
         self._url = "https://api.anaplan.com/scim/1/0/v2"
-        self._page_size = 100
 
     async def get_service_provider_config(self) -> ServiceProviderConfig:
         res = await self._http.get(f"{self._url}/ServiceProviderConfig")
@@ -33,18 +32,16 @@ class _AsyncScimClient:
         res = await self._http.get(f"{self._url}/Schemas")
         return [Schema.model_validate(e) for e in res.get("Resources", [])]
 
-    async def get_users(self) -> list[User]:
-        params = {"startIndex": 1, "count": self._page_size}
+    async def get_users(self, page_size: int = 100) -> list[User]:
+        params = {"startIndex": 1, "count": page_size}
         res = await self._http.get(f"{self._url}/Users", params=params)
         users = [User.model_validate(e) for e in res.get("Resources", [])]
-        if (total := res["totalResults"]) <= self._page_size:
+        if (total := res["totalResults"]) <= page_size:
             return users
         pages = await gather(
             *(
-                self._http.get(
-                    f"{self._url}/Users", params={"startIndex": i, "count": self._page_size}
-                )
-                for i in range(self._page_size + 1, total + 1, self._page_size)
+                self._http.get(f"{self._url}/Users", params={"startIndex": i, "count": page_size})
+                for i in range(page_size + 1, total + 1, page_size)
             )
         )
         for user in chain(*(p.get("Resources", []) for p in pages)):
