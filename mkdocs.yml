@@ -46,6 +46,7 @@ nav:
       - CloudWorks API: 'guides/cloud_works.md'
       - ALM API: 'guides/alm.md'
       - Audit API: 'guides/audit.md'
+      - SCIM API: 'guides/scim.md'
       - Sorting: 'guides/sorting.md'
       - Multiple Models: 'guides/multiple_models.md'
       - Logging: 'guides/logging.md'
@@ -61,6 +62,7 @@ nav:
           - CloudWorks:
               - Client: 'api/async/async_cw_client.md'
               - Flows: 'api/async/async_flows_client.md'
+          - SCIM: 'api/async/async_scim_client.md'
           - OAuth: 'api/async/async_oauth_client.md'
       - Synchronous:
           - Bulk: 'api/sync/sync_client.md'
@@ -70,6 +72,7 @@ nav:
           - CloudWorks:
               - Client: 'api/sync/sync_cw_client.md'
               - Flows: 'api/sync/sync_flows_client.md'
+          - SCIM: 'api/sync/sync_scim_client.md'
           - OAuth: 'api/sync/sync_oauth_client.md'
       - Models:
           - ALM: 'api/models/alm.md'
