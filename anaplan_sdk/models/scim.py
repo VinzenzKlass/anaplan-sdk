@@ -4,7 +4,6 @@ from pydantic import Field
 
 from anaplan_sdk.models import AnaplanModel
 
-Ops = Literal["eq", "ne", "gt", "ge", "lt", "le", "pr"]
 AnaplanFilterFields = Literal[
     "id", "externalId", "userName", "name.familyName", "name.givenName", "active"
 ]
@@ -48,6 +47,10 @@ class _FilterExpression:
 
     def __eq__(self, other: Any) -> Self:
         self._exprs.append(f'{self._field} eq "{other}"')
+        return self
+
+    def __ne__(self, other: Any) -> Self:
+        self._exprs.append(f'{self._field} ne "{other}"')
         return self
 
     def __gt__(self, other: Any) -> Self:
