@@ -33,10 +33,10 @@ class _AsyncScimClient:
         res = await self._http.get(f"{self._url}/Schemas")
         return [Schema.model_validate(e) for e in res.get("Resources", [])]
 
-    async def get_users(self, predicates: field = None, page_size: int = 100) -> list[User]:
+    async def get_users(self, predicate: str | field = None, page_size: int = 100) -> list[User]:
         params: dict[str, int | str] = {"startIndex": 1, "count": page_size}
-        if predicates is not None:
-            params["filter"] = str(predicates)
+        if predicate is not None:
+            params["filter"] = str(predicate)
         res = await self._http.get(f"{self._url}/Users", params=params)
         users = [User.model_validate(e) for e in res.get("Resources", [])]
         if (total := res["totalResults"]) <= page_size:

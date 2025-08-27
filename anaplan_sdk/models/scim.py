@@ -17,6 +17,8 @@ class _FilterExpression:
         self._operators = []
 
     def __str__(self) -> str:
+        if not self._exprs:
+            return "active eq true" if self._field == "active" else f"{self._field} pr"
         parts = []
         for i, expr in enumerate(self._exprs):
             if i > 0:
@@ -24,34 +26,24 @@ class _FilterExpression:
             parts.append(expr)
         return " ".join(parts)
 
-    def __bool__(self):
-        raise ValueError("Filter expressions cannot be evaluated directly.")
-
     def __invert__(self) -> Self:
-        if self._field != "active":
-            raise ValueError(
-                "Anaplan does not support the 'not' operator. Only 'active' can be falsy evaluated."
-                "This is equivalent to 'active eq false'."
-            )
-        self._exprs.append("active eq false")
+        self._exprs.append(
+            "active eq false" if self._field == "active" else f"{self._field} eq null"
+        )
         return self
 
     def __and__(self, other: Self) -> Self:
         self._operators.append("and")
         if not self._exprs:
-            self._exprs.append("active eq true")  # If no expression, evaluate to == true
-        self._exprs.append(f"({str(other)})") if other._operators else self._exprs.extend(
-            other._exprs
-        )
+            self._exprs.append(str(self))
+        self._exprs.append(f"({str(other)})" if other._operators else str(other))
         return self
 
     def __or__(self, other: Self) -> Self:
         self._operators.append("or")
         if not self._exprs:
-            self._exprs.append("active eq true")  # If no expression, evaluate to == true
-        self._exprs.append(f"({str(other)})") if other._operators else self._exprs.extend(
-            other._exprs
-        )
+            self._exprs.append(str(self))
+        self._exprs.append(f"({str(other)})" if other._operators else str(other))
         return self
 
     def __eq__(self, other: Any) -> Self:
@@ -72,10 +64,6 @@ class _FilterExpression:
 
     def __le__(self, other: Any) -> Self:
         self._exprs.append(f'{self._field} le "{other}"')
-        return self
-
-    def is_not_null(self):
-        self._exprs.append(f"{self._field} pr")
         return self
 
 
@@ -101,8 +89,8 @@ class Name(NameInput):
 
 
 class Email(AnaplanModel):
-    value: str | None = Field(default=None, description="Email address of the User")
-    type: Literal["work", "home", "other"] | None = Field(
+    value: str = Field(description="Email address of the User")
+    type: Literal["work", "home", "other"] = Field(
         default=None, description="A label indicating the emails's function, e.g., 'work' or 'home'"
     )
     primary: bool | None = Field(
@@ -136,7 +124,7 @@ class User(_BaseUser):
     id: str = Field(description="The unique identifier for the User.")
     name: Name = Field(description="The user's real name.")
     active: bool = Field(description="Indicating the User's active status.")
-    emails: list[Email] = Field(description="Email addresses for the user.")
+    emails: list[Email] = Field(default=[], description="Email addresses for the user.")
     display_name: str = Field(description="Display Name for the User.")
     entitlements: list[Entitlement] | None = Field(
         default=None, description="A list of entitlements (Workspaces) the User has."
