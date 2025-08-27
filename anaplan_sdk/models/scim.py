@@ -1,8 +1,20 @@
-from typing import Any, Literal
+from typing import Any, Literal, TypeAlias
 
 from pydantic import Field
 
 from anaplan_sdk.models import AnaplanModel
+
+FilterOpsWithValue = Literal["eq", "ne", "gt", "ge", "lt", "le"]
+AnaplanFilterFields = Literal[
+    "id", "externalId", "userName", "name.familyName", "name.givenName", "active"
+]
+ScimFilters: TypeAlias = (
+    list[
+        tuple[AnaplanFilterFields, FilterOpsWithValue, str]
+        | tuple[AnaplanFilterFields, Literal["pr"]]
+    ]
+    | None
+)
 
 
 class NameInput(AnaplanModel):
