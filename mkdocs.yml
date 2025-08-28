@@ -80,6 +80,7 @@ nav:
           - CloudWorks: 'api/models/cloud_works.md'
           - Flows: 'api/models/flows.md'
           - Transactional: 'api/models/transactional.md'
+          - SCIM: 'api/models/scim.md'
       - Exceptions: 'api/exceptions.md'
 
 plugins:
