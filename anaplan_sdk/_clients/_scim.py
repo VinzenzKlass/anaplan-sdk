@@ -1,3 +1,4 @@
+import logging
 from concurrent.futures import ThreadPoolExecutor
 from itertools import chain
 from typing import Any
@@ -14,6 +15,8 @@ from anaplan_sdk.models.scim import (
     UserInput,
     field,
 )
+
+logger = logging.getLogger("anaplan_sdk")
 
 
 class _ScimClient:
@@ -61,7 +64,9 @@ class _ScimClient:
         """
         params: dict[str, int | str] = {"startIndex": 1, "count": page_size}
         if predicate is not None:
-            params["filter"] = str(predicate)
+            _predicate = predicate if isinstance(predicate, str) else str(predicate)
+            logger.debug(f"Searching for users with predicate: {_predicate}")
+            params["filter"] = _predicate
         res = self._http.get(f"{self._url}/Users", params=params)
         users = [User.model_validate(e) for e in res.get("Resources", [])]
         if (total := res["totalResults"]) <= page_size:
@@ -95,7 +100,9 @@ class _ScimClient:
         :return: The created User object.
         """
         res = self._http.post(f"{self._url}/Users", json=construct_payload(UserInput, user))
-        return User.model_validate(res)
+        user = User.model_validate(res)
+        logger.info(f"Added user '{user.user_name}' with ID '{user.id}'.")
+        return user
 
     def replace_user(self, user_id: str, user: ReplaceUserInput | dict[str, Any]):
         """
@@ -110,7 +117,9 @@ class _ScimClient:
         res = self._http.put(
             f"{self._url}/Users/{user_id}", json=construct_payload(ReplaceUserInput, user)
         )
-        return User.model_validate(res)
+        user = User.model_validate(res)
+        logger.info(f"Replaced user with ID '{user_id}' with '{user.user_name}'.")
+        return user
 
     def update_user(self, user_id: str, operations: list[Operation] | list[dict[str, Any]]) -> User:
         """
@@ -131,4 +140,6 @@ class _ScimClient:
                 "Operations": [construct_payload(Operation, e) for e in operations],
             },
         )
-        return User.model_validate(res)
+        user = User.model_validate(res)
+        logger.info(f"Updated user with ID '{user_id}'.")
+        return user

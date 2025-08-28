@@ -32,18 +32,23 @@ class _FilterExpression:
         return self
 
     def __and__(self, other: Self) -> Self:
-        self._operators.append("and")
-        if not self._exprs:
-            self._exprs.append(str(self))
-        self._exprs.append(f"({str(other)})" if other._operators else str(other))
-        return self
+        return self._combine(other, "and")
 
     def __or__(self, other: Self) -> Self:
-        self._operators.append("or")
+        return self._combine(other, "or")
+
+    def _combine(self, other: Self, operator: Literal["and", "or"]) -> Self:
+        if self._requires_grouping(operator):
+            self._exprs = [f"({str(self)})"]
+            self._operators = []
+        self._operators.append(operator)
         if not self._exprs:
             self._exprs.append(str(self))
-        self._exprs.append(f"({str(other)})" if other._operators else str(other))
+        self._exprs.append(f"({str(other)})" if other._requires_grouping(operator) else str(other))
         return self
+
+    def _requires_grouping(self, operator: Literal["and", "or"]) -> bool:
+        return len(self._operators) > 0 and ("or" in self._operators or operator == "or")
 
     def __eq__(self, other: Any) -> Self:
         self._exprs.append(f'{self._field} eq "{other}"')
