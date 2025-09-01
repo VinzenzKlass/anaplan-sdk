@@ -26,6 +26,7 @@ from anaplan_sdk.models import (
 from ._alm import _AsyncAlmClient
 from ._audit import _AsyncAuditClient
 from ._cloud_works import _AsyncCloudWorksClient
+from ._scim import _AsyncScimClient
 from ._transactional import _AsyncTransactionalClient
 
 SortBy = Literal["id", "name"] | None
@@ -135,7 +136,8 @@ class AsyncClient:
             _AsyncTransactionalClient(self._http, model_id) if model_id else None
         )
         self._alm_client = _AsyncAlmClient(self._http, model_id) if model_id else None
-        self._audit = _AsyncAuditClient(self._http)
+        self._audit_client = _AsyncAuditClient(self._http)
+        self._scim_client = _AsyncScimClient(self._http)
         self._cloud_works = _AsyncCloudWorksClient(self._http)
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
@@ -169,7 +171,7 @@ class AsyncClient:
         The Audit Client provides access to the Anaplan Audit API.
         For details, see https://vinzenzklass.github.io/anaplan-sdk/guides/audit/.
         """
-        return self._audit
+        return self._audit_client
 
     @property
     def cw(self) -> _AsyncCloudWorksClient:
@@ -217,6 +219,15 @@ class AsyncClient:
                 "is instantiated correctly with a valid `model_id`."
             )
         return self._alm_client
+
+    @property
+    def scim(self) -> _AsyncScimClient:
+        """
+        To use the SCIM API, you must be User Admin. The SCIM API allows managing internal users.
+        Visiting users are excluded from the SCIM API.
+        :return: The SCIM Client.
+        """
+        return self._scim_client
 
     async def get_workspaces(
         self,

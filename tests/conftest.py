@@ -52,6 +52,11 @@ def error_run_id():
     return "910a68fb814e4225ad683bdafb70ae65"
 
 
+@pytest.fixture(scope="session")
+def scim_user_id():
+    return "38a0546fd5894c1fac87f8fb71566b3f"
+
+
 @pytest.fixture
 def name():
     return "Test_" + "".join(choices(string.ascii_uppercase + string.digits, k=12))
