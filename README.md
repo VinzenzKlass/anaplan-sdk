@@ -7,7 +7,7 @@
 </h3>
 
 <p align="center" style="font-size: 1.2rem; font-weight: 300; margin: 15px 0">
-    Streamlined Python Interface for Anaplan
+    Streamlined Python Interface for the Anaplan API.
 </p>
 
 <div align="center">
