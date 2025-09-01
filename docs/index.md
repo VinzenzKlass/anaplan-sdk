@@ -42,7 +42,7 @@ abstractions over all parts of the Anaplan API, allowing you to focus on busines
 - **Pythonic Interface**: Clean, intuitive access to Anaplan functionality
 - **Simplified API Interactions**: Automatic handling of authentication, error handling, and data formatting
 - **Performance Optimizations**: Built-in chunking and compression techniques
-- **Multiple API Support**: Supports all Anaplan API catgeories
+- **Multiple API Support**: Supports all Anaplan API categories
 - **Flexible Client Options**: Both synchronous and asynchronous implementations
 - **Developer-Friendly**: Designed to reduce boilerplate code and accelerate development
 
