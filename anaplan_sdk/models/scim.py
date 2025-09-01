@@ -1,6 +1,7 @@
-from typing import Any, Literal, Self
+from typing import Any, Literal
 
 from pydantic import Field
+from typing_extensions import Self
 
 from anaplan_sdk.models import AnaplanModel
 
