@@ -1,4 +1,9 @@
-This Quickstart focuses on the Bulk APIs, which are the most commonly used APIs for data import and export. If you are
+---
+title: Quick Start
+description: How to get started with Anaplan SDK and the Anaplan API.
+---
+
+This Quickstart focuses on the Bulk endpoints of the Anaplan API, which are most commonly used for data import and export. If you are
 looking for different APIs, such as the Transactional APIs or CloudWork APIs, please refer to the respective 
 [Guides](guides/index.md).
 
@@ -9,7 +14,7 @@ understand why this is not a good idea for production use.
     The Quickstart assumes you already have both valid credentials for your tenant, and the `workspace_id` and 
     `model_id` of the Model you want to work with. If you don't: You can find both of these either in the URL displayed 
     in the browser or by instantiating a client with Authentication information only and then calling the 
-    `list_workspaces` and `list_models` methods. Alternatively, you can use an HTTP Client like Postman, Insomnia, 
+    `get_workspaces` and `get_models` methods. Alternatively, you can use an HTTP Client like Postman, Insomnia, 
     or Paw.
 
 === "Synchronous"
@@ -45,15 +50,15 @@ common practice.
 
 === "Synchronous"
     ```python
-    file = anaplan.list_files()
-    processes = anaplan.list_processes()
+    file = anaplan.get_files()
+    processes = anaplan.get_processes()
     ```
 
 === "Asynchronous"
     ```python
     from asyncio import gather
     
-    files, processes = await gather(anaplan.list_files(), anaplan.list_processes())
+    files, processes = await gather(anaplan.get_files(), anaplan.get_processes())
     ```
 ??? info "Output"
     Models used in this Example: [File](api/models/bulk.md#anaplan_sdk.models._bulk.File), [Process](api/models/bulk.md#anaplan_sdk.models._bulk.Process).
@@ -98,11 +103,11 @@ Conversely, for exporting data, we start by listing the available exports.
 
 === "Synchronous"
     ```python
-    exports = anaplan.list_exports()
+    exports = anaplan.get_exports()
     ```
 === "Asynchronous"
     ```python
-    exports = await anaplan.list_exports()
+    exports = await anaplan.get_exports()
     ```
 ??? info "Output"
     Models used in this Example: [Export](api/models/bulk.md#anaplan_sdk.models._bulk.Export).
@@ -130,7 +135,7 @@ Conversely, for exporting data, we start by listing the available exports.
 
 ## Next Steps
 
-To gain a better understanding of how Anaplan handles data, head over to the [Anaplan Explained](anaplan_explained.md)
+To gain a better understanding of how Anaplan handles data, head over to the [Anaplan Explained](concepts.md)
 section.
 
 For a more detailed guide on how to use both the [Bulk APIs](guides/bulk.md)

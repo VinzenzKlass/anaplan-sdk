@@ -1,7 +1,6 @@
 from typing import Literal, TypeAlias
 
-from pydantic import ConfigDict, Field, field_validator
-from pydantic.alias_generators import to_camel
+from pydantic import Field, field_validator
 
 from ._base import AnaplanModel
 
@@ -40,11 +39,13 @@ class Model(AnaplanModel):
         description="The unique identifier of the user who last modified this model."
     )
     memory_usage: int = Field(0, description="The memory usage of this model in bytes.")
-    current_workspace_id: str = Field(
-        description="The unique identifier of the workspace that this model is currently in."
+    workspace_id: str = Field(
+        validation_alias="currentWorkspaceId",
+        description="The unique identifier of the workspace that this model is currently in.",
     )
-    current_workspace_name: str = Field(
-        description="The name of the workspace that this model is currently in."
+    workspace_name: str = Field(
+        validation_alias="currentWorkspaceName",
+        description="The name of the workspace that this model is currently in.",
     )
     url: str = Field(validation_alias="modelUrl", description="The current URL of this model.")
     category_values: list = Field(description="The category values of this model.")
@@ -164,13 +165,21 @@ class TaskResult(AnaplanModel):
     )
 
 
-class TaskStatus(AnaplanModel):
-    model_config = ConfigDict(alias_generator=to_camel, populate_by_name=True)
-    id: str = Field(validation_alias="taskId", description="The unique identifier of this task.")
-    task_state: Literal["NOT_STARTED", "IN_PROGRESS", "COMPLETE"] = Field(
-        description="The state of this task."
-    )
-    creation_time: int = Field(description="Unix timestamp of when this task was created.")
+class TaskStatus(TaskSummary):
     progress: float = Field(description="The progress of this task as a float between 0 and 1.")
     current_step: str | None = Field(None, description="The current step of this task.")
     result: TaskResult | None = Field(None)
+
+
+class DeletionFailure(AnaplanModel):
+    model_id: str = Field(description="The unique identifier of the model that failed to delete.")
+    message: str = Field(description="The error message explaining why the deletion failed.")
+
+
+class ModelDeletionResult(AnaplanModel):
+    models_deleted: int = Field(description="The number of models that were successfully deleted.")
+    failures: list[DeletionFailure] = Field(
+        [],
+        validation_alias="bulkDeleteModelsFailures",
+        description="List of models that failed to delete with their error messages.",
+    )

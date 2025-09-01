@@ -1,3 +1,8 @@
+---
+title: Installation
+description: How to install Anaplan SDK.
+---
+
 Anaplan SDK requires Python 3.10.4 or higher.
 
 === "pip"
