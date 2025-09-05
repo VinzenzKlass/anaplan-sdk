@@ -24,6 +24,7 @@ from anaplan_sdk.models import (
 from ._alm import _AsyncAlmClient
 from ._audit import _AsyncAuditClient
 from ._cloud_works import _AsyncCloudWorksClient
+from ._scim import _AsyncScimClient
 from ._transactional import _AsyncTransactionalClient
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
@@ -117,6 +118,7 @@ class AsyncClient(_AsyncBaseClient):
         )
         self._audit = _AsyncAuditClient(_client, self._retry_count)
         self._cloud_works = _AsyncCloudWorksClient(_client, self._retry_count)
+        self._scim = _AsyncScimClient(_client, self._retry_count)
         self.status_poll_delay = status_poll_delay
         self.upload_chunk_size = upload_chunk_size
         self.allow_file_creation = allow_file_creation
@@ -196,6 +198,13 @@ class AsyncClient(_AsyncBaseClient):
                 "is instantiated correctly with a valid `model_id`."
             )
         return self._alm_client
+
+    @property
+    def scim(self) -> _AsyncScimClient:
+        """
+        The Scim provides access to the Anaplan SCIM API.
+        """
+        return self._scim
 
     async def list_workspaces(self, search_pattern: str | None = None) -> list[Workspace]:
         """

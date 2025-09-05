@@ -26,6 +26,7 @@ from anaplan_sdk.models import (
 from ._alm import _AlmClient
 from ._audit import _AuditClient
 from ._cloud_works import _CloudWorksClient
+from ._scim import _ScimClient
 from ._transactional import _TransactionalClient
 
 logging.getLogger("httpx").setLevel(logging.CRITICAL)
@@ -120,6 +121,7 @@ class Client(_BaseClient):
         self._cloud_works = _CloudWorksClient(_client, self._retry_count)
         self._thread_count = multiprocessing.cpu_count()
         self._audit = _AuditClient(_client, self._retry_count, self._thread_count)
+        self._scim = _ScimClient(_client, self._retry_count)
         self.status_poll_delay = status_poll_delay
         self.upload_parallel = upload_parallel
         self.upload_chunk_size = upload_chunk_size
@@ -200,6 +202,13 @@ class Client(_BaseClient):
                 "is instantiated correctly with a valid `model_id`."
             )
         return self._alm_client
+
+    @property
+    def scim(self) -> _ScimClient:
+        """
+        The Scim provides access to the Anaplan SCIM API.
+        """
+        return self._scim
 
     def list_workspaces(self, search_pattern: str | None = None) -> list[Workspace]:
         """
