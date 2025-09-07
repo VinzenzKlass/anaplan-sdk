@@ -257,7 +257,7 @@ def _extract_first_page(
     actual_page_size = res["meta"]["paging"]["currentPageSize"]
     if actual_page_size < page_size and not actual_page_size == total_items:
         logger.warning(
-            f"Page size {page_size} was silently truncated to {actual_page_size}."
+            f"Page size {page_size} was silently truncated to {actual_page_size}. "
             f"Using the server-side enforced page size {actual_page_size} for further requests."
         )
     logger.debug(f"Found {total_items} total items, retrieved {len(first_page)} in first page.")
