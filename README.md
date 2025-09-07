@@ -23,9 +23,11 @@
 </div>
 
 ---
+Streamlined Python Interface for the Anaplan API. Get up and running with the Anaplan API in minutes.
 
 Anaplan SDK is an independent, unofficial project providing pythonic access to Anaplan. It delivers high-level
-abstractions over all Anaplan APIs, allowing you to focus on business requirements rather than implementation details.
+abstractions over all parts of the Anaplan API, allowing you to focus on business requirements rather than
+implementation details.
 
 ## Key Features
 
