@@ -125,6 +125,9 @@ markdown_extensions:
   - admonition
 
 extra:
+  analytics:
+    provider: google
+    property: G-8X4QQH8XQB
   social:
     - icon: fontawesome/brands/github
       link: https://github.com/VinzenzKlass/anaplan-sdk
