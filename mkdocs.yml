@@ -7,6 +7,7 @@ repo_url: https://github.com/VinzenzKlass/anaplan-sdk
 
 theme:
   name: 'material'
+  custom_dir: docs/overrides
   palette:
     - scheme: 'default'
       media: '(prefers-color-scheme: light)'
