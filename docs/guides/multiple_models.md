@@ -12,8 +12,8 @@ argument - the existing one will be used.
 === "Synchronous"
     ```python
     anaplan = Client(
-        workspace_id="8a81b09d599f3c6e0159f605560c2630",
-        model_id="8896D8C366BC48E5A3182B9F5CE10526",
+        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        model_id="22222222222222222222222222222222",
         certificate=getenv("ANAPLAN_CERT"),
         private_key=getenv("ANAPLAN_PK"),
     )
@@ -25,8 +25,8 @@ argument - the existing one will be used.
 === "Asynchronous"
     ```python
     anaplan = AsyncClient(
-        workspace_id="8a81b09d599f3c6e0159f605560c2630",
-        model_id="8896D8C366BC48E5A3182B9F5CE10526",
+        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        model_id="22222222222222222222222222222222",
         certificate=getenv("ANAPLAN_CERT"),
         private_key=getenv("ANAPLAN_PK"),
     )

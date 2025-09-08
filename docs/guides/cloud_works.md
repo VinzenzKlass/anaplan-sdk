@@ -99,8 +99,8 @@ Similarly, you can use the `create_integration` method to create an integration.
     )
     integration_input = IntegrationInput(
         name="Blob to Anaplan",
-        workspace_id="8a81b09d599f3c6e0159f605560c2630",
-        model_id="8896D8C366BC48E5A3182B9F5CE10526",
+        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        model_id="22222222222222222222222222222222",
         jobs=[job],
     )
     integration_id = anaplan.cw.create_integration(integration_input)
@@ -111,8 +111,8 @@ Similarly, you can use the `create_integration` method to create an integration.
         {
             "name": "Blob to Anaplan",
             "version": "2.0",
-            "workspaceId": "8a81b09d599f3c6e0159f605560c2630",
-            "modelId": "8896D8C366BC48E5A3182B9F5CE10526",
+            "workspaceId": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "modelId": "22222222222222222222222222222222",
             "nuxVisible": False,
             "jobs": [
                 {
@@ -144,8 +144,8 @@ To create a Process Integration, you can simply extend the above example to incl
     anaplan.cw.create_integration(
         IntegrationInput(
             name="Double Blob to Anaplan",
-            workspace_id="8a81b09d599f3c6e0159f605560c2630",
-            model_id="8896D8C366BC48E5A3182B9F5CE10526",
+            workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            model_id="22222222222222222222222222222222",
             process_id=118000000012,  # Add this line
             jobs=[job, another_job, ...],
         )
@@ -157,8 +157,8 @@ To create a Process Integration, you can simply extend the above example to incl
         {
             "name": "Double Blob to Anaplan",
             "version": "2.0",
-            "workspaceId": "8a81b09d599f3c6e0159f605560c2630",
-            "modelId": "8896D8C366BC48E5A3182B9F5CE10526",
+            "workspaceId": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "modelId": "22222222222222222222222222222222",
             "processId": "118000000012", # Add this line
             "nuxVisible": false,
             "jobs": [
@@ -218,8 +218,8 @@ instead, or an accordingly shaped dictionary:
         IntegrationProcessInput(
             name="My Process",
             process_id=118000000012,
-            workspace_id="8a81b09d599f3c6e0159f605560c2630",
-            model_id="8896D8C366BC48E5A3182B9F5CE10526",
+            workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            model_id="22222222222222222222222222222222",
         )
     )
     ```
@@ -229,8 +229,8 @@ instead, or an accordingly shaped dictionary:
         {
             "name": "My Process",
             "version": "2.0",
-            "workspaceId": "8a81b09d599f3c6e0159f605560c2630",
-            "modelId": "8896D8C366BC48E5A3182B9F5CE10526",
+            "workspaceId": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "modelId": "22222222222222222222222222222222",
             "processId": "118000000012"
         }
     )
