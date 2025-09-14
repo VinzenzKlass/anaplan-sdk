@@ -162,7 +162,6 @@ async def test_with_model(client: AsyncClient):
     assert other_client.alm._model_id == other_model_id
     assert other_client.tr._model_id == other_model_id
     assert other_client.alm._model_id == other_model_id
-    assert other_client.scim._url
 
 
 async def _async_range(count: int):

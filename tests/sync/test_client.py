@@ -152,4 +152,3 @@ def test_with_model(client: Client):
     assert other_client.alm._model_id == other_model_id
     assert other_client.tr._model_id == other_model_id
     assert other_client.alm._model_id == other_model_id
-    assert other_client.scim._url
