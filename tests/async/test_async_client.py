@@ -149,10 +149,19 @@ async def test_run_nonexistent_action_raises_exception(client: AsyncClient):
 async def test_upload_empty_file(client: AsyncClient, test_file):
     with pytest.raises(AnaplanException):
         await client.upload_file(test_file, b"")
-        result = await client.get_file(
-            test_file
-        )  # Error occurs here, since the file does not actually exist
-        assert result == b""
+        # Error occurs here, since the file does not actually exist
+        await client.get_file(test_file)
+
+
+async def test_with_model(client: AsyncClient):
+    other_ws_id = other_model_id = "123"
+    other_client = client.with_model(other_model_id, other_ws_id)
+    assert isinstance(other_client, AsyncClient)
+    assert other_client._workspace_id == other_ws_id
+    assert other_client._model_id == other_model_id
+    assert other_client.alm._model_id == other_model_id
+    assert other_client.tr._model_id == other_model_id
+    assert other_client.alm._model_id == other_model_id
 
 
 async def _async_range(count: int):

@@ -139,7 +139,16 @@ def test_run_nonexistent_action_raises_exception(client: Client):
 def test_upload_empty_file(client: Client, test_file):
     with pytest.raises(AnaplanException):
         client.upload_file(test_file, b"")
-        result = client.get_file(
-            test_file
-        )  # Error occurs here, since the file does not actually exist
-        assert result == b""
+        # Error occurs here, since the file does not actually exist
+        client.get_file(test_file)
+
+
+def test_with_model(client: Client):
+    other_ws_id = other_model_id = "123"
+    other_client = client.with_model(other_model_id, other_ws_id)
+    assert isinstance(other_client, Client)
+    assert other_client._workspace_id == other_ws_id
+    assert other_client._model_id == other_model_id
+    assert other_client.alm._model_id == other_model_id
+    assert other_client.tr._model_id == other_model_id
+    assert other_client.alm._model_id == other_model_id

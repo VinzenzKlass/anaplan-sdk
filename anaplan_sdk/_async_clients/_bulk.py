@@ -154,15 +154,18 @@ class AsyncClient:
         :return: A new instance of the Client.
         """
         client = copy(self)
-        new_ws_id = workspace_id or self._workspace_id
-        new_model_id = model_id or self._model_id
+        client._workspace_id = workspace_id or self._workspace_id
+        client._model_id = model_id or self._model_id
         logger.debug(
             f"Creating a new AsyncClient from existing instance "
-            f"with workspace_id={new_ws_id}, model_id={new_model_id}."
+            f"with workspace_id={client._workspace_id}, model_id={client._model_id}."
         )
-        client._url = f"https://api.anaplan.com/2/0/workspaces/{new_ws_id}/models/{new_model_id}"
-        client._transactional_client = _AsyncTransactionalClient(self._http, new_model_id)
-        client._alm_client = _AsyncAlmClient(self._http, new_model_id)
+        client._url = (
+            "https://api.anaplan.com/2/0/workspaces"
+            f"/{client._workspace_id}/models/{client._model_id}"
+        )
+        client._transactional_client = _AsyncTransactionalClient(self._http, client._model_id)
+        client._alm_client = _AsyncAlmClient(self._http, client._model_id)
         return client
 
     @property
