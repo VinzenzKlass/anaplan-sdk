@@ -24,7 +24,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-cert = ["cryptography>=42.0.7,<46.0.0"]
+cert = ["cryptography>=42.0.7,<47.0.0"]
 oauth = ["oauthlib>=3.0.0,<4.0.0"]
 keyring = ["keyring>=25.6.0,<26.0.0"]
 
@@ -43,7 +43,7 @@ dev = [
     "fieldz>=0.1.2",
     "griffe-fieldz>=0.3.0",
     "oauthlib>=3.2.2",
-    "cryptography>=45.0.0",
+    "cryptography>=46.0.1",
     "keyring>=25.6.0",
     "mkdocs-minify-plugin>=0.8.0",
     "polars>=1.32.3",
