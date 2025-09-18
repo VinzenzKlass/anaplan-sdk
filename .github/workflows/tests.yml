@@ -2,12 +2,15 @@ name: Test Suite
 
 on:
   push:
-    branches: [ "master" ]
+    branches: [ master ]
   pull_request:
-    branches: [ "master" ]
+    branches: [ master ]
+  workflow_dispatch:
 
 jobs:
   tests:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
     env:
       ANAPLAN_SDK_TEST_WORKSPACE_ID: ${{secrets.ANAPLAN_SDK_TEST_WORKSPACE_ID}}
       ANAPLAN_SDK_TEST_MODEL_ID: ${{secrets.ANAPLAN_SDK_TEST_MODEL_ID}}
@@ -16,22 +19,19 @@ jobs:
       AZ_STORAGE_ACCOUNT: ${{secrets.AZ_STORAGE_ACCOUNT}}
       AZ_STORAGE_SAS_TOKEN: ${{secrets.AZ_STORAGE_SAS_TOKEN}}
 
-    name: "Python ${{ matrix.python-version }}"
-    runs-on: ubuntu-22.04
+    name: Python ${{ matrix.python-version }}
 
     strategy:
       max-parallel: 4
       matrix:
-        python-version: [ "3.10.4", "3.11", "3.12", "3.13" ]
+        python-version: [ 3.10.4, 3.11, 3.12, 3.13 ]
 
     steps:
-      - uses: "actions/checkout@v4"
-      - uses: "actions/setup-python@v5"
-        with:
-          python-version: "${{ matrix.python-version }}"
-      - name: "Setup"
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - name: Setup
         run: |
-          pip install uv
-          uv sync
-      - name: "Run tests"
-        run: "uv run python -m pytest -n 15 --dist loadfile tests/"
+          uv python install ${{ matrix.python-version }}
+          uv sync --dev
+      - name: Tests
+        run: uv run python -m pytest -n 15 --dist loadfile tests/
