@@ -8,17 +8,24 @@ from typing import Any
 import pytest
 
 from anaplan_sdk.models.cloud_works import (
+    AnaplanSource,
     AnaplanTarget,
     AzureBlobConnectionInput,
     ConnectionInput,
+    FileSource,
     FileSourceInput,
+    FileTarget,
     IntegrationInput,
+    IntegrationJob,
     IntegrationJobInput,
     IntegrationProcessInput,
     NotificationConfigInput,
     NotificationInput,
     NotificationItemInput,
     ScheduleInput,
+    SingleIntegration,
+    TableSource,
+    TableTarget,
 )
 from anaplan_sdk.models.flows import FlowInput, FlowStepInput
 
@@ -283,3 +290,36 @@ def flow_dict(name):
             },
         ],
     }
+
+
+@pytest.fixture(scope="session")
+def integration_validator():
+    def validate(integrations: list[SingleIntegration]):
+        assert all(isinstance(i, SingleIntegration) for i in integrations)
+        assert all(
+            isinstance(i.jobs, list) and len(i.jobs) > 0 and isinstance(j, IntegrationJob)
+            for i in integrations[1:]
+            for j in i.jobs
+        )
+        process, gbq_import, gbq_export, s3_import, s3_export, az_import, az_export = integrations
+        assert (
+            isinstance(process.process_id, int)
+            and (119000000000 > process.process_id >= 118000000000)
+            and (process.jobs is None)
+        )
+
+        integration_configs = (
+            (gbq_import, TableSource, AnaplanTarget),
+            (gbq_export, AnaplanSource, TableTarget),
+            (s3_import, FileSource, AnaplanTarget),
+            (s3_export, AnaplanSource, FileTarget),
+            (az_import, FileSource, AnaplanTarget),
+            (az_export, AnaplanSource, FileTarget),
+        )
+        assert all(
+            isinstance(integration.jobs[0].sources[0], source_type)
+            and isinstance(integration.jobs[0].targets[0], target_type)
+            for integration, source_type, target_type in integration_configs
+        )
+
+    return validate

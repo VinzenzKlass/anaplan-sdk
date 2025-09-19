@@ -234,7 +234,7 @@ class Integration(_BaseIntegration):
     model_id: str = Field(description="The ID of the model this integration belongs to.")
     workspace_id: str = Field(description="The ID of the workspace this integration belongs to.")
     nux_visible: bool = Field(description="Whether this integration is visible in the UI.")
-    process_id: str | None = Field(None, description="The ID of the process (for Process type).")
+    process_id: int | None = Field(None, description="The ID of the process (for Process type).")
     schedule: Schedule | None = Field(
         default=None, description="Schedule configuration if defined."
     )
@@ -295,7 +295,7 @@ class AnaplanTarget(AnaplanModel):
     file_id: int = Field(description="The ID of the file to be used as a target.")
 
 
-class IntegrationJobs(AnaplanModel):
+class IntegrationJob(AnaplanModel):
     type: IntegrationType = Field(description="The type of this integration.")
     sources: list[AnaplanSource | FileSource | TableSource] = Field(
         description="The source of this job."
@@ -313,7 +313,7 @@ class SingleIntegration(Integration):
             "when getting an individual integration by Id."
         ),
     )
-    jobs: list[IntegrationJobs] | None = Field(
+    jobs: list[IntegrationJob] | None = Field(
         default=None,
         description=(
             "The Integration Job details. The source and target can be switched according to "

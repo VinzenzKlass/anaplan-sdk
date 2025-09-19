@@ -1,13 +1,6 @@
 from asyncio import gather
 
-from anaplan_sdk.models.cloud_works import (
-    Connection,
-    Integration,
-    RunError,
-    RunStatus,
-    RunSummary,
-    SingleIntegration,
-)
+from anaplan_sdk.models.cloud_works import Connection, Integration, RunError, RunStatus, RunSummary
 
 
 async def test_list_connections(client):
@@ -40,8 +33,9 @@ async def test_patch_connection(client, name, registry):
     await client.cw.patch_connection(registry["connections"][-1], {"name": name})
 
 
-async def test_get_integration(client, registry, test_integration):
-    assert isinstance(await client.cw.get_integration(test_integration), SingleIntegration)
+async def test_get_integration(client, test_integration_ids, integration_validator):
+    integrations = await gather(*(client.cw.get_integration(i) for i in test_integration_ids))
+    integration_validator(integrations)
 
 
 async def test_list_integrations(client):
