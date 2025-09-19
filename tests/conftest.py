@@ -11,7 +11,7 @@ from anaplan_sdk.models.cloud_works import (
     AnaplanTarget,
     AzureBlobConnectionInput,
     ConnectionInput,
-    FileSource,
+    FileSourceInput,
     IntegrationInput,
     IntegrationJobInput,
     IntegrationProcessInput,
@@ -90,7 +90,7 @@ def az_blob_connection_dict(name):
 
 @pytest.fixture
 def integration_pydantic(name, connection_id):
-    source = FileSource(
+    source = FileSourceInput(
         type="AzureBlob", connection_id=connection_id, file="dummy/liquor_sales.csv"
     )
     target = AnaplanTarget(action_id=112000000064, file_id=113000000055)
@@ -104,7 +104,7 @@ def integration_pydantic(name, connection_id):
 
 @pytest.fixture
 def multi_step_integration_pydantic(name, connection_id):
-    source = FileSource(
+    source = FileSourceInput(
         type="AzureBlob", connection_id=connection_id, file="dummy/liquor_sales.csv"
     )
     target = AnaplanTarget(action_id=112000000064, file_id=113000000055)

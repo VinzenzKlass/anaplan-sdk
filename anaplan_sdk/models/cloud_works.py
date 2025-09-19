@@ -254,16 +254,6 @@ class Integration(_BaseIntegration):
     )
 
 
-class SingleIntegration(Integration):
-    integration_type: None = Field(
-        default=None,
-        description=(
-            "Sentinel for erroneous implementation of the Anaplan API. This field is not provided "
-            "when getting an individual integration by Id."
-        ),
-    )
-
-
 class AnaplanSource(AnaplanModel):
     type: Literal["Anaplan"] = Field(
         default="Anaplan", description="Literal signifying this is an Anaplan source."
@@ -275,16 +265,18 @@ class AnaplanSource(AnaplanModel):
     )
 
 
-class FileSource(AnaplanModel):
+class FileSourceInput(AnaplanModel):
     connection_id: str = Field(description="The unique identifier of the connection.")
     type: Literal["AmazonS3", "AzureBlob"] = Field(description="The type of this connection.")
     file: str = Field(description="The file path relative to the root of the connection.")
 
 
-class FileTarget(FileSource):
-    connection_id: str = Field(description="The unique identifier of the connection.")
-    type: Literal["AmazonS3", "AzureBlob"] = Field(description="The type of this connection.")
-    overwrite: bool = Field(default=True, description="Whether to overwrite the file if it exists.")
+class FileSource(FileSourceInput):
+    connection_name: str = Field(description="The name of the connection.")
+    is_connection_deleted: bool = Field(description="Whether the connection has been deleted.")
+    bucket_name: str | None = Field(
+        default=None, description="The name of the bucket, if applicable."
+    )
 
 
 class TableSource(AnaplanModel):
@@ -293,6 +285,10 @@ class TableSource(AnaplanModel):
     )
     connection_id: str = Field(description="The unique identifier of the connection.")
     table: str = Field(description="The table name in the BigQuery dataset in the connection.")
+
+
+class FileTarget(FileSourceInput):
+    overwrite: bool = Field(default=True, description="Whether to overwrite the file if it exists.")
 
 
 class TableTarget(TableSource):
@@ -313,9 +309,36 @@ class AnaplanTarget(AnaplanModel):
     file_id: int = Field(description="The ID of the file to be used as a target.")
 
 
-class IntegrationJobInput(AnaplanModel):
+class IntegrationJobs(AnaplanModel):
     type: IntegrationType = Field(description="The type of this integration.")
     sources: list[AnaplanSource | FileSource | TableSource] = Field(
+        description="The source of this job."
+    )
+    targets: list[AnaplanTarget | FileTarget | TableTarget] = Field(
+        description="The target of this job."
+    )
+
+
+class SingleIntegration(Integration):
+    integration_type: None = Field(
+        default=None,
+        description=(
+            "Sentinel for erroneous implementation of the Anaplan API. This field is not provided "
+            "when getting an individual integration by Id."
+        ),
+    )
+    jobs: list[IntegrationJobs] | None = Field(
+        default=None,
+        description=(
+            "The Integration Job details. The source and target can be switched according to "
+            "convert imports and exports requirement."
+        ),
+    )
+
+
+class IntegrationJobInput(AnaplanModel):
+    type: IntegrationType = Field(description="The type of this integration.")
+    sources: list[AnaplanSource | FileSourceInput | TableSource] = Field(
         description="The sources of this integration."
     )
     targets: list[AnaplanTarget | FileTarget | TableTarget] = Field(
