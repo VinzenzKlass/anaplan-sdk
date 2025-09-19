@@ -120,6 +120,19 @@ def test_integration(py_version):
 
 
 @pytest.fixture(scope="session")
+def test_integration_ids(test_integration):
+    return [
+        test_integration,
+        "040a5b1572d74e14adbbc8bada248f41",
+        "7839b6bd6c0649acad13cf9d38a374f6",
+        "fc24f171c6ba49b49b19b4502f98e62d",
+        "a1b5719444444e678eb3b6bbcc137e1a",
+        "d1108b906b9c4447b5a62af8f2938a5d",
+        "7fede57c307b46d394b892456bc2083e",
+    ]
+
+
+@pytest.fixture(scope="session")
 def test_notification(py_version):
     if "3.10" in py_version:
         return "bfe29c0ff7434bde96c94ce1ec1b8e0a"

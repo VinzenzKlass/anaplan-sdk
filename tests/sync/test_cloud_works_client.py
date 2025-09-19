@@ -1,11 +1,6 @@
-from anaplan_sdk.models.cloud_works import (
-    Connection,
-    Integration,
-    RunError,
-    RunStatus,
-    RunSummary,
-    SingleIntegration,
-)
+from concurrent.futures.thread import ThreadPoolExecutor
+
+from anaplan_sdk.models.cloud_works import Connection, Integration, RunError, RunStatus, RunSummary
 
 
 def test_list_connections(client):
@@ -38,8 +33,10 @@ def test_patch_connection(client, name, registry):
     client.cw.patch_connection(registry["connections"][-1], {"name": name})
 
 
-def test_get_integration(client, registry, test_integration):
-    assert isinstance(client.cw.get_integration(test_integration), SingleIntegration)
+def test_get_integration(client, test_integration_ids, integration_validator):
+    with ThreadPoolExecutor() as executor:
+        integrations = list(executor.map(client.cw.get_integration, test_integration_ids))
+    integration_validator(integrations)
 
 
 def test_list_integrations(client):

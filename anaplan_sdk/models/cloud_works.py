@@ -111,24 +111,10 @@ class GoogleBigQueryConnectionInfo(AnaplanModel):
     dataset: str = Field(description="The ID of the Google BigQuery dataset.")
 
 
-class GoogleServiceAccountJson(AnaplanModel):
-    type: str = Field(description="The type of the service account.")
-    project_id: str = Field(description="The project ID of the service account.")
-    private_key_id: str = Field(description="The private key ID of the service account.")
-    private_key: str = Field(description="The private key of the service account.")
-    client_email: str = Field(description="The client email of the service account.")
-    client_id: str = Field(description="The client ID of the service account.")
-    auth_uri: str = Field(description="The authentication URI of the service account.")
-    token_uri: str = Field(description="The token URI of the service account.")
-    auth_provider_x509_cert_url: str = Field(
-        description="The authentication provider's X.509 certificate URL."
-    )
-    client_x509_cert_url: str = Field(description="The client's X.509 certificate URL.")
-
-
 class GoogleBigQueryConnectionInput(GoogleBigQueryConnectionInfo, BaseConnectionInput):
-    serviceAccountKey: GoogleServiceAccountJson = Field(
-        description="The service account JSON for the Google BigQuery connection."
+    service_account_json: dict[str, str] = Field(
+        serialization_alias="serviceAccountKey",
+        description="The entire service account JSON for the Google BigQuery connection.",
     )
 
 
@@ -248,19 +234,9 @@ class Integration(_BaseIntegration):
     model_id: str = Field(description="The ID of the model this integration belongs to.")
     workspace_id: str = Field(description="The ID of the workspace this integration belongs to.")
     nux_visible: bool = Field(description="Whether this integration is visible in the UI.")
-    process_id: str | None = Field(None, description="The ID of the process (for Process type).")
+    process_id: int | None = Field(None, description="The ID of the process (for Process type).")
     schedule: Schedule | None = Field(
         default=None, description="Schedule configuration if defined."
-    )
-
-
-class SingleIntegration(Integration):
-    integration_type: None = Field(
-        default=None,
-        description=(
-            "Sentinel for erroneous implementation of the Anaplan API. This field is not provided "
-            "when getting an individual integration by Id."
-        ),
     )
 
 
@@ -275,16 +251,18 @@ class AnaplanSource(AnaplanModel):
     )
 
 
-class FileSource(AnaplanModel):
+class FileSourceInput(AnaplanModel):
     connection_id: str = Field(description="The unique identifier of the connection.")
     type: Literal["AmazonS3", "AzureBlob"] = Field(description="The type of this connection.")
     file: str = Field(description="The file path relative to the root of the connection.")
 
 
-class FileTarget(FileSource):
-    connection_id: str = Field(description="The unique identifier of the connection.")
-    type: Literal["AmazonS3", "AzureBlob"] = Field(description="The type of this connection.")
-    overwrite: bool = Field(default=True, description="Whether to overwrite the file if it exists.")
+class FileSource(FileSourceInput):
+    connection_name: str = Field(description="The name of the connection.")
+    is_connection_deleted: bool = Field(description="Whether the connection has been deleted.")
+    bucket_name: str | None = Field(
+        default=None, description="The name of the bucket, if applicable."
+    )
 
 
 class TableSource(AnaplanModel):
@@ -293,6 +271,10 @@ class TableSource(AnaplanModel):
     )
     connection_id: str = Field(description="The unique identifier of the connection.")
     table: str = Field(description="The table name in the BigQuery dataset in the connection.")
+
+
+class FileTarget(FileSourceInput):
+    overwrite: bool = Field(default=True, description="Whether to overwrite the file if it exists.")
 
 
 class TableTarget(TableSource):
@@ -313,9 +295,36 @@ class AnaplanTarget(AnaplanModel):
     file_id: int = Field(description="The ID of the file to be used as a target.")
 
 
-class IntegrationJobInput(AnaplanModel):
+class IntegrationJob(AnaplanModel):
     type: IntegrationType = Field(description="The type of this integration.")
     sources: list[AnaplanSource | FileSource | TableSource] = Field(
+        description="The source of this job."
+    )
+    targets: list[AnaplanTarget | FileTarget | TableTarget] = Field(
+        description="The target of this job."
+    )
+
+
+class SingleIntegration(Integration):
+    integration_type: None = Field(
+        default=None,
+        description=(
+            "Sentinel for erroneous implementation of the Anaplan API. This field is not provided "
+            "when getting an individual integration by Id."
+        ),
+    )
+    jobs: list[IntegrationJob] | None = Field(
+        default=None,
+        description=(
+            "The Integration Job details. The source and target can be switched according to "
+            "convert imports and exports requirement."
+        ),
+    )
+
+
+class IntegrationJobInput(AnaplanModel):
+    type: IntegrationType = Field(description="The type of this integration.")
+    sources: list[AnaplanSource | FileSourceInput | TableSource] = Field(
         description="The sources of this integration."
     )
     targets: list[AnaplanTarget | FileTarget | TableTarget] = Field(
