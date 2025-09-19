@@ -111,24 +111,10 @@ class GoogleBigQueryConnectionInfo(AnaplanModel):
     dataset: str = Field(description="The ID of the Google BigQuery dataset.")
 
 
-class GoogleServiceAccountJson(AnaplanModel):
-    type: str = Field(description="The type of the service account.")
-    project_id: str = Field(description="The project ID of the service account.")
-    private_key_id: str = Field(description="The private key ID of the service account.")
-    private_key: str = Field(description="The private key of the service account.")
-    client_email: str = Field(description="The client email of the service account.")
-    client_id: str = Field(description="The client ID of the service account.")
-    auth_uri: str = Field(description="The authentication URI of the service account.")
-    token_uri: str = Field(description="The token URI of the service account.")
-    auth_provider_x509_cert_url: str = Field(
-        description="The authentication provider's X.509 certificate URL."
-    )
-    client_x509_cert_url: str = Field(description="The client's X.509 certificate URL.")
-
-
 class GoogleBigQueryConnectionInput(GoogleBigQueryConnectionInfo, BaseConnectionInput):
-    serviceAccountKey: GoogleServiceAccountJson = Field(
-        description="The service account JSON for the Google BigQuery connection."
+    service_account_json: dict[str, str] = Field(
+        serialization_alias="serviceAccountKey",
+        description="The entire service account JSON for the Google BigQuery connection.",
     )
 
 

@@ -4,11 +4,9 @@ schedules and monitoring their status. For more details,
 see [CloudWorks](https://help.anaplan.com/cloudworks-96f951fe-52fc-45a3-b6cb-16b7fe38e1aa). It also supports Flows, 
 which are a sequence of integrations that are executed in a specific order.
 
-## Accessing the Namespace
+## Listing Resources
 
-All the methods for the CloudWorks APIs reside in a different namespace for better API navigability and
-comprehensiveness, but are accessible through the same client for convenience. The Flows APIs in turn are accessible 
-through the `flows` property of the cloud works namespace.
+You can list all CloudWorks Connections, Integrations and Flows using the following methods:
 
 === "Synchronous"
     ```python
@@ -37,47 +35,112 @@ but you can also pass a plain dictionary instead, when you are for e.g. dynamica
 anyway.
 
 === "Pydantic"
-    ```python
-    from anaplan_sdk.models.cloud_works import (
-        AzureBlobConnectionInput, ConnectionInput
-    )
-
-    con_id = anaplan.cw.create_connection(
-        ConnectionInput(
-            type="AzureBlob",
-            body=AzureBlobConnectionInput(
-                name="My Blob",
-                storage_account_name="mystorageaccount",
-                sas_token="sp=rl&st=2025-05-10T19:29:44Z...",
-                container_name="raw",
-            ),
+    === "Azure Blob"
+        ```python
+        from anaplan_sdk.models.cloud_works import (
+            AzureBlobConnectionInput, ConnectionInput
         )
-    )
-    ```
-=== "Dictionary"
-    ```python
-    con_id = anaplan.cw.create_connection(
-        {
-            "type": "AzureBlob",
-            "body": {
-                "name": "My Blob",
-                "storageAccountName": "mystorageaccount",
-                "containerName": "raw",
-                "sasToken": "sp=rl&st=2025-05-10T19:29:44Z...",
-            },
-        }
-    )
-    ```
 
-In the latter case, you still benefit from pydantic validation before the request is sent out. This way, you benefit
-from more concise error messages and can save on network calls. For example, if you accidentally pass 
-`storageAccount` instead of `storageAccountName` in the dictionary payload, you will get
+        con_id = anaplan.cw.create_connection(
+            ConnectionInput(
+                type="AzureBlob",
+                body=AzureBlobConnectionInput(
+                    name="Azure Blob Connection",
+                    storage_account_name="mystorageaccount",
+                    sas_token="sp=racwdl&st=2025-09-19T09:02:45Z...",
+                    container_name="my-container",
+                ),
+            )
+        )   
+        ```
+
+    === "AWS S3"
+        ```python
+        from anaplan_sdk.models.cloud_works import (
+            AmazonS3ConnectionInput, ConnectionInput
+        )
+    
+        con_id = anaplan.cw.create_connection(
+            ConnectionInput(
+                type="AmazonS3",
+                body=AmazonS3ConnectionInput(
+                    name="AWS S3 Connection",
+                    access_key_id="XXX",
+                    secret_access_key="XXX",
+                    bucket_name="my-bucket-name",
+                ),
+            )
+        )
+        ```
+    === "Google BigQuery"
+        ```python
+        from anaplan_sdk.models.cloud_works import (
+            GoogleBigQueryConnectionInput, ConnectionInput
+        )
+    
+        con_id = anaplan.cw.create_connection(
+            ConnectionInput(
+                type="GoogleBigQuery",
+                body=GoogleBigQueryConnectionInput(
+                    name="Google BigQuery Connection",
+                    dataset="my_dataset",
+                    service_account_json={"type": "service_account", ...},
+                ),
+            )
+        )
+        ```
+
+=== "Dictionary"
+    === "Azure Blob"
+        ```python
+        con_id = anaplan.cw.create_connection(
+            {
+                "type": "AzureBlob",
+                "body": {
+                    "name": "Azure Blob Connection",
+                    "storageAccountName": "mystorageaccount",
+                    "containerName": "my-container",
+                    "sasToken": "sp=racwdl&st=2025-09-19T09:02:45Z...",
+                },
+            }
+        )
+        ```
+    === "AWS S3"
+        ```python
+        con_id = anaplan.cw.create_connection(
+            {
+                "type": "AmazonS3",
+                "body": {
+                    "name": "AWS S3 Connection",
+                    "bucketName": "my-bucket-name",
+                    "accessKeyId": "XXX",
+                    "secretAccessKey": "XXX",
+                },
+            }
+        )
+        ```
+    === "Google BigQuery"
+        ```python
+        con_id = anaplan.cw.create_connection(
+            {
+                "type": "GoogleBigQuery",
+                "body": {
+                    "name": "Google BigQuery Connection",
+                    "dataset": "my_dataset",
+                    "serviceAccountKey": {"type": "service_account", ...},
+                },
+            }
+        )
+        ```
+
+If you pass a dictionary,the payload is still validated against the Pydantic Model. This way, you benefit from more concise error messages and can save on network calls. For example, if you accidentally pass  `storageAccount` instead of `storageAccountName` in the dictionary payload, you will get
 > body.AzureBlobConnectionInput.storageAccountName Field required
 
-Instead of
+instead of
+
 > { "code": 400, "message": "Invalid request body" }
 
-before any network calls are made, allowing you to catch the error earlier and with more information on what went wrong.
+and without sending a request to Anaplan at all.
 
 ## Create an Integration
 
@@ -119,7 +182,7 @@ Similarly, you can use the `create_integration` method to create an integration.
                     "type": "AzureBlobToAnaplan",
                     "sources": [
                         {
-                            "connectionId": "5e634ba338444d2ea26ce384a70b5705",
+                            "connectionId": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
                             "type": "AzureBlob",
                             "file": "dummy.csv"
                         }
@@ -201,7 +264,7 @@ To create a Process Integration, you can simply extend the above example to incl
     )
     ```
 
-Be careful to ensure, that all ids specified in the job inputs match what is defined in your model and matches the
+Be careful to ensure that all ids specified in the job inputs match what is defined in your model and matches the
 process. If this is not the case, this will error, occasionally with a misleading error message, i.e.
 `XYZ is not defined in your model` even though it is, Anaplan just does not know what to do with it in the location you
 specified.
@@ -251,10 +314,10 @@ also comes with a set of defaults, allowing you to omit a lot of inputs compared
         FlowInput(
             name="My Flow",
             steps=[
-                FlowStepInput(referrer="840ccd8a279a454d99577d9538f24f09"),
+                FlowStepInput(referrer="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"),
                 FlowStepInput(
-                    referrer="c0fa795faac047468a59c8dbe3752d75",
-                    depends_on=["840ccd8a279a454d99577d9538f24f09"],
+                    referrer="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+                    depends_on=["AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"],
                 ),
             ],
         )
@@ -270,7 +333,7 @@ also comes with a set of defaults, allowing you to omit a lot of inputs compared
             "steps": [
                 {
                     "type": "Integration",
-                    "referrer": "840ccd8a279a454d99577d9538f24f09",
+                    "referrer": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
                     "isSkipped": False,
                     "exceptionBehavior": [
                         {
@@ -285,9 +348,9 @@ also comes with a set of defaults, allowing you to omit a lot of inputs compared
                 },
                 {
                     "type": "Integration",
-                    "referrer": "c0fa795faac047468a59c8dbe3752d75",
+                    "referrer": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
                     "dependsOn": [
-                        "840ccd8a279a454d99577d9538f24f09"
+                        "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
                     ],
                     "isSkipped": False,
                     "exceptionBehavior": [
