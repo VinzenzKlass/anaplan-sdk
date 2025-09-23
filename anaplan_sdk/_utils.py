@@ -1,9 +1,10 @@
+import logging
 from itertools import chain
-from typing import Any, Literal, Type, TypeVar
+from typing import Any, List, Literal, Type, TypeVar
 
+from pydantic import AliasPath, Field
 from pydantic.alias_generators import to_camel
 
-from anaplan_sdk._services import logger
 from anaplan_sdk.exceptions import AnaplanException, InvalidIdentifierException
 from anaplan_sdk.models import (
     AnaplanModel,
@@ -25,6 +26,33 @@ from anaplan_sdk.models.cloud_works import (
 )
 
 T = TypeVar("T", bound=AnaplanModel)
+logger = logging.getLogger("anaplan_sdk")
+
+
+class Meta(AnaplanModel):
+    current_page_size: int = Field(validation_alias=AliasPath("paging", "currentPageSize"))
+    total_size: int = Field(validation_alias=AliasPath("paging", "totalSize"))
+    offset: int = Field(validation_alias=AliasPath("paging", "offset"))
+
+
+class Status(AnaplanModel):
+    code: int
+    message: str
+
+
+class ModelWrapper(AnaplanModel):
+    meta: Meta
+    status: Status
+    data: List[AnaplanModel]
+
+
+def parse_model(data_model: Type[T], data: bytes) -> ModelWrapper:
+    class _ModelWrapper(ModelWrapper):
+        data: List[data_model] = Field(
+            default=[], validation_alias=data_model.__name__.lower() + "s"
+        )
+
+    return _ModelWrapper.model_validate_json(data)
 
 
 def models_url(only_in_workspace: bool | str, workspace_id: str | None) -> str:

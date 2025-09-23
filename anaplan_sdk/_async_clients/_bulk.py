@@ -283,10 +283,9 @@ class AsyncClient:
         params = {"modelDetails": "true"} | sort_params(sort_by, descending)
         if search_pattern:
             params["s"] = search_pattern
-        res = await self._http.get_paginated(
-            models_url(only_in_workspace, self._workspace_id), "models", params=params
+        return await self._http.get_paginated(
+            models_url(only_in_workspace, self._workspace_id), Model, params=params
         )
-        return [Model.model_validate(e) for e in res]
 
     async def delete_models(self, model_ids: list[str]) -> ModelDeletionResult:
         """

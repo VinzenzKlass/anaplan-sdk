@@ -228,7 +228,7 @@ class AnaplanLocalOAuth(_AnaplanAuth):
     @property
     def token(self) -> dict[str, str]:
         """
-        Returns the current token dictionary. You can safely use the `access_token`, but if you
+        Returns the current token dictionary. You can safely use the `access_token`, but you
         must not use the `refresh_token` outside of this class, if you expect to use this instance
         further. If you do use the `refresh_token` outside of this class, this will error on the
         next attempt to refresh the token, as the `refresh_token` can only be used once.

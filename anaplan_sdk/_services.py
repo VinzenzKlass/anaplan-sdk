@@ -6,13 +6,14 @@ from concurrent.futures import ThreadPoolExecutor
 from gzip import compress
 from itertools import chain
 from math import ceil
-from typing import Any, Awaitable, Callable, Coroutine, Iterator, TypeVar
+from typing import Any, Awaitable, Callable, Coroutine, Iterator, Type, TypeVar
 
 import httpx
 from httpx import HTTPError, Response
 
+from ._utils import ModelWrapper, parse_model
 from .exceptions import AnaplanException, AnaplanTimeoutException, InvalidIdentifierException
-from .models import TaskSummary
+from .models import AnaplanModel, TaskSummary
 
 SORT_WARNING = (
     "If you are sorting by a field that is potentially ambiguous (e.g., name), the order of "
@@ -28,6 +29,7 @@ logger = logging.getLogger("anaplan_sdk")
 _json_header = {"Content-Type": "application/json"}
 _gzip_header = {"Content-Type": "application/x-gzip"}
 
+T = TypeVar("T", bound=AnaplanModel)
 Task = TypeVar("Task", bound=TaskSummary)
 
 
@@ -160,8 +162,10 @@ class _AsyncHttpService:
         self._poll_delay = poll_delay
         self._page_size = min(page_size, 5_000)
 
-    async def get(self, url: str, **kwargs) -> dict[str, Any]:
-        return (await self._run_with_retry(self._client.get, url, **kwargs)).json()
+    async def get(self, url: str, data_model: Type[T], **kwargs) -> list[T]:
+        return parse_model(
+            data_model, (await self._run_with_retry(self._client.get, url, **kwargs)).content
+        ).data
 
     async def get_binary(self, url: str) -> bytes:
         return (await self._run_with_retry(self._client.get, url)).content
@@ -198,33 +202,43 @@ class _AsyncHttpService:
             await sleep(self._poll_delay)
         return result
 
-    async def get_paginated(self, url: str, result_key: str, **kwargs) -> Iterator[dict[str, Any]]:
+    async def get_paginated(self, url: str, data_model: Type[T], **kwargs) -> list[T]:
         logger.debug(f"Starting paginated fetch from {url} with page_size={self._page_size}.")
-        first_page, total_items, actual_size = await self._get_first_page(url, result_key, **kwargs)
-        if total_items <= self._page_size:
+        res, actual_size = await self._get_first_page(url, data_model, **kwargs)
+        if res.meta.total_size <= self._page_size:
             logger.debug("All items fit in first page, no additional requests needed.")
-            return iter(first_page)
+            return res.data
         if kwargs and (kwargs.get("params") or {}).get("sort", None):
             logger.warning(SORT_WARNING)
         pages = await gather(
             *(
-                self._get_page(url, actual_size, n * actual_size, result_key, **kwargs)
-                for n in range(1, ceil(total_items / actual_size))
+                self._get_page(url, actual_size, n * actual_size, data_model, **kwargs)
+                for n in range(1, ceil(res.meta.total_size / actual_size))
             )
         )
-        logger.debug(f"Completed paginated fetch of {total_items} total items.")
-        return chain(first_page, *pages)
+        logger.debug(f"Completed paginated fetch of {res.meta.total_size} total items.")
+        return list(chain(res.data, *pages))
 
-    async def _get_page(self, url: str, limit: int, offset: int, result_key: str, **kwargs) -> list:
+    async def _get_page(
+        self, url: str, limit: int, offset: int, data_model: Type[T], **kwargs
+    ) -> list:
         logger.debug(f"Fetching page: offset={offset}, limit={limit} from {url}.")
         kwargs["params"] = (kwargs.get("params") or {}) | {"limit": limit, "offset": offset}
-        return (await self.get(url, **kwargs)).get(result_key, [])
+        return parse_model(
+            data_model, (await self._run_with_retry(self._client.get, url, **kwargs)).content
+        ).data
 
-    async def _get_first_page(self, url: str, result_key: str, **kwargs) -> tuple[list, int, int]:
+    async def _get_first_page(
+        self, url: str, data_model: Type[T], **kwargs
+    ) -> tuple[ModelWrapper, int]:
         logger.debug(f"Fetching first page with limit={self._page_size} from {url}.")
         kwargs["params"] = (kwargs.get("params") or {}) | {"limit": self._page_size}
-        res = await self.get(url, **kwargs)
-        return _extract_first_page(res, result_key, self._page_size)
+        return _extract_first_page(
+            parse_model(
+                data_model, (await self._run_with_retry(self._client.get, url, **kwargs)).content
+            ),
+            self._page_size,
+        )
 
     async def _run_with_retry(
         self, func: Callable[..., Coroutine[Any, Any, Response]], *args, **kwargs
@@ -250,18 +264,18 @@ class _AsyncHttpService:
         raise AnaplanException("Exhausted all retries without a successful response or Error.")
 
 
-def _extract_first_page(
-    res: dict[str, Any], result_key: str, page_size: int
-) -> tuple[list[dict[str, Any]], int, int]:
-    total_items, first_page = res["meta"]["paging"]["totalSize"], res.get(result_key, [])
-    actual_page_size = res["meta"]["paging"]["currentPageSize"]
-    if actual_page_size < page_size and not actual_page_size == total_items:
+def _extract_first_page(res: ModelWrapper, page_size: int) -> tuple[ModelWrapper, int]:
+    actual_page_size = res.meta.current_page_size
+    if actual_page_size < page_size and not actual_page_size == res.meta.total_size:
         logger.warning(
             f"Page size {page_size} was silently truncated to {actual_page_size}. "
             f"Using the server-side enforced page size {actual_page_size} for further requests."
         )
-    logger.debug(f"Found {total_items} total items, retrieved {len(first_page)} in first page.")
-    return first_page, total_items, actual_page_size
+    logger.debug(
+        f"Found {res.meta.total_size} total items, "
+        f"retrieved {res.meta.current_page_size} in first page."
+    )
+    return res, actual_page_size
 
 
 def _raise_error(error: HTTPError) -> None:
