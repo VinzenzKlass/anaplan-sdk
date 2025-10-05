@@ -236,7 +236,7 @@ code to stream the data to Anaplan.
         options = {"aws_region": "eu-west-3", "skip_signature": "true"}
         df = pl.scan_parquet(url, storage_options=options)
         for i in range(0, df.select(pl.len()).collect().item(), chunk_size):
-            chunk = df.slice(i, chunk_size).collect_async(engine="streaming")
+            chunk = df.slice(i, chunk_size).collect(engine="streaming")
             yield chunk.write_csv(include_header=i == 0)
     
     
