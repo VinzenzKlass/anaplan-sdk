@@ -232,6 +232,25 @@ class AsyncClient:
         """
         return self._scim_client
 
+    async def get_workspace(self, workspace_id: str | None = None) -> Workspace:
+        """
+        Retrieves the Workspace with the given Id, or the Workspace of the current instance if no Id
+        is given. If no Id is given and the instance has no workspace Id, this will
+        raise a ValueError.
+        :param workspace_id: The identifier of the Workspace to retrieve.
+        :return: The Workspace.
+        """
+        ws_id = workspace_id or self._workspace_id
+        if not ws_id:
+            raise ValueError(
+                "No `workspace_id` provided and the client instance has no `workspace_id`. "
+                "Cannot retrieve Workspace."
+            )
+        res = await self._http.get(
+            f"https://api.anaplan.com/2/0/workspaces/{ws_id}", params={"tenantDetails": "true"}
+        )
+        return Workspace.model_validate(res["workspace"])
+
     async def get_workspaces(
         self,
         search_pattern: str | None = None,
@@ -257,6 +276,24 @@ class AsyncClient:
             "https://api.anaplan.com/2/0/workspaces", "workspaces", params=params
         )
         return [Workspace.model_validate(e) for e in res]
+
+    async def get_model(self, model_id: str | None = None) -> Model:
+        """
+        Retrieves the Model with the given Id, or the Model of the current instance if no Id
+        is given. If no Id is given and the instance has no model Id, this will raise a ValueError.
+        :param model_id: The identifier of the Model to retrieve.
+        :return: The Model.
+        """
+        _model_id = model_id or self._model_id
+        if not _model_id:
+            raise ValueError(
+                "No `model_id` provided and the client instance has no `model_id`. "
+                "Cannot retrieve Model."
+            )
+        res = await self._http.get(
+            f"https://api.anaplan.com/2/0/models/{_model_id}", params={"modelDetails": "true"}
+        )
+        return Model.model_validate(res["model"])
 
     async def get_models(
         self,
