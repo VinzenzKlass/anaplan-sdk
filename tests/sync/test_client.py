@@ -9,6 +9,12 @@ from anaplan_sdk.exceptions import (
 from anaplan_sdk.models import Model, TaskStatus, TaskSummary, Workspace
 
 
+def test_get_workspace(client: Client):
+    workspace = client.get_workspace()
+    assert isinstance(workspace, Workspace)
+    assert workspace.id == client._workspace_id
+
+
 def test_list_workspaces(client):
     workspaces, search = client.get_workspaces(), client.get_workspaces("Demo")
     assert isinstance(workspaces, list)
@@ -42,6 +48,12 @@ def test_broken_client_transactional_raises(broken_client: Client):
 def test_file_creation_raises_exception(client: Client):
     with pytest.raises(InvalidIdentifierException):
         client.upload_file(115000000000, b"")
+
+
+def test_get_model(client: Client):
+    model = client.get_model()
+    assert isinstance(model, Model)
+    assert model.id == client._model_id
 
 
 def test_list_models(client: Client):

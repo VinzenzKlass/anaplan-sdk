@@ -1,10 +1,3 @@
-!!! danger "Anaplan Sorting is not consistent"
-    If you are sorting by a field that is potentially ambiguous (e.g., `name`), the order of results is not guaranteed
-    to be internally consistent across multiple requests. This will lead to wrong results when paginating through
-    result sets where the ambiguous order can cause records to slip between pages or be duplicated on multiple pages.
-    The only way to ensure correct results when sorting is to make sure the entire result set fits in one page,
-    or to sort by a field that is guaranteed to be unique (e.g., `id`).
-
 Some endpoints support sorting results by a specified field in either ascending or descending order. The methods for
 these endpoints include a `sort_by` parameter to specify the field to sort on, and a `descending` boolean parameter
 to specify the sort order (default is ascending).  
