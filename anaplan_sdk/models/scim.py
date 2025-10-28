@@ -129,6 +129,16 @@ class _BaseUser(AnaplanModel):
     user_name: str = Field(description="Unique name for the User.")
 
 
+class Meta(AnaplanModel):
+    resource_type: str = Field(description="The type of the resource.")
+    location: str = Field(description="The URI of the resource.")
+
+
+class MetaWithDates(Meta):
+    created: str = Field(description="The timestamp when the resource was created.")
+    last_modified: str = Field(description="The timestamp when the resource was last modified.")
+
+
 class User(_BaseUser):
     id: str = Field(description="The unique identifier for the User.")
     name: Name = Field(description="The user's real name.")
@@ -138,6 +148,7 @@ class User(_BaseUser):
     entitlements: list[Entitlement] = Field(
         default=[], description="A list of entitlements (Workspaces) the User has."
     )
+    meta: MetaWithDates = Field(description="Metadata about the resource.")
 
 
 class ReplaceUserInput(_BaseUser):
@@ -155,16 +166,6 @@ class UserInput(_BaseUser):
         description="Your unique id for this user (as stored in your company systems)."
     )
     name: NameInput = Field(description="The user's real name.")
-
-
-class Meta(AnaplanModel):
-    resource_type: str = Field(description="The type of the resource.")
-    location: str = Field(description="The URI of the resource.")
-
-
-class MetaWithDates(Meta):
-    created: str = Field(description="The timestamp when the resource was created.")
-    last_modified: str = Field(description="The timestamp when the resource was last modified.")
 
 
 class Supported(AnaplanModel):

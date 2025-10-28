@@ -1,5 +1,6 @@
 from anaplan_sdk import AsyncClient
 from anaplan_sdk.models.scim import (
+    MetaWithDates,
     NameInput,
     Remove,
     Replace,
@@ -46,6 +47,7 @@ async def test_get_user(client: AsyncClient, scim_user_id: str):
     user = await client.scim.get_user(scim_user_id)
     assert isinstance(user, User)
     assert user.id == scim_user_id
+    assert isinstance(user.meta, MetaWithDates)
 
 
 async def test_replace_user(client: AsyncClient, scim_user_id: str):
