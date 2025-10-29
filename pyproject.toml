@@ -1,6 +1,6 @@
 [project]
 name = "anaplan-sdk"
-version = "0.5.4"
+version = "0.5.5"
 description = "Streamlined Python Interface for the Anaplan API."
 license = "Apache-2.0"
 authors = [{ name = "Vinzenz Klass", email = "vinzenz.klass@valantic.com" }]
@@ -17,6 +17,18 @@ keywords = [
     "anaplan cloudworks api",
     "anaplan transactional api",
 ]
+classifiers = [
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Operating System :: OS Independent",
+]
 requires-python = ">=3.10.4"
 dependencies = [
     "pydantic>=2.7.2,<3.0.0",
@@ -30,7 +42,7 @@ keyring = ["keyring>=25.6.0,<26.0.0"]
 
 [dependency-groups]
 dev = [
-    "ruff>=0.12.8",
+    "ruff>=0.14.2",
     "pre-commit>=4.3.0",
     "pytest>=8.4.1",
     "pytest-asyncio>=1.1.0",
