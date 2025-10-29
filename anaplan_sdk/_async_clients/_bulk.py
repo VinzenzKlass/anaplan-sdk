@@ -23,6 +23,7 @@ from anaplan_sdk.models import (
     Workspace,
 )
 
+from ..models._bulk import ModelWithTransactionInfo
 from ._alm import _AsyncAlmClient
 from ._audit import _AsyncAuditClient
 from ._cloud_works import _AsyncCloudWorksClient
@@ -277,7 +278,7 @@ class AsyncClient:
         )
         return [Workspace.model_validate(e) for e in res]
 
-    async def get_model(self, model_id: str | None = None) -> Model:
+    async def get_model(self, model_id: str | None = None) -> ModelWithTransactionInfo:
         """
         Retrieves the Model with the given Id, or the Model of the current instance if no Id
         is given. If no Id is given and the instance has no model Id, this will raise a ValueError.
@@ -293,7 +294,7 @@ class AsyncClient:
         res = await self._http.get(
             f"https://api.anaplan.com/2/0/models/{_model_id}", params={"modelDetails": "true"}
         )
-        return Model.model_validate(res["model"])
+        return ModelWithTransactionInfo.model_validate(res["model"])
 
     async def get_models(
         self,

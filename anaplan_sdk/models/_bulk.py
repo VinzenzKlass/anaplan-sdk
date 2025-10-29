@@ -53,6 +53,12 @@ class Model(AnaplanModel):
     last_modified: str = Field(description="The last modified date of this model.")
 
 
+class ModelWithTransactionInfo(Model):
+    model_transaction_running: bool = Field(
+        description="Whether a transaction is currently running on this model."
+    )
+
+
 class File(AnaplanModel):
     id: int = Field(description="The unique identifier of this file.")
     name: str = Field(description="The name of this file.")
