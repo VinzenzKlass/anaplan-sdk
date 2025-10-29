@@ -18,13 +18,13 @@ from anaplan_sdk.models import (
     Import,
     Model,
     ModelDeletionResult,
+    ModelWithTransactionInfo,
     Process,
     TaskStatus,
     TaskSummary,
     Workspace,
 )
 
-from ..models._bulk import ModelWithTransactionInfo
 from ._alm import _AlmClient
 from ._audit import _AuditClient
 from ._cloud_works import _CloudWorksClient
