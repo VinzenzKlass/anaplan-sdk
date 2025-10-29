@@ -9,6 +9,7 @@ from anaplan_sdk.exceptions import (
     InvalidIdentifierException,
 )
 from anaplan_sdk.models import Model, TaskStatus, TaskSummary, Workspace
+from anaplan_sdk.models._bulk import ModelWithTransactionInfo
 
 
 async def test_get_workspace(client: AsyncClient):
@@ -54,7 +55,7 @@ async def test_file_creation_raises_exception(client: AsyncClient):
 
 async def test_get_model(client: AsyncClient):
     model = await client.get_model()
-    assert isinstance(model, Model)
+    assert isinstance(model, ModelWithTransactionInfo)
     assert model.id == client._model_id
 
 
