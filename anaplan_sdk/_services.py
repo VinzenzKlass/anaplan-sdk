@@ -14,15 +14,6 @@ from httpx import HTTPError, Response
 from .exceptions import AnaplanException, AnaplanTimeoutException, InvalidIdentifierException
 from .models import TaskSummary
 
-SORT_WARNING = (
-    "If you are sorting by a field that is potentially ambiguous (e.g., name), the order of "
-    "results is not guaranteed to be internally consistent across multiple requests. This will "
-    "lead to wrong results when paginating through result sets where the ambiguous order can cause "
-    "records to slip between pages or be duplicated on multiple pages. The only way to ensure "
-    "correct results when sorting is to make sure the entire result set fits in one page, or to "
-    "sort by a field that is guaranteed to be unique (e.g., id)."
-)
-
 logger = logging.getLogger("anaplan_sdk")
 
 _json_header = {"Content-Type": "application/json"}
@@ -93,8 +84,6 @@ class _HttpService:
         if total_items <= self._page_size:
             logger.debug("All items fit in first page, no additional requests needed.")
             return iter(first_page)
-        if kwargs and (kwargs.get("params") or {}).get("sort", None):
-            logger.warning(SORT_WARNING)
         pages_needed = ceil(total_items / actual_size)
         logger.debug(f"Fetching {pages_needed - 1} additional pages with {actual_size} items each.")
         with ThreadPoolExecutor() as executor:
@@ -204,8 +193,6 @@ class _AsyncHttpService:
         if total_items <= self._page_size:
             logger.debug("All items fit in first page, no additional requests needed.")
             return iter(first_page)
-        if kwargs and (kwargs.get("params") or {}).get("sort", None):
-            logger.warning(SORT_WARNING)
         pages = await gather(
             *(
                 self._get_page(url, actual_size, n * actual_size, result_key, **kwargs)
