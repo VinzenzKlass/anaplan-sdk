@@ -19,15 +19,11 @@ Anaplan SDK
 </h1>
 
 <div align="center">
-    <a href="https://pepy.tech/projects/anaplan-sdk">
-        <img src="https://static.pepy.tech/badge/anaplan-sdk" alt="">
-    </a>
-    <a href="https://pypi.org/project/anaplan-sdk/">
-        <img src="https://img.shields.io/pypi/v/anaplan-sdk.svg" alt="PyPi Latest Release"/>
-    </a>
-    <a href="https://pepy.tech/projects/anaplan-sdk">
-        <img src="https://static.pepy.tech/badge/anaplan-sdk/month" alt="PyPI Downloads">
-    </a>
+    <a href="https://github.com/VinzenzKlass/anaplan-sdk/actions"><img src="https://github.com/VinzenzKlass/anaplan-sdk/actions/workflows/tests.yml/badge.svg" alt="Workflow status badge" loading="lazy" height="20"></a>
+    <a href="https://pepy.tech/projects/anaplan-sdk"><img src="https://static.pepy.tech/badge/anaplan-sdk" alt="Downloads"></a>
+    <a href="https://pypi.org/project/anaplan-sdk"><img src="https://img.shields.io/pypi/v/anaplan-sdk.svg" alt="PyPi Latest Release"/></a>
+    <a href="https://pypi.org/project/anaplan-sdk"><img alt="PyPI - Python Version" src="https://img.shields.io/pypi/pyversions/anaplan-sdk"></a>
+    <a href="https://pepy.tech/projects/anaplan-sdk"><img src="https://static.pepy.tech/badge/anaplan-sdk/month" alt="PyPI Downloads"></a>
 </div>
 
 ---
