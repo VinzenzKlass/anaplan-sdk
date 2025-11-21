@@ -1,11 +1,11 @@
 import logging
 import os
 from base64 import b64encode
-from typing import Callable
+from typing import Callable, Generator
 
 import httpx
 
-from ._oauth import _OAuthRequestFactory
+from ._oauth import _OAuthRequestFactory  # pyright: ignore[reportPrivateUsage]
 from .exceptions import AnaplanException, InvalidCredentialsException, InvalidPrivateKeyException
 
 logger = logging.getLogger("anaplan_sdk")
@@ -24,7 +24,7 @@ class _AnaplanAuth(httpx.Auth):
     def _build_auth_request(self) -> httpx.Request:
         raise NotImplementedError("Must be implemented in subclass.")
 
-    def auth_flow(self, request):
+    def auth_flow(self, request: httpx.Request) -> Generator[httpx.Request, httpx.Response, None]:
         request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
         response = yield request
         if response.status_code == 401:
@@ -46,9 +46,9 @@ class _StaticTokenAuth(httpx.Auth):
     def __init__(self, token: str):
         self._token = token
 
-    def auth_flow(self, request):
+    def auth_flow(self, request: httpx.Request) -> Generator[httpx.Request, httpx.Response, None]:
         request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
-        response = yield request
+        response: httpx.Response = yield request
         if response.status_code == 401:
             raise InvalidCredentialsException("Token is invalid or expired.")
 
@@ -116,7 +116,7 @@ class _AnaplanCertAuth(_AnaplanAuth):
             self._certificate = certificate
 
     def __set_private_key(
-        self, private_key: str | bytes, private_key_password: str | bytes
+        self, private_key: str | bytes, private_key_password: str | bytes | None
     ) -> None:
         try:
             from cryptography.exceptions import InvalidKey, UnsupportedAlgorithm
@@ -142,7 +142,7 @@ class _AnaplanCertAuth(_AnaplanAuth):
                 if isinstance(private_key_password, str)
                 else private_key_password
             )
-            self._private_key: RSAPrivateKey = serialization.load_pem_private_key(
+            self._private_key: RSAPrivateKey = serialization.load_pem_private_key(  # pyright: ignore[reportAttributeAccessIssue]
                 data, password, backend=default_backend()
             )
         except (IOError, InvalidKey, UnsupportedAlgorithm) as error:
@@ -305,9 +305,7 @@ class AnaplanRefreshTokenAuth(_AnaplanAuth):
         :param token_url: The URL to post the refresh token request to in order to fetch the access
                token.
         """
-        if not isinstance(token, dict) or not all(
-            key in token for key in ("access_token", "refresh_token")
-        ):
+        if not all(key in token for key in ("access_token", "refresh_token")):
             raise ValueError(
                 "The token must at least contain 'access_token' and 'refresh_token' keys."
             )
@@ -342,7 +340,7 @@ class AnaplanRefreshTokenAuth(_AnaplanAuth):
         self._token: str = self._oauth_token["access_token"]
 
 
-def _create_auth(
+def _create_auth(  # pyright: ignore[reportUnusedFunction]
     user_email: str | None = None,
     password: str | None = None,
     certificate: str | bytes | None = None,

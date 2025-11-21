@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from anaplan_sdk._services import _AsyncHttpService
+from anaplan_sdk._services import _AsyncHttpService  # pyright: ignore[reportPrivateUsage]
 from anaplan_sdk._utils import construct_payload
 from anaplan_sdk.models.flows import Flow, FlowInput, FlowSummary
 
@@ -36,7 +36,7 @@ class _AsyncFlowClient:
             (await self._http.get(f"{self._url}/{flow_id}"))["integrationFlow"]
         )
 
-    async def run_flow(self, flow_id: str, only_steps: list[str] = None) -> str:
+    async def run_flow(self, flow_id: str, only_steps: list[str] | None = None) -> str:
         """
         Run a flow by its ID. Make sure that neither the flow nor any of its contained are running.
         If this is the case, the task will error. Anaplan neither schedules these tasks nor can it

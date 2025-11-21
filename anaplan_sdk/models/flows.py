@@ -4,7 +4,7 @@ from typing import Literal
 from pydantic import Field
 
 from ._base import AnaplanModel
-from .cloud_works import _BaseIntegration
+from .cloud_works import _BaseIntegration  # pyright: ignore[reportPrivateUsage]
 
 
 class FlowSummary(_BaseIntegration):

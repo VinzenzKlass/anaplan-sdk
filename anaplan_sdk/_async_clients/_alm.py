@@ -1,7 +1,7 @@
 import logging
 from typing import Literal, overload
 
-from anaplan_sdk._services import _AsyncHttpService
+from anaplan_sdk._services import _AsyncHttpService  # pyright: ignore[reportPrivateUsage]
 from anaplan_sdk._utils import sort_params
 from anaplan_sdk.exceptions import AnaplanActionError
 from anaplan_sdk.models import (
@@ -137,8 +137,8 @@ class _AsyncAlmClient:
         if not wait_for_completion:
             return task
         task = await self._http.poll_task(self.get_sync_task, task.id)
-        if not task.result.successful:
-            msg = f"Sync task {task.id} completed with errors: {task.result.error}."
+        if not task.result.successful:  # pyright: ignore[reportOptionalMemberAccess]
+            msg = f"Sync task {task.id} completed with errors: {task.result.error}."  # pyright: ignore
             logger.error(msg)
             raise AnaplanActionError(msg)
         logger.info(f"Sync task {task.id} completed successfully.")
@@ -185,8 +185,8 @@ class _AsyncAlmClient:
         if not wait_for_completion:
             return task
         task = await self._http.poll_task(self.get_comparison_report_task, task.id)
-        if not task.result.successful:
-            msg = f"Comparison Report task {task.id} completed with errors: {task.result.error}."
+        if not task.result.successful:  # pyright: ignore
+            msg = f"Comparison Report task {task.id} completed with errors: {task.result.error}."  # pyright: ignore
             logger.error(msg)
             raise AnaplanActionError(msg)
         logger.info(f"Comparison Report task {task.id} completed successfully.")
@@ -209,7 +209,7 @@ class _AsyncAlmClient:
         """
         return await self._http.get_binary(
             f"{self._url}/alm/comparisonReports/"
-            f"{task.result.target_revision_id}/{task.result.source_revision_id}"
+            f"{task.result.target_revision_id}/{task.result.source_revision_id}"  # pyright: ignore
         )
 
     @overload
@@ -260,8 +260,8 @@ class _AsyncAlmClient:
         if not wait_for_completion:
             return task
         task = await self._http.poll_task(self.get_comparison_summary_task, task.id)
-        if not task.result.successful:
-            msg = f"Comparison Summary task {task.id} completed with errors: {task.result.error}."
+        if not task.result.successful:  # pyright: ignore
+            msg = f"Comparison Summary task {task.id} completed with errors: {task.result.error}."  # pyright: ignore
             logger.error(msg)
             raise AnaplanActionError(msg)
         logger.info(f"Comparison Summary task {task.id} completed successfully.")
@@ -284,6 +284,6 @@ class _AsyncAlmClient:
         """
         res = await self._http.get(
             f"{self._url}/alm/summaryReports/"
-            f"{task.result.target_revision_id}/{task.result.source_revision_id}"
+            f"{task.result.target_revision_id}/{task.result.source_revision_id}"  # pyright: ignore
         )
         return SummaryReport.model_validate(res["summaryReport"])

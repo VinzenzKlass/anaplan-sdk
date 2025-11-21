@@ -1,8 +1,9 @@
+# pyright: reportPrivateUsage=false
 import logging
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 from copy import copy
-from typing import Iterator, Literal
+from typing import Any, Iterator, Literal
 
 import httpx
 from typing_extensions import Self
@@ -62,7 +63,7 @@ class Client:
         upload_parallel: bool = True,
         upload_chunk_size: int = 25_000_000,
         allow_file_creation: bool = False,
-        **httpx_kwargs,
+        **httpx_kwargs: Any,
     ) -> None:
         """
         Synchronous Anaplan Client. For guides and examples
@@ -170,8 +171,8 @@ class Client:
             "https://api.anaplan.com/2/0/workspaces"
             f"/{client._workspace_id}/models/{client._model_id}"
         )
-        client._transactional_client = _TransactionalClient(self._http, client._model_id)
-        client._alm_client = _AlmClient(self._http, client._model_id)
+        client._transactional_client = _TransactionalClient(self._http, client._model_id)  # pyright: ignore[reportArgumentType]
+        client._alm_client = _AlmClient(self._http, client._model_id)  # pyright: ignore[reportArgumentType]
         return client
 
     @property
@@ -428,7 +429,7 @@ class Client:
         if not wait_for_completion:
             return TaskStatus.model_validate(self.get_task_status(action_id, task_id))
         status = self._http.poll_task(self.get_task_status, action_id, task_id)
-        if status.task_state == "COMPLETE" and not status.result.successful:
+        if status.task_state == "COMPLETE" and not status.result.successful:  # pyright: ignore[reportOptionalMemberAccess]
             logger.error(f"Task '{task_id}' completed with errors.")
             raise AnaplanActionError(f"Task '{task_id}' completed with errors.")
 
@@ -527,7 +528,7 @@ class Client:
         """
         logger.info(f"Starting upload stream for file '{file_id}' with batch size {batch_size}.")
         self._set_chunk_count(file_id, -1)
-        indices, chunks = [], []
+        indices, chunks = list[int](), list[str | bytes]()
         with ThreadPoolExecutor(max_workers=batch_size) as executor:
             for index, chunk in enumerate(content):
                 indices.append(index)
@@ -633,7 +634,7 @@ class Client:
                 "Make sure you have understood the implications of this before doing so. "
             )
         response = self._http.post(f"{self._url}/files/{file_id}", json={"chunkCount": num_chunks})
-        optionally_new_file = int(response.get("file").get("id"))
+        optionally_new_file = int(response.get("file", {}).get("id"))
         if optionally_new_file != file_id:
             if self.allow_file_creation:
                 logger.info(f"Created new file with name '{file_id}', Id is {optionally_new_file}.")

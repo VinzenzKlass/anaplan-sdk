@@ -1,4 +1,4 @@
-from typing import Literal, TypeAlias, Union
+from typing import Any, Literal, TypeAlias, Union
 
 from pydantic import Field
 
@@ -23,8 +23,8 @@ class ListItem(AnaplanModel):
     id: int = Field(description="The unique identifier of this list item.")
     name: str = Field(description="The name of this list item.")
     code: str | None = Field(None, description="The code of this list item.")
-    properties: dict = Field({}, description="The properties of this list item.")
-    subsets: dict = Field({}, description="The subsets of this list item.")
+    properties: dict[str, Any] = Field({}, description="The properties of this list item.")
+    subsets: dict[str, Any] = Field({}, description="The subsets of this list item.")
     parent: str | None = Field(None, description="The parent of this list item.")
     parent_id: str | None = Field(
         None, description="The unique identifier of the parent of this list item."
@@ -301,7 +301,7 @@ class WeeksGroupingCalendar(WeeksPeriodsCalendar):
     week_grouping: str = Field(
         description="The week grouping configuration, e.g. '4-4-5', '4-5-4', or '5-4-4'."
     )
-    totals_selection: TotalsSelection = Field(
+    totals_selection: TotalsSelection = Field(  # pyright: ignore[reportIncompatibleVariableOverride]
         description="The totals selection configuration for the calendar."
     )
 

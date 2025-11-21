@@ -1,7 +1,8 @@
+# pyright: reportPrivateUsage=false
 import logging
 from asyncio import gather
 from copy import copy
-from typing import AsyncIterator, Iterator, Literal
+from typing import Any, AsyncIterator, Coroutine, Iterator, Literal
 
 import httpx
 from typing_extensions import Self
@@ -60,7 +61,7 @@ class AsyncClient:
         status_poll_delay: int = 1,
         upload_chunk_size: int = 25_000_000,
         allow_file_creation: bool = False,
-        **httpx_kwargs,
+        **httpx_kwargs: Any,
     ) -> None:
         """
         Asynchronous Anaplan Client. For guides and examples
@@ -165,8 +166,8 @@ class AsyncClient:
             "https://api.anaplan.com/2/0/workspaces"
             f"/{client._workspace_id}/models/{client._model_id}"
         )
-        client._transactional_client = _AsyncTransactionalClient(self._http, client._model_id)
-        client._alm_client = _AsyncAlmClient(self._http, client._model_id)
+        client._transactional_client = _AsyncTransactionalClient(self._http, client._model_id)  # pyright: ignore[reportArgumentType]
+        client._alm_client = _AsyncAlmClient(self._http, client._model_id)  # pyright: ignore[reportArgumentType]
         return client
 
     @property
@@ -425,7 +426,7 @@ class AsyncClient:
         if not wait_for_completion:
             return TaskStatus.model_validate(await self.get_task_status(action_id, task_id))
         status = await self._http.poll_task(self.get_task_status, action_id, task_id)
-        if status.task_state == "COMPLETE" and not status.result.successful:
+        if status.task_state == "COMPLETE" and not status.result.successful:  # pyright: ignore[reportOptionalMemberAccess]
             logger.error(f"Task '{task_id}' completed with errors.")
             raise AnaplanActionError(f"Task '{task_id}' completed with errors.")
 
@@ -521,7 +522,7 @@ class AsyncClient:
         """
         logger.info(f"Starting upload stream for file '{file_id}' with batch size {batch_size}.")
         await self._set_chunk_count(file_id, -1)
-        tasks = []
+        tasks: list[Coroutine[Any, Any, None]] = []
         if isinstance(content, Iterator):
             for index, chunk in enumerate(content):
                 tasks.append(self._upload_chunk(file_id, index, chunk))
@@ -637,7 +638,7 @@ class AsyncClient:
         response = await self._http.post(
             f"{self._url}/files/{file_id}", json={"chunkCount": num_chunks}
         )
-        optionally_new_file = int(response.get("file").get("id"))
+        optionally_new_file = int(response.get("file", {}).get("id"))
         if optionally_new_file != file_id:
             if self.allow_file_creation:
                 logger.info(f"Created new file with name '{file_id}', Id is {optionally_new_file}.")

@@ -1,6 +1,6 @@
 from typing import Any, Literal
 
-from anaplan_sdk._services import _AsyncHttpService
+from anaplan_sdk._services import _AsyncHttpService  # pyright: ignore[reportPrivateUsage]
 from anaplan_sdk._utils import sort_params
 from anaplan_sdk.models import User
 

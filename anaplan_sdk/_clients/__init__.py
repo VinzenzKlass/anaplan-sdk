@@ -1,3 +1,5 @@
+# pyright: reportPrivateUsage=false
+
 from ._alm import _AlmClient
 from ._audit import _AuditClient
 from ._bulk import Client

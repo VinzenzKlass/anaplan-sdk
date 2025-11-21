@@ -11,7 +11,7 @@ __all__ = [
     "AnaplanRefreshTokenAuth",
     "AsyncOauth",
     "Oauth",
-    "models",
-    "exceptions",
+    "models",  # pyright: ignore[reportUnsupportedDunderAll]
+    "exceptions",  # pyright: ignore[reportUnsupportedDunderAll]
     "field",
 ]

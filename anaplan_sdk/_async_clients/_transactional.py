@@ -3,7 +3,7 @@ from asyncio import gather
 from itertools import chain
 from typing import Any, Literal, overload
 
-from anaplan_sdk._services import _AsyncHttpService
+from anaplan_sdk._services import _AsyncHttpService  # pyright: ignore[reportPrivateUsage]
 from anaplan_sdk._utils import (
     parse_calendar_response,
     parse_insertion_response,
@@ -170,7 +170,7 @@ class _AsyncTransactionalClient:
         return [ListItem.model_validate(e) for e in res.get("listItems", [])]
 
     async def insert_list_items(
-        self, list_id: int, items: list[dict[str, str | int | dict]]
+        self, list_id: int, items: list[dict[str, str | int | dict[str, Any]]]
     ) -> InsertionResult:
         """
         Insert new items to the given list. The items must be a list of dictionaries with at least
@@ -340,7 +340,7 @@ class _AsyncTransactionalClient:
         return [DimensionWithCode.model_validate(e) for e in res.get("items", [])]
 
     async def lookup_dimension_items(
-        self, dimension_id: int, codes: list[str] = None, names: list[str] = None
+        self, dimension_id: int, codes: list[str] | None = None, names: list[str] | None = None
     ) -> list[DimensionWithCode]:
         """
         Looks up items in a dimension by their codes or names. If both are provided, both will be

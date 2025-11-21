@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from anaplan_sdk._services import _HttpService
+from anaplan_sdk._services import _HttpService  # pyright: ignore[reportPrivateUsage]
 from anaplan_sdk._utils import construct_payload
 from anaplan_sdk.models.flows import Flow, FlowInput, FlowSummary
 
@@ -34,7 +34,7 @@ class _FlowClient:
         """
         return Flow.model_validate((self._http.get(f"{self._url}/{flow_id}"))["integrationFlow"])
 
-    def run_flow(self, flow_id: str, only_steps: list[str] = None) -> str:
+    def run_flow(self, flow_id: str, only_steps: list[str] | None = None) -> str:
         """
         Run a flow by its ID. Make sure that neither the flow nor any of its contained are running.
         If this is the case, the task will error. Anaplan neither schedules these tasks nor can it

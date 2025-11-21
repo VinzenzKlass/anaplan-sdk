@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Literal
 
-from anaplan_sdk._services import _HttpService
+from anaplan_sdk._services import _HttpService  # pyright: ignore[reportPrivateUsage]
 from anaplan_sdk._utils import (
     connection_body_payload,
     construct_payload,
@@ -24,7 +24,7 @@ from anaplan_sdk.models.cloud_works import (
     SingleIntegration,
 )
 
-from ._cw_flow import _FlowClient
+from ._cw_flow import _FlowClient  # pyright: ignore[reportPrivateUsage]
 
 logger = logging.getLogger("anaplan_sdk")
 
