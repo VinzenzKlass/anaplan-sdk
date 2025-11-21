@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from itertools import chain
 from typing import Any
 
-from anaplan_sdk._services import _HttpService
+from anaplan_sdk._services import _HttpService  # pyright: ignore[reportPrivateUsage]
 from anaplan_sdk._utils import construct_payload
 from anaplan_sdk.models.scim import (
     Operation,
@@ -48,7 +48,7 @@ class _ScimClient:
         res = self._http.get(f"{self._url}/Schemas")
         return [Schema.model_validate(e) for e in res.get("Resources", [])]
 
-    def get_users(self, predicate: str | field = None, page_size: int = 100) -> list[User]:
+    def get_users(self, predicate: str | field | None = None, page_size: int = 100) -> list[User]:
         """
         Get a list of users, optionally filtered by a predicate. Keep in mind that this will only
         return internal users. To get a list of all users in the tenant, use the `get_users()`
@@ -71,13 +71,15 @@ class _ScimClient:
         users = [User.model_validate(e) for e in res.get("Resources", [])]
         if (total := res["totalResults"]) <= page_size:
             return users
-        with ThreadPoolExecutor() as executor:
-            pages = executor.map(
-                lambda i: self._http.get(
-                    f"{self._url}/Users", params=(params | {"startIndex": i, "count": page_size})
-                ),
-                range(page_size + 1, total + 1, page_size),
+
+        def fetch_page(start_index: int) -> dict[str, Any]:
+            return self._http.get(
+                f"{self._url}/Users",
+                params=(params | {"startIndex": start_index, "count": page_size}),
             )
+
+        with ThreadPoolExecutor() as executor:
+            pages = executor.map(fetch_page, range(page_size + 1, total + 1, page_size))
         for user in chain(*(p.get("Resources", []) for p in pages)):
             users.append(User.model_validate(user))
         return users
@@ -100,9 +102,9 @@ class _ScimClient:
         :return: The created User object.
         """
         res = self._http.post(f"{self._url}/Users", json=construct_payload(UserInput, user))
-        user = User.model_validate(res)
-        logger.info(f"Added user '{user.user_name}' with ID '{user.id}'.")
-        return user
+        new_user = User.model_validate(res)
+        logger.info(f"Added user '{new_user.user_name}' with ID '{new_user.id}'.")
+        return new_user
 
     def replace_user(self, user_id: str, user: ReplaceUserInput | dict[str, Any]):
         """
@@ -117,9 +119,9 @@ class _ScimClient:
         res = self._http.put(
             f"{self._url}/Users/{user_id}", json=construct_payload(ReplaceUserInput, user)
         )
-        user = User.model_validate(res)
-        logger.info(f"Replaced user with ID '{user_id}' with '{user.user_name}'.")
-        return user
+        rep_user = User.model_validate(res)
+        logger.info(f"Replaced user with ID '{user_id}' with '{rep_user.user_name}'.")
+        return rep_user
 
     def update_user(self, user_id: str, operations: list[Operation] | list[dict[str, Any]]) -> User:
         """

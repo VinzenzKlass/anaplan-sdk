@@ -3,7 +3,7 @@ from concurrent.futures import ThreadPoolExecutor
 from itertools import chain
 from typing import Any, Literal, overload
 
-from anaplan_sdk._services import _HttpService
+from anaplan_sdk._services import _HttpService  # pyright: ignore[reportPrivateUsage]
 from anaplan_sdk._utils import (
     parse_calendar_response,
     parse_insertion_response,
@@ -141,7 +141,7 @@ class _TransactionalClient:
         )
 
     @overload
-    def get_list_items(
+    def get_list_items(  # pyright: ignore[reportOverlappingOverload]
         self, list_id: int, return_raw: Literal[False] = False
     ) -> list[ListItem]: ...
 
@@ -167,7 +167,7 @@ class _TransactionalClient:
         return [ListItem.model_validate(e) for e in res.get("listItems", [])]
 
     def insert_list_items(
-        self, list_id: int, items: list[dict[str, str | int | dict]]
+        self, list_id: int, items: list[dict[str, str | int | dict[str, Any]]]
     ) -> InsertionResult:
         """
         Insert new items to the given list. The items must be a list of dictionaries with at least
@@ -197,13 +197,15 @@ class _TransactionalClient:
             logger.info(f"Inserted {result.added} items into list '{list_id}'.")
             return result
 
+        def chunk_insertion(chunk: list[dict[str, str | int | dict[str, Any]]]) -> dict[str, Any]:
+            return self._http.post(
+                f"{self._url}/lists/{list_id}/items?action=add", json={"items": chunk}
+            )
+
         with ThreadPoolExecutor() as executor:
             responses = list(
                 executor.map(
-                    lambda chunk: self._http.post(
-                        f"{self._url}/lists/{list_id}/items?action=add", json={"items": chunk}
-                    ),
-                    [items[i : i + 100_000] for i in range(0, len(items), 100_000)],
+                    chunk_insertion, [items[i : i + 100_000] for i in range(0, len(items), 100_000)]
                 )
             )
         result = parse_insertion_response(responses)
@@ -239,13 +241,15 @@ class _TransactionalClient:
             logger.info(f"Deleted {info.deleted} items from list '{list_id}'.")
             return info
 
+        def chunk_deletion(chunk: list[dict[str, str | int]]) -> dict[str, Any]:
+            return self._http.post(
+                f"{self._url}/lists/{list_id}/items?action=delete", json={"items": chunk}
+            )
+
         with ThreadPoolExecutor() as executor:
             responses = list(
                 executor.map(
-                    lambda chunk: self._http.post(
-                        f"{self._url}/lists/{list_id}/items?action=delete", json={"items": chunk}
-                    ),
-                    [items[i : i + 100_000] for i in range(0, len(items), 100_000)],
+                    chunk_deletion, [items[i : i + 100_000] for i in range(0, len(items), 100_000)]
                 )
             )
         info = ListDeletionResult(
@@ -338,7 +342,7 @@ class _TransactionalClient:
         return [DimensionWithCode.model_validate(e) for e in res.get("items", [])]
 
     def lookup_dimension_items(
-        self, dimension_id: int, codes: list[str] = None, names: list[str] = None
+        self, dimension_id: int, codes: list[str] | None = None, names: list[str] | None = None
     ) -> list[DimensionWithCode]:
         """
         Looks up items in a dimension by their codes or names. If both are provided, both will be

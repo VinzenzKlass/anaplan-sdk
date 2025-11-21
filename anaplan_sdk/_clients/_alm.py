@@ -1,7 +1,7 @@
 import logging
 from typing import Literal, overload
 
-from anaplan_sdk._services import _HttpService
+from anaplan_sdk._services import _HttpService  # pyright: ignore[reportPrivateUsage]
 from anaplan_sdk._utils import sort_params
 from anaplan_sdk.exceptions import AnaplanActionError
 from anaplan_sdk.models import (
@@ -135,8 +135,8 @@ class _AlmClient:
         if not wait_for_completion:
             return task
         task = self._http.poll_task(self.get_sync_task, task.id)
-        if not task.result.successful:
-            msg = f"Sync task {task.id} completed with errors: {task.result.error}."
+        if not task.result.successful:  # pyright: ignore[reportOptionalMemberAccess]
+            msg = f"Sync task {task.id} completed with errors: {task.result.error}."  # pyright: ignore
             logger.error(msg)
             raise AnaplanActionError(msg)
         logger.info(f"Sync task {task.id} completed successfully.")
@@ -183,8 +183,8 @@ class _AlmClient:
         if not wait_for_completion:
             return task
         task = self._http.poll_task(self.get_comparison_report_task, task.id)
-        if not task.result.successful:
-            msg = f"Comparison Report task {task.id} completed with errors: {task.result.error}."
+        if not task.result.successful:  # pyright: ignore[reportOptionalMemberAccess]
+            msg = f"Comparison Report task {task.id} completed with errors: {task.result.error}."  # pyright: ignore
             logger.error(msg)
             raise AnaplanActionError(msg)
         logger.info(f"Comparison Report task {task.id} completed successfully.")
@@ -207,11 +207,11 @@ class _AlmClient:
         """
         return self._http.get_binary(
             f"{self._url}/alm/comparisonReports/"
-            f"{task.result.target_revision_id}/{task.result.source_revision_id}"
+            f"{task.result.target_revision_id}/{task.result.source_revision_id}"  # pyright: ignore
         )
 
     @overload
-    def create_comparison_summary(
+    def create_comparison_summary(  # pyright: ignore[reportOverlappingOverload]
         self,
         source_revision_id: str,
         source_model_id: str,
@@ -258,8 +258,8 @@ class _AlmClient:
         if not wait_for_completion:
             return task
         task = self._http.poll_task(self.get_comparison_summary_task, task.id)
-        if not task.result.successful:
-            msg = f"Comparison Summary task {task.id} completed with errors: {task.result.error}."
+        if not task.result.successful:  # pyright: ignore[reportOptionalMemberAccess]
+            msg = f"Comparison Summary task {task.id} completed with errors: {task.result.error}."  # pyright: ignore
             logger.error(msg)
             raise AnaplanActionError(msg)
         logger.info(f"Comparison Summary task {task.id} completed successfully.")
@@ -282,6 +282,6 @@ class _AlmClient:
         """
         res = self._http.get(
             f"{self._url}/alm/summaryReports/"
-            f"{task.result.target_revision_id}/{task.result.source_revision_id}"
+            f"{task.result.target_revision_id}/{task.result.source_revision_id}"  # pyright: ignore
         )
         return SummaryReport.model_validate(res["summaryReport"])
