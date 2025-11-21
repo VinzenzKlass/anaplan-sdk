@@ -3,7 +3,7 @@ from asyncio import gather
 from itertools import chain
 from typing import Any
 
-from anaplan_sdk._services import _AsyncHttpService
+from anaplan_sdk._services import _AsyncHttpService  # pyright: ignore[reportPrivateUsage]
 from anaplan_sdk._utils import construct_payload
 from anaplan_sdk.models.scim import (
     Operation,
@@ -48,7 +48,9 @@ class _AsyncScimClient:
         res = await self._http.get(f"{self._url}/Schemas")
         return [Schema.model_validate(e) for e in res.get("Resources", [])]
 
-    async def get_users(self, predicate: str | field = None, page_size: int = 100) -> list[User]:
+    async def get_users(
+        self, predicate: str | field | None = None, page_size: int = 100
+    ) -> list[User]:
         """
         Get a list of users, optionally filtered by a predicate. Keep in mind that this will only
         return internal users. To get a list of all users in the tenant, use the `get_users()`
@@ -101,9 +103,9 @@ class _AsyncScimClient:
         :return: The created User object.
         """
         res = await self._http.post(f"{self._url}/Users", json=construct_payload(UserInput, user))
-        user = User.model_validate(res)
-        logger.info(f"Added user '{user.user_name}' with ID '{user.id}'.")
-        return user
+        new_user = User.model_validate(res)
+        logger.info(f"Added user '{new_user.user_name}' with ID '{new_user.id}'.")
+        return new_user
 
     async def replace_user(self, user_id: str, user: ReplaceUserInput | dict[str, Any]):
         """
@@ -118,9 +120,9 @@ class _AsyncScimClient:
         res = await self._http.put(
             f"{self._url}/Users/{user_id}", json=construct_payload(ReplaceUserInput, user)
         )
-        user = User.model_validate(res)
-        logger.info(f"Replaced user with ID '{user_id}' with '{user.user_name}'.")
-        return user
+        rep_user = User.model_validate(res)
+        logger.info(f"Replaced user with ID '{user_id}' with '{rep_user.user_name}'.")
+        return rep_user
 
     async def update_user(
         self, user_id: str, operations: list[Operation] | list[dict[str, Any]]
