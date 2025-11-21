@@ -78,7 +78,7 @@ class ReportTaskFailureResult(AnaplanModel):
 
 
 class ReportTask(SyncTask):
-    result: ReportTaskResult | ReportTaskFailureResult | None = Field(
+    result: ReportTaskResult | ReportTaskFailureResult | None = Field(  # pyright: ignore[reportIncompatibleVariableOverride]
         None, description="The result of the comparison report task, including the report file URL."
     )
 

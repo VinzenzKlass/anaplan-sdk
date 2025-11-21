@@ -8,18 +8,19 @@ from anaplan_sdk.models import AnaplanModel
 AnaplanFilterFields = Literal[
     "id", "externalId", "userName", "name.familyName", "name.givenName", "active"
 ]
+Operator = Literal["and", "or"]
 
 
 class _FilterExpression:
     def __init__(self, _field: AnaplanFilterFields) -> None:
         self._field: AnaplanFilterFields = _field
         self._exprs: list[str] = []
-        self._operators = []
+        self._operators: list[Operator] = []
 
     def __str__(self) -> str:
         if not self._exprs:
             return "active eq true" if self._field == "active" else f"{self._field} pr"
-        parts = []
+        parts: list[str] = []
         for i, expr in enumerate(self._exprs):
             if i > 0:
                 parts.append(self._operators[i - 1])
@@ -48,14 +49,14 @@ class _FilterExpression:
         self._exprs.append(f"({str(other)})" if other._requires_grouping(operator) else str(other))
         return self
 
-    def _requires_grouping(self, operator: Literal["and", "or"]) -> bool:
+    def _requires_grouping(self, operator: Operator) -> bool:
         return len(self._operators) > 0 and ("or" in self._operators or operator == "or")
 
-    def __eq__(self, other: Any) -> Self:
+    def __eq__(self, other: Any) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         self._exprs.append(f'{self._field} eq "{other}"')
         return self
 
-    def __ne__(self, other: Any) -> Self:
+    def __ne__(self, other: Any) -> Self:  # pyright: ignore[reportIncompatibleMethodOverride]
         self._exprs.append(f'{self._field} ne "{other}"')
         return self
 
@@ -99,7 +100,7 @@ class Name(NameInput):
 
 class Email(AnaplanModel):
     value: str = Field(description="Email address of the User")
-    type: Literal["work", "home", "other"] = Field(
+    type: Literal["work", "home", "other", None] = Field(
         default=None, description="A label indicating the emails's function, e.g., 'work' or 'home'"
     )
     primary: bool | None = Field(
@@ -268,16 +269,16 @@ class Operation(AnaplanModel):
 
 
 class Replace(Operation):
-    op: Literal["replace"] = Field(
+    op: Literal["replace"] = Field(  # pyright: ignore[reportIncompatibleVariableOverride]
         default="replace", description="Replace the value at path with the new given value."
     )
 
 
 class Add(Operation):
-    op: Literal["add"] = Field(
+    op: Literal["add"] = Field(  # pyright: ignore[reportIncompatibleVariableOverride]
         default="add", description="Add the given value to the attribute at path."
     )
 
 
 class Remove(Operation):
-    op: Literal["remove"] = Field(default="remove", description="Remove the value at path.")
+    op: Literal["remove"] = Field(default="remove", description="Remove the value at path.")  # pyright: ignore[reportIncompatibleVariableOverride]

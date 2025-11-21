@@ -1,4 +1,4 @@
-from typing import Literal, TypeAlias
+from typing import Any, Literal, TypeAlias
 
 from pydantic import Field, field_validator
 
@@ -48,7 +48,7 @@ class Model(AnaplanModel):
         description="The name of the workspace that this model is currently in.",
     )
     url: str = Field(validation_alias="modelUrl", description="The current URL of this model.")
-    category_values: list = Field(description="The category values of this model.")
+    category_values: list[Any] = Field(description="The category values of this model.")
     iso_creation_date: str = Field(description="The creation date of this model in ISO format.")
     last_modified: str = Field(description="The last modified date of this model.")
 
@@ -80,7 +80,7 @@ class ListMetadata(AnaplanModel):
     id: int = Field(description="The unique identifier of this list.")
     name: str = Field(description="The name of this list.")
     has_selective_access: bool = Field(description="Whether this list has selective access or not.")
-    properties: list = Field([], description="The properties of this list.")
+    properties: list[Any] = Field([], description="The properties of this list.")
     production_data: bool = Field(description="Whether this list is production data or not.")
     managed_by: str = Field(description="The user who manages this list.")
     numbered_list: bool = Field(description="Whether this list is a numbered list or not.")

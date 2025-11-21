@@ -1,5 +1,5 @@
 import logging
-from typing import Callable
+from typing import Any, Callable
 
 import httpx
 
@@ -85,13 +85,13 @@ class _BaseOauth:
         """
         auth_url = authorization_url or self._authorization_url
         state = state or self._state_generator()
-        url, _, _ = self._oauth.prepare_authorization_request(
+        url, _, _ = self._oauth.prepare_authorization_request(  # pyright: ignore[reportUnknownMemberType]
             auth_url, state, self._redirect_uri, self._scope
         )
         return url, state
 
     def _token_request(self, authorization_response: str) -> httpx.Request:
-        url, headers, body = self._oauth.prepare_token_request(
+        url, headers, body = self._oauth.prepare_token_request(  # pyright: ignore[reportUnknownMemberType]
             authorization_response=authorization_response,
             token_url=self._token_url,
             redirect_url=self._redirect_uri,
@@ -100,7 +100,7 @@ class _BaseOauth:
         return httpx.Request(method="POST", url=url, headers=headers, content=body)
 
     def _refresh_token_request(self, refresh_token: str) -> httpx.Request:
-        url, headers, body = self._oauth.prepare_refresh_token_request(
+        url, headers, body = self._oauth.prepare_refresh_token_request(  # pyright: ignore[reportUnknownMemberType]
             self._token_url,
             refresh_token=refresh_token,
             client_id=self._client_id,
@@ -108,7 +108,7 @@ class _BaseOauth:
         )
         return httpx.Request(method="POST", url=url, headers=headers, content=body)
 
-    def _parse_response(self, response: httpx.Response) -> dict[str, str]:
+    def _parse_response(self, response: httpx.Response) -> dict[str, Any]:
         if response.status_code == 401:
             raise InvalidCredentialsException
         if not response.is_success:
@@ -203,7 +203,7 @@ class Oauth(_BaseOauth):
         from oauthlib.oauth2 import OAuth2Error
 
         try:
-            url, headers, body = self._oauth.prepare_token_request(
+            url, headers, body = self._oauth.prepare_token_request(  # pyright: ignore[reportUnknownMemberType]
                 authorization_response=authorization_response,
                 token_url=self._token_url,
                 redirect_url=self._redirect_uri,
@@ -243,7 +243,7 @@ class Oauth(_BaseOauth):
         from oauthlib.oauth2 import OAuth2Error
 
         try:
-            url, headers, body = self._oauth.prepare_refresh_token_request(
+            url, headers, body = self._oauth.prepare_refresh_token_request(  # pyright: ignore[reportUnknownMemberType]
                 self._token_url,
                 refresh_token=refresh_token,
                 client_id=self._client_id,

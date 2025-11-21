@@ -12,6 +12,6 @@ __all__ = [
     "AsyncOauth",
     "Oauth",
     "models",
-    "exceptions",
+    "exceptions",  # pyright: ignore[reportUnsupportedDunderAll]
     "field",
 ]

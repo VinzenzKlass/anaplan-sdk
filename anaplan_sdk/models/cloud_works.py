@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import Field, field_validator
 
@@ -220,7 +220,7 @@ class _BaseIntegration(_VersionedBaseModel):
 
     @field_validator("latest_run", mode="before")
     @classmethod
-    def _empty_source_is_none(cls, inp: dict):
+    def _empty_source_is_none(cls, inp: dict[str, Any]):
         return inp if inp else None
 
 
@@ -306,7 +306,7 @@ class IntegrationJob(AnaplanModel):
 
 
 class SingleIntegration(Integration):
-    integration_type: None = Field(
+    integration_type: None = Field(  # pyright: ignore[reportIncompatibleVariableOverride]
         default=None,
         description=(
             "Sentinel for erroneous implementation of the Anaplan API. This field is not provided "

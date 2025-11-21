@@ -132,7 +132,7 @@ def action_url(action_id: int) -> Literal["imports", "exports", "actions", "proc
     raise InvalidIdentifierException(f"Action '{action_id}' is not a valid identifier.")
 
 
-def parse_calendar_response(data: dict) -> ModelCalendar:
+def parse_calendar_response(data: dict[str, Any]) -> ModelCalendar:
     """
     Parse calendar response and return appropriate calendar model.
     :param data: The calendar data from the API response.
@@ -154,8 +154,8 @@ def parse_calendar_response(data: dict) -> ModelCalendar:
     )
 
 
-def parse_insertion_response(data: list[dict]) -> InsertionResult:
-    failures, added, ignored, total = [], 0, 0, 0
+def parse_insertion_response(data: list[dict[str, Any]]) -> InsertionResult:
+    failures, added, ignored, total = list[Any](), int(0), int(0), int(0)
     for res in data:
         failures.append(res.get("failures", []))
         added += res.get("added", 0)
