@@ -1,18 +1,18 @@
 import asyncio
 import logging
 import time
-from asyncio import gather, sleep
+from asyncio import gather
 from concurrent.futures import ThreadPoolExecutor
 from gzip import compress
 from itertools import chain
 from math import ceil
-from typing import Any, Awaitable, Callable, Coroutine, Iterator, TypeAlias, TypeVar, Union
+from typing import Any, Callable, Coroutine, Iterator, TypeAlias, TypeVar
 
 import httpx
 from httpx import HTTPError, Response
 
 from .exceptions import AnaplanException, AnaplanTimeoutException, InvalidIdentifierException
-from .models import CompletedTask, TaskStatus, TaskSummary
+from .models import TaskSummary
 
 logger = logging.getLogger("anaplan_sdk")
 
@@ -21,7 +21,7 @@ _gzip_header = {"Content-Type": "application/x-gzip"}
 
 Task = TypeVar("Task", bound=TaskSummary)
 
-AnyJson: TypeAlias = Union[dict[str, Any], list[dict[str, Any]]]
+AnyJson: TypeAlias = dict[str, Any] | list[dict[str, Any]]
 
 
 class _HttpService:
@@ -33,17 +33,14 @@ class _HttpService:
         backoff: float,
         backoff_factor: float,
         page_size: int,
-        poll_delay: int,
     ):
         logger.debug(
-            f"Initializing HttpService with retry_count={retry_count}, "
-            f"page_size={page_size}, poll_delay={poll_delay}."
+            f"Initializing HttpService with retry_count={retry_count}, page_size={page_size}."
         )
         self._client = client
         self._retry_count = retry_count
         self._backoff = backoff
         self._backoff_factor = backoff_factor
-        self._poll_delay = poll_delay
         self._page_size = min(page_size, 5_000)
 
     def get(self, url: str, **kwargs: Any) -> dict[str, Any]:
@@ -74,11 +71,6 @@ class _HttpService:
     def put_binary_gzip(self, url: str, content: str | bytes) -> Response:
         content = compress(content.encode() if isinstance(content, str) else content)
         return self.__run_with_retry(self._client.put, url, headers=_gzip_header, content=content)
-
-    def poll_task(self, func: Callable[..., TaskStatus], *args: Any) -> CompletedTask:
-        while (result := func(*args)).task_state != "COMPLETE":
-            time.sleep(self._poll_delay)
-        return result
 
     def get_paginated(self, url: str, result_key: str, **kwargs: Any) -> Iterator[dict[str, Any]]:
         logger.debug(f"Starting paginated fetch from {url} with page_size={self._page_size}.")
@@ -145,17 +137,14 @@ class _AsyncHttpService:
         backoff: float,
         backoff_factor: float,
         page_size: int,
-        poll_delay: int,
     ):
         logger.debug(
-            f"Initializing AsyncHttpService with retry_count={retry_count}, "
-            f"page_size={page_size}, poll_delay={poll_delay}."
+            f"Initializing AsyncHttpService with retry_count={retry_count}, page_size={page_size}."
         )
         self._client = client
         self._retry_count = retry_count
         self._backoff = backoff
         self._backoff_factor = backoff_factor
-        self._poll_delay = poll_delay
         self._page_size = min(page_size, 5_000)
 
     async def get(self, url: str, **kwargs: Any) -> dict[str, Any]:
@@ -190,11 +179,6 @@ class _AsyncHttpService:
         return await self._run_with_retry(
             self._client.put, url, headers=_gzip_header, content=content
         )
-
-    async def poll_task(self, func: Callable[..., Awaitable[Task]], *args: Any) -> Task:
-        while (result := await func(*args)).task_state != "COMPLETE":
-            await sleep(self._poll_delay)
-        return result
 
     async def get_paginated(
         self, url: str, result_key: str, **kwargs: Any

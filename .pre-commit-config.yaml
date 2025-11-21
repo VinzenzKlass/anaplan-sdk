@@ -14,3 +14,5 @@ repos:
     hooks:
       - id: basedpyright
         args: [ --threads,  '8' ]
+        pass_filenames: false
+        always_run: true

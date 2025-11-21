@@ -1,11 +1,16 @@
 from ._alm import (
+    CompletedReportTask,
+    CompletedSyncTask,
     ModelRevision,
+    PendingTask,
     ReportTask,
     ReportTaskResult,
+    ReportTaskStatusPoll,
     Revision,
     SummaryReport,
     SyncTask,
     SyncTaskResult,
+    SyncTaskStatusPoll,
 )
 from ._base import AnaplanModel
 from ._bulk import (
@@ -77,6 +82,12 @@ __all__ = [
     "TaskStatusPoll",
     "CompletedTask",
     "TaskResultDetail",
+    "PendingTask",
+    "CompletedSyncTask",
+    "SyncTask",
+    "SyncTaskStatusPoll",
+    "CompletedReportTask",
+    "ReportTaskStatusPoll",
     "TaskStatus",
     "TaskSummary",
     "SyncTaskResult",

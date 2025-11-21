@@ -1,6 +1,6 @@
 # pyright: reportPrivateUsage=false
 import logging
-from asyncio import gather
+from asyncio import gather, sleep
 from copy import copy
 from typing import Any, AsyncIterator, Coroutine, Iterator, Literal, overload
 
@@ -132,7 +132,6 @@ class AsyncClient:
             backoff=backoff,
             backoff_factor=backoff_factor,
             page_size=page_size,
-            poll_delay=status_poll_delay,
         )
         self._workspace_id = workspace_id
         self._model_id = model_id
@@ -140,11 +139,14 @@ class AsyncClient:
         self._transactional_client = (
             _AsyncTransactionalClient(self._http, model_id) if model_id else None
         )
-        self._alm_client = _AsyncAlmClient(self._http, model_id) if model_id else None
+        self._alm_client = (
+            _AsyncAlmClient(self._http, model_id, status_poll_delay) if model_id else None
+        )
         self._audit_client = _AsyncAuditClient(self._http)
         self._scim_client = _AsyncScimClient(self._http)
         self._cloud_works = _AsyncCloudWorksClient(self._http)
         self.upload_chunk_size = upload_chunk_size
+        self.status_poll_delay = status_poll_delay
         self.allow_file_creation = allow_file_creation
         logger.debug(
             f"Initialized AsyncClient with workspace_id={workspace_id}, model_id={model_id}"
@@ -169,8 +171,14 @@ class AsyncClient:
             "https://api.anaplan.com/2/0/workspaces"
             f"/{client._workspace_id}/models/{client._model_id}"
         )
-        client._transactional_client = _AsyncTransactionalClient(self._http, client._model_id)  # pyright: ignore[reportArgumentType]
-        client._alm_client = _AsyncAlmClient(self._http, client._model_id)  # pyright: ignore[reportArgumentType]
+        client._transactional_client = (
+            _AsyncTransactionalClient(self._http, client._model_id) if client._model_id else None
+        )
+        client._alm_client = (
+            _AsyncAlmClient(self._http, client._model_id, self.status_poll_delay)
+            if client._model_id
+            else None
+        )
         return client
 
     @property
@@ -438,13 +446,14 @@ class AsyncClient:
 
         if not wait_for_completion:
             return await self.get_task_status(action_id, task_id)
-        status = await self._http.poll_task(self.get_task_status, action_id, task_id)
-        if status.task_state == "COMPLETE" and not status.result.successful:
+        while (task := await self.get_task_status(action_id, task_id)).task_state != "COMPLETE":
+            await sleep(self.status_poll_delay)
+        if not task.result.successful:
             logger.error(f"Task '{task_id}' completed with errors.")
             raise AnaplanActionError(f"Task '{task_id}' completed with errors.")
 
         logger.info(f"Task '{task_id}' of '{action_id}' completed successfully.")
-        return status
+        return task
 
     async def get_file(self, file_id: int) -> bytes:
         """

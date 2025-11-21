@@ -3,6 +3,7 @@ import logging
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 from copy import copy
+from time import sleep
 from typing import Any, Iterator, Literal, overload
 
 import httpx
@@ -135,7 +136,6 @@ class Client:
             backoff=backoff,
             backoff_factor=backoff_factor,
             page_size=page_size,
-            poll_delay=status_poll_delay,
         )
         self._retry_count = retry_count
         self._workspace_id = workspace_id
@@ -439,13 +439,14 @@ class Client:
 
         if not wait_for_completion:
             return self.get_task_status(action_id, task_id)
-        status = self._http.poll_task(self.get_task_status, action_id, task_id)
-        if status.task_state == "COMPLETE" and not status.result.successful:
+        while (task := self.get_task_status(action_id, task_id)).task_state != "COMPLETE":
+            sleep(self.status_poll_delay)
+        if not task.result.successful:
             logger.error(f"Task '{task_id}' completed with errors.")
             raise AnaplanActionError(f"Task '{task_id}' completed with errors.")
 
         logger.info(f"Task '{task_id}' of Action '{action_id}' completed successfully.")
-        return status
+        return task
 
     def get_file(self, file_id: int) -> bytes:
         """
