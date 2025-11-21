@@ -143,14 +143,6 @@ class Export(AnaplanModel):
     )
 
 
-class TaskSummary(AnaplanModel):
-    id: str = Field(validation_alias="taskId", description="The unique identifier of this task.")
-    task_state: Literal["NOT_STARTED", "IN_PROGRESS", "COMPLETE"] = Field(
-        description="The state of this task."
-    )
-    creation_time: int = Field(description="Unix timestamp of when this task was created.")
-
-
 class TaskResultDetail(AnaplanModel):
     local_message_text: str | None = Field(None, description="Error message text.")
     occurrences: int = Field(0, description="The number of occurrences of this error.")
@@ -171,10 +163,30 @@ class TaskResult(AnaplanModel):
     )
 
 
-class TaskStatus(TaskSummary):
+class TaskSummary(AnaplanModel):
+    id: str = Field(validation_alias="taskId", description="The unique identifier of this task.")
+    task_state: Literal["NOT_STARTED", "IN_PROGRESS", "COMPLETE"] = Field(
+        description="The state of this task."
+    )
+    creation_time: int = Field(description="Unix timestamp of when this task was created.")
+
+
+class Task(TaskSummary):
+    task_state: Literal["NOT_STARTED", "IN_PROGRESS"]  # pyright: ignore[reportIncompatibleVariableOverride]
     progress: float = Field(description="The progress of this task as a float between 0 and 1.")
     current_step: str | None = Field(None, description="The current step of this task.")
-    result: TaskResult | None = Field(None)
+
+
+class CompletedTask(Task):
+    task_state: Literal["COMPLETE"]  # pyright: ignore[reportIncompatibleVariableOverride]
+    result: TaskResult
+
+
+TaskStatus: TypeAlias = Task | CompletedTask
+
+
+class TaskStatusPoll(AnaplanModel):
+    task: TaskStatus = Field(description="The task details.")
 
 
 class DeletionFailure(AnaplanModel):

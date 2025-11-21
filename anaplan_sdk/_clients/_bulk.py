@@ -3,7 +3,7 @@ import logging
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 from copy import copy
-from typing import Any, Iterator, Literal
+from typing import Any, Iterator, Literal, overload
 
 import httpx
 from typing_extensions import Self
@@ -14,6 +14,7 @@ from anaplan_sdk._utils import action_url, models_url, sort_params
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
 from anaplan_sdk.models import (
     Action,
+    CompletedTask,
     Export,
     File,
     Import,
@@ -21,7 +22,9 @@ from anaplan_sdk.models import (
     ModelDeletionResult,
     ModelWithTransactionInfo,
     Process,
+    Task,
     TaskStatus,
+    TaskStatusPoll,
     TaskSummary,
     Workspace,
 )
@@ -410,6 +413,14 @@ class Client:
         )
         return [Export.model_validate(e) for e in res]
 
+    @overload
+    def run_action(
+        self, action_id: int, wait_for_completion: Literal[True] = True
+    ) -> CompletedTask: ...
+
+    @overload
+    def run_action(self, action_id: int, wait_for_completion: Literal[False] = False) -> Task: ...
+
     def run_action(self, action_id: int, wait_for_completion: bool = True) -> TaskStatus:
         """
         Runs the Action and validates the spawned task. If the Action fails or completes with
@@ -427,9 +438,9 @@ class Client:
         logger.info(f"Invoked Action '{action_id}', spawned Task: '{task_id}'.")
 
         if not wait_for_completion:
-            return TaskStatus.model_validate(self.get_task_status(action_id, task_id))
+            return self.get_task_status(action_id, task_id)
         status = self._http.poll_task(self.get_task_status, action_id, task_id)
-        if status.task_state == "COMPLETE" and not status.result.successful:  # pyright: ignore[reportOptionalMemberAccess]
+        if status.task_state == "COMPLETE" and not status.result.successful:
             logger.error(f"Task '{task_id}' completed with errors.")
             raise AnaplanActionError(f"Task '{task_id}' completed with errors.")
 
@@ -598,11 +609,8 @@ class Client:
         :param task_id: The identifier of the spawned task.
         :return: The status of the task.
         """
-        return TaskStatus.model_validate(
-            self._http.get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks/{task_id}").get(
-                "task"
-            )
-        )
+        res = self._http.get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks/{task_id}")
+        return TaskStatusPoll.model_validate(res).task
 
     def get_optimizer_log(self, action_id: int, task_id: str) -> bytes:
         """

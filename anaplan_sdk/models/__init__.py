@@ -10,6 +10,7 @@ from ._alm import (
 from ._base import AnaplanModel
 from ._bulk import (
     Action,
+    CompletedTask,
     Export,
     ExportTypes,
     File,
@@ -21,9 +22,11 @@ from ._bulk import (
     ModelDeletionResult,
     ModelWithTransactionInfo,
     Process,
+    Task,
     TaskResult,
     TaskResultDetail,
     TaskStatus,
+    TaskStatusPoll,
     TaskSummary,
     Workspace,
 )
@@ -68,8 +71,11 @@ __all__ = [
     "Process",
     "Module",
     "LineItem",
+    "Task",
     "TaskSummary",
     "TaskResult",
+    "TaskStatusPoll",
+    "CompletedTask",
     "TaskResultDetail",
     "TaskStatus",
     "TaskSummary",

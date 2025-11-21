@@ -12,7 +12,7 @@ import httpx
 from httpx import HTTPError, Response
 
 from .exceptions import AnaplanException, AnaplanTimeoutException, InvalidIdentifierException
-from .models import TaskSummary
+from .models import CompletedTask, TaskStatus, TaskSummary
 
 logger = logging.getLogger("anaplan_sdk")
 
@@ -75,7 +75,7 @@ class _HttpService:
         content = compress(content.encode() if isinstance(content, str) else content)
         return self.__run_with_retry(self._client.put, url, headers=_gzip_header, content=content)
 
-    def poll_task(self, func: Callable[..., Task], *args: Any) -> Task:
+    def poll_task(self, func: Callable[..., TaskStatus], *args: Any) -> CompletedTask:
         while (result := func(*args)).task_state != "COMPLETE":
             time.sleep(self._poll_delay)
         return result
