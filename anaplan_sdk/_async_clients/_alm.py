@@ -10,13 +10,17 @@ from anaplan_sdk.models import (
     CompletedReportTask,
     ModelRevision,
     ReportTask,
-    ReportTaskStatusPoll,
     Revision,
     SummaryReport,
     SyncTask,
     TaskSummary,
 )
-from anaplan_sdk.models._task import CompletedSyncTask, PendingTask, _SyncTaskStatusPoll
+from anaplan_sdk.models._task import (
+    CompletedSyncTask,
+    PendingTask,
+    _ReportTaskStatusPoll,
+    _SyncTaskStatusPoll,
+)
 
 logger = logging.getLogger("anaplan_sdk")
 
@@ -243,7 +247,7 @@ class _AsyncAlmClient:
         :return: The report task information.
         """
         res = await self._http.get(f"{self._url}/alm/comparisonReportTasks/{task_id}")
-        return ReportTaskStatusPoll.model_validate(res).task
+        return _ReportTaskStatusPoll.model_validate(res).task
 
     async def get_comparison_report(self, task: CompletedReportTask) -> bytes:
         """
@@ -319,7 +323,7 @@ class _AsyncAlmClient:
         :return: The report task information.
         """
         res = await self._http.get(f"{self._url}/alm/summaryReportTasks/{task_id}")
-        return ReportTaskStatusPoll.model_validate(res).task
+        return _ReportTaskStatusPoll.model_validate(res).task
 
     async def get_comparison_summary(self, task: ReportTask) -> SummaryReport:
         """

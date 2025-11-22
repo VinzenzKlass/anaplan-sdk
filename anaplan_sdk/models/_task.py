@@ -34,13 +34,13 @@ class TaskSummary(AnaplanModel):
 
 
 class Task(TaskSummary):
-    task_state: Literal["NOT_STARTED", "IN_PROGRESS"]  # pyright: ignore[reportIncompatibleVariableOverride]
+    task_state: Literal["NOT_STARTED", "IN_PROGRESS"] = Field(description="The state of this task.")  # pyright: ignore[reportIncompatibleVariableOverride]
     progress: float = Field(description="The progress of this task as a float between 0 and 1.")
     current_step: str | None = Field(None, description="The current step of this task.")
 
 
 class CompletedTask(Task):
-    task_state: Literal["COMPLETE"]  # pyright: ignore[reportIncompatibleVariableOverride]
+    task_state: Literal["COMPLETE"] = Field(description="The state of this task.")  # pyright: ignore[reportIncompatibleVariableOverride]
     result: TaskResult
 
 
@@ -48,7 +48,7 @@ TaskStatus: TypeAlias = Task | CompletedTask
 
 
 class _TaskStatusPoll(AnaplanModel):
-    task: TaskStatus
+    task: TaskStatus = Field(discriminator="task_state")
 
 
 class SyncTaskResult(AnaplanModel):
@@ -60,12 +60,12 @@ class SyncTaskResult(AnaplanModel):
 
 
 class PendingTask(TaskSummary):
-    task_state: Literal["NOT_STARTED", "IN_PROGRESS"]  # pyright: ignore[reportIncompatibleVariableOverride]
+    task_state: Literal["NOT_STARTED", "IN_PROGRESS"] = Field(description="The state of this task.")  # pyright: ignore[reportIncompatibleVariableOverride]
     current_step: str = Field(description="The current step of the sync task.")
 
 
 class CompletedSyncTask(PendingTask):
-    task_state: Literal["COMPLETE"]  # pyright: ignore[reportIncompatibleVariableOverride]
+    task_state: Literal["COMPLETE"] = Field(description="The state of this task.")  # pyright: ignore[reportIncompatibleVariableOverride]
     result: SyncTaskResult
 
 
@@ -73,7 +73,7 @@ SyncTask: TypeAlias = PendingTask | CompletedSyncTask
 
 
 class _SyncTaskStatusPoll(AnaplanModel):
-    task: SyncTask
+    task: SyncTask = Field(discriminator="task_state")
 
 
 class ReportTaskResult(SyncTaskResult):
@@ -100,5 +100,5 @@ class CompletedReportTask(CompletedSyncTask):
 ReportTask: TypeAlias = PendingTask | CompletedReportTask
 
 
-class ReportTaskStatusPoll(AnaplanModel):
-    task: ReportTask = Field(description="The task details.")
+class _ReportTaskStatusPoll(AnaplanModel):
+    task: ReportTask = Field(discriminator="task_state")

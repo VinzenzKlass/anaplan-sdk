@@ -18,6 +18,7 @@ from anaplan_sdk.models._task import (
     CompletedReportTask,
     CompletedSyncTask,
     PendingTask,
+    _ReportTaskStatusPoll,
     _SyncTaskStatusPoll,
 )
 
@@ -320,7 +321,7 @@ class _AlmClient:
         :return: The report task information.
         """
         res = self._http.get(f"{self._url}/alm/summaryReportTasks/{task_id}")
-        return _SyncTaskStatusPoll.model_validate(res).task
+        return _ReportTaskStatusPoll.model_validate(res).task
 
     def get_comparison_summary(self, task: ReportTask) -> SummaryReport:
         """
