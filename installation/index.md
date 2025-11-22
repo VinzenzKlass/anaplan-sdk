@@ -1,0 +1,56 @@
+Anaplan SDK requires Python 3.10.4 or higher.
+
+```
+pip install anaplan-sdk
+```
+
+```
+uv add anaplan-sdk
+```
+
+```
+poetry add anaplan-sdk
+```
+
+### Dependencies
+
+By default, Anaplan SDK has just two dependencies:
+
+- [httpx](https://www.python-httpx.org/): HTTP Client.
+- [pydantic](https://pypi.org/project/pydantic/): Data Models and validation.
+
+### Certificate Authentication
+
+If you want to use certificate authentication, you need to install the `cert` extra:
+
+```
+pip install anaplan-sdk[cert]
+```
+
+```
+uv add anaplan-sdk[cert]
+```
+
+```
+poetry add anaplan-sdk[cert]
+```
+
+This will install [cryptography](https://github.com/pyca/cryptography) to securely construct the authentication request.
+
+### Oauth2 Authentication
+
+If you want to use Oauth2 authentication, you need to install the `oauth` extra:
+
+```
+pip install anaplan-sdk[oauth]
+```
+
+```
+uv add anaplan-sdk[oauth]
+```
+
+```
+poetry add anaplan-sdk[oauth]
+```
+
+This will install [OAuthLib](https://oauthlib.readthedocs.io/en/latest/index.html) to securely construct the authentication request.
