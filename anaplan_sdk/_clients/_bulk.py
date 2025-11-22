@@ -25,10 +25,10 @@ from anaplan_sdk.models import (
     Process,
     Task,
     TaskStatus,
-    TaskStatusPoll,
     TaskSummary,
     Workspace,
 )
+from anaplan_sdk.models._task import _TaskStatusPoll
 
 from ._alm import _AlmClient
 from ._audit import _AuditClient
@@ -144,7 +144,7 @@ class Client:
         self._transactional_client = (
             _TransactionalClient(self._http, model_id) if model_id else None
         )
-        self._alm_client = _AlmClient(self._http, model_id) if model_id else None
+        self._alm_client = _AlmClient(self._http, model_id, status_poll_delay) if model_id else None
         self._audit_client = _AuditClient(self._http)
         self._scim_client = _ScimClient(self._http)
         self._cloud_works = _CloudWorksClient(self._http)
@@ -174,8 +174,14 @@ class Client:
             "https://api.anaplan.com/2/0/workspaces"
             f"/{client._workspace_id}/models/{client._model_id}"
         )
-        client._transactional_client = _TransactionalClient(self._http, client._model_id)  # pyright: ignore[reportArgumentType]
-        client._alm_client = _AlmClient(self._http, client._model_id)  # pyright: ignore[reportArgumentType]
+        client._transactional_client = (
+            _TransactionalClient(self._http, client._model_id) if client._model_id else None
+        )
+        client._alm_client = (
+            _AlmClient(self._http, client._model_id, self.status_poll_delay)
+            if client._model_id
+            else None
+        )
         return client
 
     @property
@@ -562,6 +568,24 @@ class Client:
         self._http.post(f"{self._url}/files/{file_id}/complete", json={"id": file_id})
         logger.info(f"Completed upload stream for '{file_id}'.")
 
+    @overload
+    def upload_and_import(
+        self,
+        file_id: int,
+        content: str | bytes,
+        action_id: int,
+        wait_for_completion: Literal[True] = True,
+    ) -> CompletedTask: ...
+
+    @overload
+    def upload_and_import(
+        self,
+        file_id: int,
+        content: str | bytes,
+        action_id: int,
+        wait_for_completion: Literal[False] = False,
+    ) -> Task: ...
+
     def upload_and_import(
         self, file_id: int, content: str | bytes, action_id: int, wait_for_completion: bool = True
     ) -> TaskStatus:
@@ -611,7 +635,7 @@ class Client:
         :return: The status of the task.
         """
         res = self._http.get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks/{task_id}")
-        return TaskStatusPoll.model_validate(res).task
+        return _TaskStatusPoll.model_validate(res).task
 
     def get_optimizer_log(self, action_id: int, task_id: str) -> bytes:
         """

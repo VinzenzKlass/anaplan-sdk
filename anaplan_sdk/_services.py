@@ -6,20 +6,18 @@ from concurrent.futures import ThreadPoolExecutor
 from gzip import compress
 from itertools import chain
 from math import ceil
-from typing import Any, Callable, Coroutine, Iterator, TypeAlias, TypeVar
+from typing import Any, Callable, Coroutine, Iterator, TypeAlias
 
 import httpx
 from httpx import HTTPError, Response
 
 from .exceptions import AnaplanException, AnaplanTimeoutException, InvalidIdentifierException
-from .models import TaskSummary
 
 logger = logging.getLogger("anaplan_sdk")
 
 _json_header = {"Content-Type": "application/json"}
 _gzip_header = {"Content-Type": "application/x-gzip"}
 
-Task = TypeVar("Task", bound=TaskSummary)
 
 AnyJson: TypeAlias = dict[str, Any] | list[dict[str, Any]]
 

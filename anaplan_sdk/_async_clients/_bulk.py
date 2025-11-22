@@ -23,10 +23,10 @@ from anaplan_sdk.models import (
     Process,
     Task,
     TaskStatus,
-    TaskStatusPoll,
     TaskSummary,
     Workspace,
 )
+from anaplan_sdk.models._task import _TaskStatusPoll
 
 from ._alm import _AsyncAlmClient
 from ._audit import _AsyncAuditClient
@@ -573,6 +573,24 @@ class AsyncClient:
         await self._http.post(f"{self._url}/files/{file_id}/complete", json={"id": file_id})
         logger.info(f"Completed upload stream for '{file_id}'.")
 
+    @overload
+    async def upload_and_import(
+        self,
+        file_id: int,
+        content: str | bytes,
+        action_id: int,
+        wait_for_completion: Literal[True] = True,
+    ) -> CompletedTask: ...
+
+    @overload
+    async def upload_and_import(
+        self,
+        file_id: int,
+        content: str | bytes,
+        action_id: int,
+        wait_for_completion: Literal[False] = False,
+    ) -> Task: ...
+
     async def upload_and_import(
         self, file_id: int, content: str | bytes, action_id: int, wait_for_completion: bool = True
     ) -> TaskStatus:
@@ -621,7 +639,7 @@ class AsyncClient:
         :param task_id: The identifier of the spawned task.
         :return: The status of the task.
         """
-        return TaskStatusPoll.model_validate(
+        return _TaskStatusPoll.model_validate(
             await self._http.get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks/{task_id}")
         ).task
 

@@ -1,8 +1,9 @@
+# pyright: reportPrivateUsage=false
 import logging
 from asyncio import sleep
 from typing import Literal, overload
 
-from anaplan_sdk._services import _AsyncHttpService  # pyright: ignore[reportPrivateUsage]
+from anaplan_sdk._services import _AsyncHttpService
 from anaplan_sdk._utils import sort_params
 from anaplan_sdk.exceptions import AnaplanActionError
 from anaplan_sdk.models import (
@@ -13,9 +14,9 @@ from anaplan_sdk.models import (
     Revision,
     SummaryReport,
     SyncTask,
-    SyncTaskStatusPoll,
     TaskSummary,
 )
+from anaplan_sdk.models._task import CompletedSyncTask, PendingTask, _SyncTaskStatusPoll
 
 logger = logging.getLogger("anaplan_sdk")
 
@@ -108,7 +109,25 @@ class _AsyncAlmClient:
         :return: The sync task information.
         """
         res = await self._http.get(f"{self._url}/alm/syncTasks/{task_id}")
-        return SyncTaskStatusPoll.model_validate(res).task
+        return _SyncTaskStatusPoll.model_validate(res).task
+
+    @overload
+    async def sync_models(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: Literal[False] = False,
+    ) -> PendingTask: ...
+
+    @overload
+    async def sync_models(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: Literal[True] = True,
+    ) -> CompletedSyncTask: ...
 
     async def sync_models(
         self,
@@ -159,6 +178,24 @@ class _AsyncAlmClient:
         """
         res = await self._http.get(f"{self._url}/alm/revisions/{revision_id}/appliedToModels")
         return [ModelRevision.model_validate(e) for e in res.get("appliedToModels", [])]
+
+    @overload
+    async def create_comparison_report(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: Literal[False] = False,
+    ) -> PendingTask: ...
+
+    @overload
+    async def create_comparison_report(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: Literal[True] = True,
+    ) -> CompletedReportTask: ...
 
     async def create_comparison_report(
         self,
