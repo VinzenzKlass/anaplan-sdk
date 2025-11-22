@@ -305,7 +305,7 @@ class _AlmClient:
         )
         if not wait_for_completion:
             return task
-        while (task := self.get_sync_task(task.id)).task_state != "COMPLETE":
+        while (task := self.get_comparison_summary_task(task.id)).task_state != "COMPLETE":
             sleep(self.poll_delay)
         if not task.result.successful:
             msg = f"Comparison Summary task {task.id} completed with errors."
