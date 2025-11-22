@@ -95,7 +95,7 @@ With these two, you're ready to run your first import.
     )
     ```
     
-This will upload the file to Anaplan, trigger the process task, wait for the completion of the task and validate the task result. You can see the details of the task by inspecting the [TaskResult](api/models/bulk.md#anaplan_sdk.models._bulk.TaskResult).
+This will upload the file to Anaplan, trigger the process task, wait for the completion of the task and validate the task result. You can see the details of the task by inspecting the [TaskResult](api/models/bulk.md#anaplan_sdk.models._task.TaskResult).
 
 ## Exporting Data
 

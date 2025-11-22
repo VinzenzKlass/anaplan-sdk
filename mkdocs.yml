@@ -105,6 +105,10 @@ plugins:
             extensions:
               - griffe_fieldz:
                   include_inherited: true
+  - llmstxt:
+      sections:
+        Docs:
+          - '*.md'
 
 watch:
   - "anaplan_sdk"
