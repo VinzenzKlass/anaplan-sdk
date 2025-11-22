@@ -1,7 +1,9 @@
+# pyright: reportPrivateUsage=false
 import logging
+from time import sleep
 from typing import Literal, overload
 
-from anaplan_sdk._services import _HttpService  # pyright: ignore[reportPrivateUsage]
+from anaplan_sdk._services import _HttpService
 from anaplan_sdk._utils import sort_params
 from anaplan_sdk.exceptions import AnaplanActionError
 from anaplan_sdk.models import (
@@ -12,14 +14,22 @@ from anaplan_sdk.models import (
     SyncTask,
     TaskSummary,
 )
+from anaplan_sdk.models._task import (
+    CompletedReportTask,
+    CompletedSyncTask,
+    PendingTask,
+    _ReportTaskStatusPoll,
+    _SyncTaskStatusPoll,
+)
 
 logger = logging.getLogger("anaplan_sdk")
 
 
 class _AlmClient:
-    def __init__(self, http: _HttpService, model_id: str) -> None:
+    def __init__(self, http: _HttpService, model_id: str, status_poll_delay: int) -> None:
         self._http = http
         self._model_id = model_id
+        self.poll_delay = status_poll_delay
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
 
     def change_model_status(self, status: Literal["online", "offline"]) -> None:
@@ -101,7 +111,25 @@ class _AlmClient:
         :return: The sync task information.
         """
         res = self._http.get(f"{self._url}/alm/syncTasks/{task_id}")
-        return SyncTask.model_validate(res["task"])
+        return _SyncTaskStatusPoll.model_validate(res).task
+
+    @overload
+    def sync_models(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: Literal[True] = True,
+    ) -> CompletedSyncTask: ...
+
+    @overload
+    def sync_models(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: Literal[False] = False,
+    ) -> PendingTask: ...
 
     def sync_models(
         self,
@@ -134,9 +162,10 @@ class _AlmClient:
         )
         if not wait_for_completion:
             return task
-        task = self._http.poll_task(self.get_sync_task, task.id)
-        if not task.result.successful:  # pyright: ignore[reportOptionalMemberAccess]
-            msg = f"Sync task {task.id} completed with errors: {task.result.error}."  # pyright: ignore
+        while (task := self.get_sync_task(task.id)).task_state != "COMPLETE":
+            sleep(self.poll_delay)
+        if not task.result.successful:
+            msg = f"Sync task {task.id} completed with errors."
             logger.error(msg)
             raise AnaplanActionError(msg)
         logger.info(f"Sync task {task.id} completed successfully.")
@@ -151,6 +180,24 @@ class _AlmClient:
         """
         res = self._http.get(f"{self._url}/alm/revisions/{revision_id}/appliedToModels")
         return [ModelRevision.model_validate(e) for e in res.get("appliedToModels", [])]
+
+    @overload
+    def create_comparison_report(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: Literal[True] = True,
+    ) -> CompletedReportTask: ...
+
+    @overload
+    def create_comparison_report(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: Literal[False] = False,
+    ) -> PendingTask: ...
 
     def create_comparison_report(
         self,
@@ -182,9 +229,10 @@ class _AlmClient:
         )
         if not wait_for_completion:
             return task
-        task = self._http.poll_task(self.get_comparison_report_task, task.id)
-        if not task.result.successful:  # pyright: ignore[reportOptionalMemberAccess]
-            msg = f"Comparison Report task {task.id} completed with errors: {task.result.error}."  # pyright: ignore
+        while (task := self.get_comparison_report_task(task.id)).task_state != "COMPLETE":
+            sleep(self.poll_delay)
+        if not task.result.successful:
+            msg = f"Comparison Report task {task.id} completed with errors."
             logger.error(msg)
             raise AnaplanActionError(msg)
         logger.info(f"Comparison Report task {task.id} completed successfully.")
@@ -197,7 +245,7 @@ class _AlmClient:
         :return: The report task information.
         """
         res = self._http.get(f"{self._url}/alm/comparisonReportTasks/{task_id}")
-        return ReportTask.model_validate(res["task"])
+        return _ReportTaskStatusPoll.model_validate(res).task
 
     def get_comparison_report(self, task: ReportTask) -> bytes:
         """
@@ -257,9 +305,10 @@ class _AlmClient:
         )
         if not wait_for_completion:
             return task
-        task = self._http.poll_task(self.get_comparison_summary_task, task.id)
-        if not task.result.successful:  # pyright: ignore[reportOptionalMemberAccess]
-            msg = f"Comparison Summary task {task.id} completed with errors: {task.result.error}."  # pyright: ignore
+        while (task := self.get_comparison_summary_task(task.id)).task_state != "COMPLETE":
+            sleep(self.poll_delay)
+        if not task.result.successful:
+            msg = f"Comparison Summary task {task.id} completed with errors."
             logger.error(msg)
             raise AnaplanActionError(msg)
         logger.info(f"Comparison Summary task {task.id} completed successfully.")
@@ -272,7 +321,7 @@ class _AlmClient:
         :return: The report task information.
         """
         res = self._http.get(f"{self._url}/alm/summaryReportTasks/{task_id}")
-        return ReportTask.model_validate(res["task"])
+        return _ReportTaskStatusPoll.model_validate(res).task
 
     def get_comparison_summary(self, task: ReportTask) -> SummaryReport:
         """

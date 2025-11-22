@@ -82,6 +82,7 @@ nav:
           - Flows: 'api/models/flows.md'
           - Transactional: 'api/models/transactional.md'
           - SCIM: 'api/models/scim.md'
+          - Tasks: 'api/models/task.md'
       - Exceptions: 'api/exceptions.md'
 
 plugins:

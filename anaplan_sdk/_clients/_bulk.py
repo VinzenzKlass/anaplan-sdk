@@ -3,7 +3,8 @@ import logging
 import multiprocessing
 from concurrent.futures import ThreadPoolExecutor
 from copy import copy
-from typing import Any, Iterator, Literal
+from time import sleep
+from typing import Any, Iterator, Literal, overload
 
 import httpx
 from typing_extensions import Self
@@ -14,6 +15,7 @@ from anaplan_sdk._utils import action_url, models_url, sort_params
 from anaplan_sdk.exceptions import AnaplanActionError, InvalidIdentifierException
 from anaplan_sdk.models import (
     Action,
+    CompletedTask,
     Export,
     File,
     Import,
@@ -21,10 +23,12 @@ from anaplan_sdk.models import (
     ModelDeletionResult,
     ModelWithTransactionInfo,
     Process,
+    Task,
     TaskStatus,
     TaskSummary,
     Workspace,
 )
+from anaplan_sdk.models._task import _TaskStatusPoll
 
 from ._alm import _AlmClient
 from ._audit import _AuditClient
@@ -132,7 +136,6 @@ class Client:
             backoff=backoff,
             backoff_factor=backoff_factor,
             page_size=page_size,
-            poll_delay=status_poll_delay,
         )
         self._retry_count = retry_count
         self._workspace_id = workspace_id
@@ -141,7 +144,7 @@ class Client:
         self._transactional_client = (
             _TransactionalClient(self._http, model_id) if model_id else None
         )
-        self._alm_client = _AlmClient(self._http, model_id) if model_id else None
+        self._alm_client = _AlmClient(self._http, model_id, status_poll_delay) if model_id else None
         self._audit_client = _AuditClient(self._http)
         self._scim_client = _ScimClient(self._http)
         self._cloud_works = _CloudWorksClient(self._http)
@@ -171,8 +174,14 @@ class Client:
             "https://api.anaplan.com/2/0/workspaces"
             f"/{client._workspace_id}/models/{client._model_id}"
         )
-        client._transactional_client = _TransactionalClient(self._http, client._model_id)  # pyright: ignore[reportArgumentType]
-        client._alm_client = _AlmClient(self._http, client._model_id)  # pyright: ignore[reportArgumentType]
+        client._transactional_client = (
+            _TransactionalClient(self._http, client._model_id) if client._model_id else None
+        )
+        client._alm_client = (
+            _AlmClient(self._http, client._model_id, self.status_poll_delay)
+            if client._model_id
+            else None
+        )
         return client
 
     @property
@@ -410,6 +419,14 @@ class Client:
         )
         return [Export.model_validate(e) for e in res]
 
+    @overload
+    def run_action(
+        self, action_id: int, wait_for_completion: Literal[True] = True
+    ) -> CompletedTask: ...
+
+    @overload
+    def run_action(self, action_id: int, wait_for_completion: Literal[False] = False) -> Task: ...
+
     def run_action(self, action_id: int, wait_for_completion: bool = True) -> TaskStatus:
         """
         Runs the Action and validates the spawned task. If the Action fails or completes with
@@ -427,14 +444,15 @@ class Client:
         logger.info(f"Invoked Action '{action_id}', spawned Task: '{task_id}'.")
 
         if not wait_for_completion:
-            return TaskStatus.model_validate(self.get_task_status(action_id, task_id))
-        status = self._http.poll_task(self.get_task_status, action_id, task_id)
-        if status.task_state == "COMPLETE" and not status.result.successful:  # pyright: ignore[reportOptionalMemberAccess]
+            return self.get_task_status(action_id, task_id)
+        while (task := self.get_task_status(action_id, task_id)).task_state != "COMPLETE":
+            sleep(self.status_poll_delay)
+        if not task.result.successful:
             logger.error(f"Task '{task_id}' completed with errors.")
             raise AnaplanActionError(f"Task '{task_id}' completed with errors.")
 
         logger.info(f"Task '{task_id}' of Action '{action_id}' completed successfully.")
-        return status
+        return task
 
     def get_file(self, file_id: int) -> bytes:
         """
@@ -550,6 +568,24 @@ class Client:
         self._http.post(f"{self._url}/files/{file_id}/complete", json={"id": file_id})
         logger.info(f"Completed upload stream for '{file_id}'.")
 
+    @overload
+    def upload_and_import(
+        self,
+        file_id: int,
+        content: str | bytes,
+        action_id: int,
+        wait_for_completion: Literal[True] = True,
+    ) -> CompletedTask: ...
+
+    @overload
+    def upload_and_import(
+        self,
+        file_id: int,
+        content: str | bytes,
+        action_id: int,
+        wait_for_completion: Literal[False] = False,
+    ) -> Task: ...
+
     def upload_and_import(
         self, file_id: int, content: str | bytes, action_id: int, wait_for_completion: bool = True
     ) -> TaskStatus:
@@ -598,11 +634,8 @@ class Client:
         :param task_id: The identifier of the spawned task.
         :return: The status of the task.
         """
-        return TaskStatus.model_validate(
-            self._http.get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks/{task_id}").get(
-                "task"
-            )
-        )
+        res = self._http.get(f"{self._url}/{action_url(action_id)}/{action_id}/tasks/{task_id}")
+        return _TaskStatusPoll.model_validate(res).task
 
     def get_optimizer_log(self, action_id: int, task_id: str) -> bytes:
         """

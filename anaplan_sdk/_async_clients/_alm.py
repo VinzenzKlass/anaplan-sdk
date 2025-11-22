@@ -1,10 +1,13 @@
+# pyright: reportPrivateUsage=false
 import logging
+from asyncio import sleep
 from typing import Literal, overload
 
-from anaplan_sdk._services import _AsyncHttpService  # pyright: ignore[reportPrivateUsage]
+from anaplan_sdk._services import _AsyncHttpService
 from anaplan_sdk._utils import sort_params
 from anaplan_sdk.exceptions import AnaplanActionError
 from anaplan_sdk.models import (
+    CompletedReportTask,
     ModelRevision,
     ReportTask,
     Revision,
@@ -12,14 +15,21 @@ from anaplan_sdk.models import (
     SyncTask,
     TaskSummary,
 )
+from anaplan_sdk.models._task import (
+    CompletedSyncTask,
+    PendingTask,
+    _ReportTaskStatusPoll,
+    _SyncTaskStatusPoll,
+)
 
 logger = logging.getLogger("anaplan_sdk")
 
 
 class _AsyncAlmClient:
-    def __init__(self, http: _AsyncHttpService, model_id: str) -> None:
+    def __init__(self, http: _AsyncHttpService, model_id: str, poll_delay: int) -> None:
         self._http = http
         self._model_id = model_id
+        self.poll_delay = poll_delay
         self._url = f"https://api.anaplan.com/2/0/models/{model_id}"
 
     async def change_model_status(self, status: Literal["online", "offline"]) -> None:
@@ -103,7 +113,25 @@ class _AsyncAlmClient:
         :return: The sync task information.
         """
         res = await self._http.get(f"{self._url}/alm/syncTasks/{task_id}")
-        return SyncTask.model_validate(res["task"])
+        return _SyncTaskStatusPoll.model_validate(res).task
+
+    @overload
+    async def sync_models(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: Literal[False] = False,
+    ) -> PendingTask: ...
+
+    @overload
+    async def sync_models(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: Literal[True] = True,
+    ) -> CompletedSyncTask: ...
 
     async def sync_models(
         self,
@@ -136,9 +164,10 @@ class _AsyncAlmClient:
         )
         if not wait_for_completion:
             return task
-        task = await self._http.poll_task(self.get_sync_task, task.id)
-        if not task.result.successful:  # pyright: ignore[reportOptionalMemberAccess]
-            msg = f"Sync task {task.id} completed with errors: {task.result.error}."  # pyright: ignore
+        while (task := await self.get_sync_task(task.id)).task_state != "COMPLETE":
+            await sleep(self.poll_delay)
+        if not task.result.successful:
+            msg = f"Sync task {task.id} was unsuccessful."
             logger.error(msg)
             raise AnaplanActionError(msg)
         logger.info(f"Sync task {task.id} completed successfully.")
@@ -153,6 +182,24 @@ class _AsyncAlmClient:
         """
         res = await self._http.get(f"{self._url}/alm/revisions/{revision_id}/appliedToModels")
         return [ModelRevision.model_validate(e) for e in res.get("appliedToModels", [])]
+
+    @overload
+    async def create_comparison_report(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: Literal[True] = True,
+    ) -> CompletedReportTask: ...
+
+    @overload
+    async def create_comparison_report(
+        self,
+        source_revision_id: str,
+        source_model_id: str,
+        target_revision_id: str,
+        wait_for_completion: Literal[False] = False,
+    ) -> PendingTask: ...
 
     async def create_comparison_report(
         self,
@@ -184,9 +231,10 @@ class _AsyncAlmClient:
         )
         if not wait_for_completion:
             return task
-        task = await self._http.poll_task(self.get_comparison_report_task, task.id)
-        if not task.result.successful:  # pyright: ignore
-            msg = f"Comparison Report task {task.id} completed with errors: {task.result.error}."  # pyright: ignore
+        while (task := await self.get_comparison_report_task(task.id)).task_state != "COMPLETE":
+            await sleep(self.poll_delay)
+        if task.result.successful is False:
+            msg = f"Comparison Report task {task.id} completed with errors: {task.result.error}."
             logger.error(msg)
             raise AnaplanActionError(msg)
         logger.info(f"Comparison Report task {task.id} completed successfully.")
@@ -199,9 +247,9 @@ class _AsyncAlmClient:
         :return: The report task information.
         """
         res = await self._http.get(f"{self._url}/alm/comparisonReportTasks/{task_id}")
-        return ReportTask.model_validate(res["task"])
+        return _ReportTaskStatusPoll.model_validate(res).task
 
-    async def get_comparison_report(self, task: ReportTask) -> bytes:
+    async def get_comparison_report(self, task: CompletedReportTask) -> bytes:
         """
         Get the report for a specific task.
         :param task: The report task object containing the task ID.
@@ -209,7 +257,7 @@ class _AsyncAlmClient:
         """
         return await self._http.get_binary(
             f"{self._url}/alm/comparisonReports/"
-            f"{task.result.target_revision_id}/{task.result.source_revision_id}"  # pyright: ignore
+            f"{task.result.target_revision_id}/{task.result.source_revision_id}"
         )
 
     @overload
@@ -259,9 +307,10 @@ class _AsyncAlmClient:
         )
         if not wait_for_completion:
             return task
-        task = await self._http.poll_task(self.get_comparison_summary_task, task.id)
-        if not task.result.successful:  # pyright: ignore
-            msg = f"Comparison Summary task {task.id} completed with errors: {task.result.error}."  # pyright: ignore
+        while (task := await self.get_comparison_summary_task(task.id)).task_state != "COMPLETE":
+            await sleep(self.poll_delay)
+        if task.result.successful is False:
+            msg = f"Comparison Summary task {task.id} completed with errors: {task.result.error}."
             logger.error(msg)
             raise AnaplanActionError(msg)
         logger.info(f"Comparison Summary task {task.id} completed successfully.")
@@ -274,7 +323,7 @@ class _AsyncAlmClient:
         :return: The report task information.
         """
         res = await self._http.get(f"{self._url}/alm/summaryReportTasks/{task_id}")
-        return ReportTask.model_validate(res["task"])
+        return _ReportTaskStatusPoll.model_validate(res).task
 
     async def get_comparison_summary(self, task: ReportTask) -> SummaryReport:
         """

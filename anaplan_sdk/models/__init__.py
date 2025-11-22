@@ -1,12 +1,4 @@
-from ._alm import (
-    ModelRevision,
-    ReportTask,
-    ReportTaskResult,
-    Revision,
-    SummaryReport,
-    SyncTask,
-    SyncTaskResult,
-)
+from ._alm import ModelRevision, Revision, SummaryReport
 from ._base import AnaplanModel
 from ._bulk import (
     Action,
@@ -21,11 +13,22 @@ from ._bulk import (
     ModelDeletionResult,
     ModelWithTransactionInfo,
     Process,
+    Workspace,
+)
+from ._task import (
+    CompletedReportTask,
+    CompletedSyncTask,
+    CompletedTask,
+    PendingTask,
+    ReportTask,
+    ReportTaskResult,
+    SyncTask,
+    SyncTaskResult,
+    Task,
     TaskResult,
     TaskResultDetail,
     TaskStatus,
     TaskSummary,
-    Workspace,
 )
 from ._transactional import (
     CurrentPeriod,
@@ -68,16 +71,20 @@ __all__ = [
     "Process",
     "Module",
     "LineItem",
+    "Task",
     "TaskSummary",
     "TaskResult",
+    "CompletedTask",
     "TaskResultDetail",
+    "PendingTask",
+    "CompletedSyncTask",
+    "SyncTask",
+    "CompletedReportTask",
     "TaskStatus",
-    "TaskSummary",
     "SyncTaskResult",
     "ReportTask",
     "ReportTaskResult",
     "SummaryReport",
-    "SyncTask",
     "User",
     "Failure",
     "InsertionResult",

@@ -3,8 +3,9 @@ from typing import Any, Literal
 
 from pydantic import Field, field_validator
 
+from anaplan_sdk.models import TaskResultDetail
+
 from ._base import AnaplanModel
-from ._bulk import TaskResultDetail
 
 ConnectionType = Literal["AmazonS3", "AzureBlob", "GoogleBigQuery"]
 IntegrationType = Literal[

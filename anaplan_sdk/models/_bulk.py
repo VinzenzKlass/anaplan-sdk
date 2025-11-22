@@ -143,40 +143,6 @@ class Export(AnaplanModel):
     )
 
 
-class TaskSummary(AnaplanModel):
-    id: str = Field(validation_alias="taskId", description="The unique identifier of this task.")
-    task_state: Literal["NOT_STARTED", "IN_PROGRESS", "COMPLETE"] = Field(
-        description="The state of this task."
-    )
-    creation_time: int = Field(description="Unix timestamp of when this task was created.")
-
-
-class TaskResultDetail(AnaplanModel):
-    local_message_text: str | None = Field(None, description="Error message text.")
-    occurrences: int = Field(0, description="The number of occurrences of this error.")
-    type: str = Field(description="The type of this error.")
-    values: list[str | None] = Field([], description="Further error information if available.")
-
-
-class TaskResult(AnaplanModel):
-    details: list[TaskResultDetail] = Field(
-        [], description="The details of this task result if available."
-    )
-    successful: bool = Field(description="Whether this task completed successfully or not.")
-    failure_dump_available: bool = Field(
-        description="Whether this task completed successfully or not."
-    )
-    nested_results: list["TaskResult"] = Field(
-        [], description="The nested results of this task, if available."
-    )
-
-
-class TaskStatus(TaskSummary):
-    progress: float = Field(description="The progress of this task as a float between 0 and 1.")
-    current_step: str | None = Field(None, description="The current step of this task.")
-    result: TaskResult | None = Field(None)
-
-
 class DeletionFailure(AnaplanModel):
     model_id: str = Field(description="The unique identifier of the model that failed to delete.")
     message: str = Field(description="The error message explaining why the deletion failed.")
