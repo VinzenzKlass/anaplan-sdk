@@ -189,8 +189,8 @@ class _AsyncAlmClient:
         source_revision_id: str,
         source_model_id: str,
         target_revision_id: str,
-        wait_for_completion: Literal[False] = False,
-    ) -> PendingTask: ...
+        wait_for_completion: Literal[True] = True,
+    ) -> CompletedReportTask: ...
 
     @overload
     async def create_comparison_report(
@@ -198,8 +198,8 @@ class _AsyncAlmClient:
         source_revision_id: str,
         source_model_id: str,
         target_revision_id: str,
-        wait_for_completion: Literal[True] = True,
-    ) -> CompletedReportTask: ...
+        wait_for_completion: Literal[False] = False,
+    ) -> PendingTask: ...
 
     async def create_comparison_report(
         self,
