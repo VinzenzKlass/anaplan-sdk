@@ -18,7 +18,7 @@ class TaskResult(AnaplanModel):
     )
     successful: bool = Field(description="Whether this task completed successfully or not.")
     failure_dump_available: bool = Field(
-        description="Whether this task completed successfully or not."
+        description="Whether a failure dump is available for this task."
     )
     nested_results: list["TaskResult"] = Field(
         [], description="The nested results of this task, if available."
@@ -94,7 +94,7 @@ class ReportTaskFailureResult(SyncTaskResult):
 
 
 class CompletedReportTask(CompletedSyncTask):
-    result: ReportTaskResult | ReportTaskFailureResult  # pyright: ignore[reportIncompatibleVariableOverride]
+    result: ReportTaskResult | ReportTaskFailureResult = Field(discriminator="successful")  # pyright: ignore[reportIncompatibleVariableOverride]
 
 
 ReportTask: TypeAlias = PendingTask | CompletedReportTask

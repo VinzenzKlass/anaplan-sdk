@@ -229,7 +229,7 @@ class _AlmClient:
         )
         if not wait_for_completion:
             return task
-        while (task := self.get_sync_task(task.id)).task_state != "COMPLETE":
+        while (task := self.get_comparison_report_task(task.id)).task_state != "COMPLETE":
             sleep(self.poll_delay)
         if not task.result.successful:
             msg = f"Comparison Report task {task.id} completed with errors."
@@ -245,7 +245,7 @@ class _AlmClient:
         :return: The report task information.
         """
         res = self._http.get(f"{self._url}/alm/comparisonReportTasks/{task_id}")
-        return _SyncTaskStatusPoll.model_validate(res).task
+        return _ReportTaskStatusPoll.model_validate(res).task
 
     def get_comparison_report(self, task: ReportTask) -> bytes:
         """
