@@ -7,6 +7,7 @@ from ._base import AnaplanModel
 ExportTypes: TypeAlias = Literal[
     "TABULAR_MULTI_COLUMN",
     "TABULAR_SINGLE_COLUMN",
+    "GRID_ALL_PAGES",
     "GRID_CURRENT_PAGE",
     "AUDIT_LOG",
     "TABULAR_ALL_LINE_ITEMS",
