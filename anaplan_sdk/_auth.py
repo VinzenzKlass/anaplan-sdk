@@ -36,6 +36,7 @@ class _AnaplanAuth(httpx.Auth):
         if response.status_code == 401:
             logger.info("Token expired, refreshing.")
             auth_res = yield self._build_auth_request()
+            auth_res.read()
             self._parse_auth_response(auth_res)
             request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
             yield request
