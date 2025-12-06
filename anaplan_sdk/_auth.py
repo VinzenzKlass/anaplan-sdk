@@ -1,7 +1,9 @@
+import asyncio
 import logging
 import os
+import threading
 from base64 import b64encode
-from typing import Callable, Generator
+from typing import AsyncGenerator, Callable, Generator, TypeAlias
 
 import httpx
 
@@ -10,12 +12,16 @@ from .exceptions import AnaplanException, InvalidCredentialsException, InvalidPr
 
 logger = logging.getLogger("anaplan_sdk")
 
+AuthGen: TypeAlias = Generator[httpx.Request, httpx.Response, None]
+AsyncAuthGen: TypeAlias = AsyncGenerator[httpx.Request, httpx.Response]
+
 
 class _AnaplanAuth(httpx.Auth):
     requires_response_body = True
 
     def __init__(self, token: str | None = None):
         self._token: str = token or ""
+        self._lock = asyncio.Lock()
         if not token:
             logger.info("Creating Authentication Token.")
             with httpx.Client(timeout=15.0) as client:
@@ -24,7 +30,7 @@ class _AnaplanAuth(httpx.Auth):
     def _build_auth_request(self) -> httpx.Request:
         raise NotImplementedError("Must be implemented in subclass.")
 
-    def auth_flow(self, request: httpx.Request) -> Generator[httpx.Request, httpx.Response, None]:
+    def sync_auth_flow(self, request: httpx.Request) -> AuthGen:
         request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
         response = yield request
         if response.status_code == 401:
@@ -33,6 +39,18 @@ class _AnaplanAuth(httpx.Auth):
             self._parse_auth_response(auth_res)
             request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
             yield request
+
+    async def async_auth_flow(self, request: httpx.Request) -> AsyncAuthGen:
+        async with self._lock:
+            request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
+            response = yield request
+            if response.status_code == 401:
+                logger.info("Token expired, refreshing.")
+                auth_res = yield self._build_auth_request()
+                await auth_res.aread()  # Ensure response content is read
+                self._parse_auth_response(auth_res)
+                request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
+                yield request
 
     def _parse_auth_response(self, response: httpx.Response) -> None:
         if response.status_code == 401:
@@ -195,6 +213,7 @@ class AnaplanLocalOAuth(_AnaplanAuth):
         """
         self._oauth_token = token or {}
         self._service_name = "anaplan_sdk"
+        self._lock = threading.Lock()
 
         if persist_token:
             try:
@@ -223,7 +242,11 @@ class AnaplanLocalOAuth(_AnaplanAuth):
         )
         if not self._oauth_token:
             self.__auth_code_flow()
-        super().__init__(self._token)
+        try:
+            super().__init__(self._token)
+        except InvalidCredentialsException:
+            logger.info("Stored OAuth token invalid, starting new authorization flow.")
+            self.__auth_code_flow()
 
     @property
     def token(self) -> dict[str, str]:
@@ -239,7 +262,7 @@ class AnaplanLocalOAuth(_AnaplanAuth):
         return self._oauth.refresh_token_request(self._oauth_token["refresh_token"])
 
     def _parse_auth_response(self, response: httpx.Response) -> None:
-        if response.status_code == 401:
+        if response.status_code in (401, 403):
             raise InvalidCredentialsException
         if not response.is_success:
             raise AnaplanException(f"Authentication failed: {response.status_code} {response.text}")
@@ -332,7 +355,7 @@ class AnaplanRefreshTokenAuth(_AnaplanAuth):
         return self._oauth.refresh_token_request(self._oauth_token["refresh_token"])
 
     def _parse_auth_response(self, response: httpx.Response) -> None:
-        if response.status_code == 401:
+        if response.status_code in (401, 403):
             raise InvalidCredentialsException
         if not response.is_success:
             raise AnaplanException(f"Authentication failed: {response.status_code} {response.text}")
