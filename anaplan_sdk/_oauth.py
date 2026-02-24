@@ -192,11 +192,19 @@ class Oauth(_BaseOauth):
     Applications.
     """
 
-    def fetch_token(self, authorization_response: str) -> dict[str, str | int]:
+    def fetch_token(
+        self, authorization_response: str, state: str | None = None
+    ) -> dict[str, str | int]:
         """
         Fetches the token using the authorization response from the OAuth 2.0 flow.
         :param authorization_response: The full URL that the user was redirected to after
                authorizing the application. This URL will contain the authorization code and state.
+        :param state: The state string that was used in the authorization URL. This is used to
+                      validate the response and prevent CSRF attacks. If you used a custom state
+                      generator, you must pass the same state string here. If you used the default
+                      state generator, you can pass the state string that was returned by the
+                      `authorization_url` method when you generated the authorization URL, or you
+                      can omit it.
         :return: The token as a dictionary containing the access token, refresh token, scope,
                  expires_in, and type.
         """
@@ -208,6 +216,7 @@ class Oauth(_BaseOauth):
                 token_url=self._token_url,
                 redirect_url=self._redirect_uri,
                 client_secret=self._client_secret,
+                state=state,
             )
             with httpx.Client() as client:
                 response = client.post(url=url, headers=headers, content=body)
