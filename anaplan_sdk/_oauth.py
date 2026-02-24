@@ -90,12 +90,15 @@ class _BaseOauth:
         )
         return url, state
 
-    def _token_request(self, authorization_response: str) -> httpx.Request:
+    def _token_request(
+        self, authorization_response: str, state: str | None = None
+    ) -> httpx.Request:
         url, headers, body = self._oauth.prepare_token_request(  # pyright: ignore[reportUnknownMemberType]
             authorization_response=authorization_response,
             token_url=self._token_url,
             redirect_url=self._redirect_uri,
             client_secret=self._client_secret,
+            state=state,
         )
         return httpx.Request(method="POST", url=url, headers=headers, content=body)
 
@@ -133,11 +136,19 @@ class AsyncOauth(_BaseOauth):
     Applications.
     """
 
-    async def fetch_token(self, authorization_response: str) -> dict[str, str | int]:
+    async def fetch_token(
+        self, authorization_response: str, state: str | None = None
+    ) -> dict[str, str | int]:
         """
         Fetches the token using the authorization response from the OAuth 2.0 flow.
         :param authorization_response: The full URL that the user was redirected to after
                authorizing the application. This URL will contain the authorization code and state.
+        :param state: The state string that was used in the authorization URL. This is used to
+                      validate the response and prevent CSRF attacks. If you used a custom state
+                      generator, you must pass the same state string here. If you used the default
+                      state generator, you can pass the state string that was returned by the
+                      `authorization_url` method when you generated the authorization URL, or you
+                      can omit it.
         :return: The token as a dictionary containing the access token, refresh token, scope,
                  expires_in, and type.
         """
@@ -145,7 +156,7 @@ class AsyncOauth(_BaseOauth):
 
         try:
             async with httpx.AsyncClient() as client:
-                response = await client.send(self._token_request(authorization_response))
+                response = await client.send(self._token_request(authorization_response, state))
             return self._parse_response(response)
         except (httpx.HTTPError, ValueError, TypeError, OAuth2Error) as error:
             logger.error(error)
@@ -211,15 +222,8 @@ class Oauth(_BaseOauth):
         from oauthlib.oauth2 import OAuth2Error
 
         try:
-            url, headers, body = self._oauth.prepare_token_request(  # pyright: ignore[reportUnknownMemberType]
-                authorization_response=authorization_response,
-                token_url=self._token_url,
-                redirect_url=self._redirect_uri,
-                client_secret=self._client_secret,
-                state=state,
-            )
             with httpx.Client() as client:
-                response = client.post(url=url, headers=headers, content=body)
+                response = client.send(self._token_request(authorization_response, state))
             return self._parse_response(response)
         except (httpx.HTTPError, ValueError, TypeError, OAuth2Error) as error:
             logger.error(error)
