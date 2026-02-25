@@ -629,15 +629,23 @@ wheels = [
 
 [[package]]
 name = "griffe-fieldz"
-version = "0.3.0"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "fieldz" },
-    { name = "griffe" },
+    { name = "griffelib" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c5/6a/94754bf39fd63ba424c667b2abf0ade78e3878e223591d1fb9c3e8a77bce/griffe_fieldz-0.3.0.tar.gz", hash = "sha256:42e7707dac51d38e26fb7f3f7f51429da9b47e98060bfeb81a4287456d5b8a89", size = 10149, upload-time = "2025-07-30T21:43:10.042Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/1c/7f/b57a27807536590f0cabdd2e6c0faac78c7d6a740e096684c51c503b7003/griffe_fieldz-0.5.0.tar.gz", hash = "sha256:dcf237a0def9f5c15e15aa5cf07b3d0a4edf4f7d6a2d713a45afe29c8af9bc8e", size = 14250, upload-time = "2026-02-24T16:22:23.374Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/4d/33/cc527c11132a6274724a04938d50e1ff2b54a5f5943cd0480427571e1adb/griffe_fieldz-0.3.0-py3-none-any.whl", hash = "sha256:52e02fdcbdf6dea3c8c95756d1e0b30861569f871d19437fda702776fde4e64d", size = 6577, upload-time = "2025-07-30T21:43:09.073Z" },
+    { url = "https://files.pythonhosted.org/packages/ce/66/9daa3118d9bf4443778d6ee31b024c79766eeb116b275eca71597adae43a/griffe_fieldz-0.5.0-py3-none-any.whl", hash = "sha256:d363e56a7468019a7184ea3995277a1f20507bb9a345408c1f7014ae06878ebf", size = 9629, upload-time = "2026-02-24T16:22:22.094Z" },
+]
+
+[[package]]
+name = "griffelib"
+version = "2.0.0"
+source = { registry = "https://pypi.org/simple" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4d/51/c936033e16d12b627ea334aaaaf42229c37620d0f15593456ab69ab48161/griffelib-2.0.0-py3-none-any.whl", hash = "sha256:01284878c966508b6d6f1dbff9b6fa607bc062d8261c5c7253cb285b06422a7f", size = 142004, upload-time = "2026-02-09T19:09:40.561Z" },
 ]
 
 [[package]]
