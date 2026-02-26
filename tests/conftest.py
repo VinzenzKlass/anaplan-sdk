@@ -129,12 +129,12 @@ def py_version() -> str:
 
 
 @pytest.fixture(scope="session")
-def list_items_long() -> list[dict[str, int]]:
+def list_items_long() -> list[dict[str, Any]]:
     return [{"name": i, "code": i} for i in range(200_000)]  # Force several batches
 
 
 @pytest.fixture(scope="session")
-def list_items_short() -> list[dict[str, int]]:
+def list_items_short() -> list[dict[str, Any]]:
     return [{"name": i, "code": i} for i in range(1_000)]  # Single batch
 
 

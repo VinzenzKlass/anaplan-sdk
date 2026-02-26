@@ -13,13 +13,13 @@ test_file = 113000000073
 test_action = 118000000027
 
 
-async def test_get_workspace(client: AsyncClient):
+async def test_get_workspace(client: AsyncClient) -> None:
     workspace = await client.get_workspace()
     assert isinstance(workspace, models.Workspace)
     assert workspace.id == client._workspace_id  # pyright: ignore[reportPrivateUsage]
 
 
-async def test_list_workspaces(client: AsyncClient):
+async def test_list_workspaces(client: AsyncClient) -> None:
     workspaces, search = await gather(client.get_workspaces(), client.get_workspaces("Demo"))
     assert isinstance(workspaces, list)
     assert all(isinstance(workspace, models.Workspace) for workspace in workspaces)
@@ -29,38 +29,40 @@ async def test_list_workspaces(client: AsyncClient):
     assert len(search) < len(workspaces)
 
 
-async def test_broken_list_files_raises_invalid_identifier_error(broken_client: AsyncClient):
+async def test_broken_list_files_raises_invalid_identifier_error(
+    broken_client: AsyncClient,
+) -> None:
     with pytest.raises(InvalidIdentifierException):
         await broken_client.get_files()
 
 
-async def test_unauthenticated_client_raises_exception():
+async def test_unauthenticated_client_raises_exception() -> None:
     with pytest.raises(InvalidCredentialsException):
         _ = AsyncClient(user_email="invalid_email", password="pass")
 
 
-def test_broken_client_alm_raises(broken_client: AsyncClient):
+def test_broken_client_alm_raises(broken_client: AsyncClient) -> None:
     with pytest.raises(ValueError):
         _ = broken_client.alm
 
 
-def test_broken_client_transactional_raises(broken_client: AsyncClient):
+def test_broken_client_transactional_raises(broken_client: AsyncClient) -> None:
     with pytest.raises(ValueError):
         _ = broken_client.tr
 
 
-async def test_file_creation_raises_exception(client: AsyncClient):
+async def test_file_creation_raises_exception(client: AsyncClient) -> None:
     with pytest.raises(InvalidIdentifierException):
         await client.upload_file(115000000000, b"")
 
 
-async def test_get_model(client: AsyncClient):
+async def test_get_model(client: AsyncClient) -> None:
     model = await client.get_model()
     assert isinstance(model, models.ModelWithTransactionInfo)
     assert model.id == client._model_id  # pyright: ignore[reportPrivateUsage]
 
 
-async def test_list_models(client: AsyncClient):
+async def test_list_models(client: AsyncClient) -> None:
     _models, current_only, search = await gather(
         client.get_models(), client.get_models(True), client.get_models(search_pattern="Demo")
     )
@@ -71,7 +73,7 @@ async def test_list_models(client: AsyncClient):
     assert len(_models) > len(current_only) > len(search) > 0
 
 
-async def test_list_models_multi_page(client_small_pages: AsyncClient):
+async def test_list_models_multi_page(client_small_pages: AsyncClient) -> None:
     _models = await client_small_pages.get_models()
     assert isinstance(_models, list)
     assert len(_models) > 0
@@ -79,100 +81,100 @@ async def test_list_models_multi_page(client_small_pages: AsyncClient):
     assert len(_models) == len(set(m.id for m in _models))  # Ensure no duplicates when paginating
 
 
-async def test_list_actions(client: AsyncClient):
+async def test_list_actions(client: AsyncClient) -> None:
     actions = await client.get_actions()
     assert isinstance(actions, list)
     assert all(isinstance(action, models.Action) for action in actions)
     assert len(actions) > 0
 
 
-async def test_list_files(client: AsyncClient):
+async def test_list_files(client: AsyncClient) -> None:
     files = await client.get_files()
     assert isinstance(files, list)
     assert all(isinstance(file, models.File) for file in files)
     assert len(files) > 0
 
 
-async def test_list_processes(client: AsyncClient):
+async def test_list_processes(client: AsyncClient) -> None:
     processes = await client.get_processes()
     assert isinstance(processes, list)
     assert all(isinstance(process, models.Process) for process in processes)
     assert len(processes) > 0
 
 
-async def test_list_imports(client: AsyncClient):
+async def test_list_imports(client: AsyncClient) -> None:
     imports = await client.get_imports()
     assert isinstance(imports, list)
     assert all(isinstance(i, models.Import) for i in imports)
     assert len(imports) > 0
 
 
-async def test_list_exports(client: AsyncClient):
+async def test_list_exports(client: AsyncClient) -> None:
     exports = await client.get_exports()
     assert isinstance(exports, list)
     assert all(isinstance(e, models.Export) for e in exports)
     assert len(exports) > 0
 
 
-async def test_upload_file_stream(client: AsyncClient):
+async def test_upload_file_stream(client: AsyncClient) -> None:
     await client.upload_file_stream(test_file, (str(i) for i in range(10)))
     out = await client.get_file(test_file)
     assert out == b"0123456789"
 
 
-async def test_upload_file_async_stream(client: AsyncClient):
+async def test_upload_file_async_stream(client: AsyncClient) -> None:
     await client.upload_file_stream(test_file, (i async for i in _async_range(10)))
     out = await client.get_file(test_file)
     assert out == b"0123456789"
 
 
-async def test_get_file_stream(client: AsyncClient):
+async def test_get_file_stream(client: AsyncClient) -> None:
     async for chunk in client.get_file_stream(test_file):
         assert isinstance(chunk, bytes)
 
 
-async def test_upload_and_download_file(client: AsyncClient):
+async def test_upload_and_download_file(client: AsyncClient) -> None:
     await client.upload_file(test_file, "Hi!")
     out = await client.get_file(test_file)
     assert out == b"Hi!"
 
 
-async def test_run_process(client: AsyncClient):
+async def test_run_process(client: AsyncClient) -> None:
     await client.run_action(test_action)
 
 
-async def test_list_task_statuses(client: AsyncClient):
+async def test_list_task_statuses(client: AsyncClient) -> None:
     task_statuses = await client.get_task_summaries(test_action)
     assert isinstance(task_statuses, list)
     assert all(isinstance(status, models.TaskSummary) for status in task_statuses)
     assert len(task_statuses) > 0
 
 
-async def test_get_task_status(client: AsyncClient):
+async def test_get_task_status(client: AsyncClient) -> None:
     task_status = await client.get_task_status(
         test_action, (await client.run_action(test_action, False)).id
     )
     assert isinstance(task_status, models.TaskStatus)
 
 
-async def test_invalid_file_id_raises_exception(client: AsyncClient):
+async def test_invalid_file_id_raises_exception(client: AsyncClient) -> None:
     with pytest.raises(InvalidIdentifierException):
         await client.get_file(1)
 
 
-async def test_run_nonexistent_action_raises_exception(client: AsyncClient):
+async def test_run_nonexistent_action_raises_exception(client: AsyncClient) -> None:
     with pytest.raises(InvalidIdentifierException):
         await client.run_action(1)
 
 
-async def test_upload_empty_file(client: AsyncClient):
+async def test_upload_empty_file(client: AsyncClient) -> None:
     with pytest.raises(AnaplanException):
         await client.upload_file(test_file, b"")
         # Error occurs here, since the file does not actually exist (only the "address", ID).
         await client.get_file(test_file)
 
 
-async def test_with_model(client: AsyncClient):
+async def test_with_model(client: AsyncClient) -> None:
     other_ws_id = other_model_id = "123"
     other_client = client.with_model(other_model_id, other_ws_id)
     assert isinstance(other_client, AsyncClient)

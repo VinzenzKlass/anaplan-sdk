@@ -1,49 +1,60 @@
 from asyncio import gather
+from typing import Any
 
-from anaplan_sdk.models.flows import Flow, FlowSummary
+from anaplan_sdk import AsyncClient
+from anaplan_sdk.models.flows import Flow, FlowInput, FlowSummary
+from tests.conftest import PyVersionConfig
 
 
-async def test_list_flows(client):
+async def test_list_flows(client: AsyncClient) -> None:
     flows = await client.cw.flows.get_flows()
     assert isinstance(flows, list)
     assert all(isinstance(f, FlowSummary) for f in flows)
 
 
-async def test_list_flows_current_user(client):
+async def test_list_flows_current_user(client: AsyncClient) -> None:
     flows = await client.cw.flows.get_flows(current_user_only=True)
     assert isinstance(flows, list)
     assert all(isinstance(f, FlowSummary) for f in flows)
 
 
-async def test_create_flow_pydantic(client, flow_pydantic, registry):
+async def test_create_flow_pydantic(
+    client: AsyncClient, flow_pydantic: FlowInput, registry: dict[str, Any]
+) -> None:
     flow_id = await client.cw.flows.create_flow(flow_pydantic)
     assert flow_id is not None
     registry["flows"].append(flow_id)
 
 
-async def test_create_flow_dict(client, flow_dict, registry):
+async def test_create_flow_dict(
+    client: AsyncClient, flow_dict: dict[str, Any], registry: dict[str, Any]
+) -> None:
     flow_id = await client.cw.flows.create_flow(flow_dict)
     assert flow_id is not None
     registry["flows"].append(flow_id)
 
 
-async def test_get_flow(client, registry):
+async def test_get_flow(client: AsyncClient, registry: dict[str, Any]) -> None:
     flow = await client.cw.flows.get_flow(registry["flows"][0])
     assert isinstance(flow, Flow)
 
 
-async def test_run_flow(client, config):
+async def test_run_flow(client: AsyncClient, config: PyVersionConfig) -> None:
     run_id = await client.cw.flows.run_flow(config.test_flow_async)
     assert run_id is not None
 
 
-async def test_update_flow_pydantic(client, flow_pydantic, registry):
+async def test_update_flow_pydantic(
+    client: AsyncClient, flow_pydantic: FlowInput, registry: dict[str, Any]
+) -> None:
     await client.cw.flows.update_flow(registry["flows"][0], flow_pydantic)
 
 
-async def test_update_flow_dict(client, flow_dict, registry):
+async def test_update_flow_dict(
+    client: AsyncClient, flow_dict: dict[str, Any], registry: dict[str, Any]
+) -> None:
     await client.cw.flows.update_flow(registry["flows"][1], flow_dict)
 
 
-async def test_delete_flow(client, registry):
+async def test_delete_flow(client: AsyncClient, registry: dict[str, Any]) -> None:
     await gather(*(client.cw.flows.delete_flow(f) for f in registry["flows"]))

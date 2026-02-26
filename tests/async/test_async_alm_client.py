@@ -12,30 +12,31 @@ from anaplan_sdk.models import (
     SyncTaskResult,
     TaskSummary,
 )
+from tests.conftest import PyVersionConfig
 
 
-async def test_change_model_status(alm_client: AsyncClient):
+async def test_change_model_status(alm_client: AsyncClient) -> None:
     await alm_client.alm.change_model_status("offline")
 
 
-async def test_list_revisions(alm_client: AsyncClient):
+async def test_list_revisions(alm_client: AsyncClient) -> None:
     revisions = await alm_client.alm.get_revisions()
     assert isinstance(revisions, list)
     assert all(isinstance(rev, Revision) for rev in revisions)
 
 
-async def test_get_latest_revision(alm_client: AsyncClient):
+async def test_get_latest_revision(alm_client: AsyncClient) -> None:
     rev = await alm_client.alm.get_latest_revision()
     assert isinstance(rev, Revision)
 
 
-async def test_list_syncable_revisions(alm_client: AsyncClient, config):
+async def test_list_syncable_revisions(alm_client: AsyncClient, config: PyVersionConfig) -> None:
     revisions = await alm_client.alm.get_syncable_revisions(config.alm_src_model_id_async)
     assert isinstance(revisions, list)
     assert all(isinstance(rev, Revision) for rev in revisions)
 
 
-async def test_create_revision(alm_src_client: AsyncClient):
+async def test_create_revision(alm_src_client: AsyncClient) -> None:
     await alm_src_client.tr.insert_list_items(
         101000000005, [{"name": str(uuid4()), "code": str(uuid4())}]
     )
@@ -47,8 +48,8 @@ async def test_create_revision(alm_src_client: AsyncClient):
 
 
 async def test_create_comparison_summary_task(
-    alm_client: AsyncClient, alm_src_client: AsyncClient, config
-):
+    alm_client: AsyncClient, alm_src_client: AsyncClient, config: PyVersionConfig
+) -> None:
     src_rev, latest_rev = await gather(
         alm_src_client.alm.get_latest_revision(), alm_client.alm.get_latest_revision()
     )
@@ -61,8 +62,8 @@ async def test_create_comparison_summary_task(
 
 
 async def test_create_comparison_summary(
-    alm_client: AsyncClient, alm_src_client: AsyncClient, config
-):
+    alm_client: AsyncClient, alm_src_client: AsyncClient, config: PyVersionConfig
+) -> None:
     src_rev, latest_rev = await gather(
         alm_src_client.alm.get_latest_revision(), alm_client.alm.get_latest_revision()
     )
@@ -76,8 +77,8 @@ async def test_create_comparison_summary(
 
 
 async def test_create_comparison_report(
-    alm_client: AsyncClient, alm_src_client: AsyncClient, config
-):
+    alm_client: AsyncClient, alm_src_client: AsyncClient, config: PyVersionConfig
+) -> None:
     src_rev, latest_rev = await gather(
         alm_src_client.alm.get_latest_revision(), alm_client.alm.get_latest_revision()
     )
@@ -91,7 +92,9 @@ async def test_create_comparison_report(
     assert report is not None
 
 
-async def test_sync_models(alm_client: AsyncClient, alm_src_client: AsyncClient, config):
+async def test_sync_models(
+    alm_client: AsyncClient, alm_src_client: AsyncClient, config: PyVersionConfig
+) -> None:
     src_rev, latest_rev = await gather(
         alm_src_client.alm.get_latest_revision(), alm_client.alm.get_latest_revision()
     )
@@ -106,7 +109,7 @@ async def test_sync_models(alm_client: AsyncClient, alm_src_client: AsyncClient,
     assert sync_task.result.target_revision_id == latest_rev.id
 
 
-async def test_list_models_for_revision(alm_client: AsyncClient):
+async def test_list_models_for_revision(alm_client: AsyncClient) -> None:
     rev = await alm_client.alm.get_latest_revision()
     assert isinstance(rev, Revision)
     model_revs = await alm_client.alm.get_models_for_revision(rev.id)
@@ -114,7 +117,7 @@ async def test_list_models_for_revision(alm_client: AsyncClient):
     assert all(isinstance(rev, ModelRevision) for rev in model_revs)
 
 
-async def test_list_sync_tasks(alm_client: AsyncClient):
+async def test_list_sync_tasks(alm_client: AsyncClient) -> None:
     tasks = await alm_client.alm.get_sync_tasks()
     assert isinstance(tasks, list)
     assert all(isinstance(task, TaskSummary) for task in tasks)

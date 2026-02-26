@@ -11,46 +11,47 @@ from anaplan_sdk.models.scim import (
     User,
     field,
 )
+from tests.conftest import PyVersionConfig
 
 
-async def test_get_service_provider_config(client: AsyncClient):
+async def test_get_service_provider_config(client: AsyncClient) -> None:
     conf = await client.scim.get_service_provider_config()
     assert isinstance(conf, ServiceProviderConfig)
 
 
-async def test_get_resource_types(client: AsyncClient):
+async def test_get_resource_types(client: AsyncClient) -> None:
     res_types = await client.scim.get_resource_types()
     assert isinstance(res_types, list)
     assert all(isinstance(r, Resource) for r in res_types)
 
 
-async def test_get_resource_schemas(client: AsyncClient):
+async def test_get_resource_schemas(client: AsyncClient) -> None:
     schemas = await client.scim.get_resource_schemas()
     assert isinstance(schemas, list)
     assert all(isinstance(s, Schema) for s in schemas)
 
 
-async def test_get_users(client: AsyncClient):
+async def test_get_users(client: AsyncClient) -> None:
     users = await client.scim.get_users()
     assert isinstance(users, list)
     assert all(isinstance(u, User) for u in users)
 
 
-async def test_get_user_filtered(client: AsyncClient, name: str = "test.user@valantic.com"):
+async def test_get_user_filtered(client: AsyncClient, name: str = "test.user@valantic.com") -> None:
     users = await client.scim.get_users(field("userName") == name)
     assert isinstance(users, list)
     assert all(isinstance(u, User) for u in users)
     assert all(u.user_name == name for u in users)
 
 
-async def test_get_user(client: AsyncClient, config):
+async def test_get_user(client: AsyncClient, config: PyVersionConfig) -> None:
     user = await client.scim.get_user(config.scim_user_id)
     assert isinstance(user, User)
     assert user.id == config.scim_user_id
     assert isinstance(user.meta, MetaWithDates)
 
 
-async def test_replace_user(client: AsyncClient, config):
+async def test_replace_user(client: AsyncClient, config: PyVersionConfig) -> None:
     user = await client.scim.replace_user(
         config.scim_user_id,
         ReplaceUserInput(
@@ -65,7 +66,7 @@ async def test_replace_user(client: AsyncClient, config):
     assert user.name.family_name == "User"
 
 
-async def test_create_update_user(client: AsyncClient, config):
+async def test_create_update_user(client: AsyncClient, config: PyVersionConfig) -> None:
     user = await client.scim.update_user(
         config.scim_user_id, [Replace(path="active", value=False), Remove(path="entitlements")]
     )
