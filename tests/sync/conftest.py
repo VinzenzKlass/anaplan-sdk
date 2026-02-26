@@ -3,14 +3,14 @@ import os
 import pytest
 
 from anaplan_sdk import Client
+from tests.conftest import PyVersionConfig
 
 
 @pytest.fixture(scope="session")
-def client(model_ids_for_py_version: tuple[str, str]) -> Client:
-    workspace_id, model_id = model_ids_for_py_version
+def client(config: PyVersionConfig) -> Client:
     return Client(
-        workspace_id=workspace_id,
-        model_id=model_id,
+        workspace_id=config.workspace_id,
+        model_id=config.model_id,
         certificate=os.environ["ANAPLAN_SDK_TEST_CERT"],
         private_key=os.environ["ANAPLAN_SDK_TEST_PK"],
         retry_count=3,
@@ -20,11 +20,10 @@ def client(model_ids_for_py_version: tuple[str, str]) -> Client:
 
 
 @pytest.fixture(scope="session")
-def client_small_pages(model_ids_for_py_version: tuple[str, str]) -> Client:
-    workspace_id, model_id = model_ids_for_py_version
+def client_small_pages(config: PyVersionConfig) -> Client:
     return Client(
-        workspace_id=workspace_id,
-        model_id=model_id,
+        workspace_id=config.workspace_id,
+        model_id=config.model_id,
         certificate=os.environ["ANAPLAN_SDK_TEST_CERT"],
         private_key=os.environ["ANAPLAN_SDK_TEST_PK"],
         page_size=100,
@@ -35,35 +34,26 @@ def client_small_pages(model_ids_for_py_version: tuple[str, str]) -> Client:
 
 
 @pytest.fixture(scope="session")
-def alm_client(client: Client, alm_model_id: str) -> Client:
-    return client.with_model(alm_model_id)
+def alm_client(client: Client, config: PyVersionConfig) -> Client:
+    return client.with_model(config.alm_model_id_sync)
 
 
 @pytest.fixture(scope="session")
-def alm_src_client(client: Client, alm_src_model_id: str) -> Client:
-    return client.with_model(alm_src_model_id)
+def alm_src_client(client: Client, config: PyVersionConfig) -> Client:
+    return client.with_model(config.alm_src_model_id_sync)
 
 
 @pytest.fixture(scope="session")
-def alm_src_model_id(py_version: str) -> str:
-    if "3.10" in py_version:
-        return "662239743F56420EBECAE7EE0659475C"
-    if "3.11" in py_version:
-        return "4FCB1B5224F64339AADC7B322E1663EF"
-    if "3.12" in py_version:
-        return "A68B26D67D00443FB8A3428CC83E427D"
-    return "5327704441464F36B4B05C6BF9DFACD2"
-
-
-@pytest.fixture(scope="session")
-def alm_model_id(py_version: str) -> str:
-    if "3.10" in py_version:
-        return "7538F3BE46B94F208C6AF5051919E56E"
-    if "3.11" in py_version:
-        return "5C31E832E0B04567B5A8784B25AF3572"
-    if "3.12" in py_version:
-        return "7F51D466D915425CA80BEDF54BF364AE"
-    return "33A804FE8FE34AC291A6E866CA6B2284"
+def test_integration_ids(config: PyVersionConfig) -> list[str]:
+    return [
+        config.test_integration_sync,
+        "040a5b1572d74e14adbbc8bada248f41",
+        "7839b6bd6c0649acad13cf9d38a374f6",
+        "fc24f171c6ba49b49b19b4502f98e62d",
+        "a1b5719444444e678eb3b6bbcc137e1a",
+        "d1108b906b9c4447b5a62af8f2938a5d",
+        "7fede57c307b46d394b892456bc2083e",
+    ]
 
 
 @pytest.fixture(scope="session")
@@ -75,52 +65,6 @@ def broken_client() -> Client:
         private_key=os.environ["ANAPLAN_SDK_TEST_PK"],
         retry_count=1,
     )
-
-
-@pytest.fixture(scope="session")
-def test_integration(py_version: str) -> str:
-    if "3.10" in py_version:
-        return "44bd0bd4606b4f77b62e70d5ff617f3f"
-    if "3.11" in py_version:
-        return "dfcf1caace4f41748fc589e83c68c65a"
-    if "3.12" in py_version:
-        return "18e2c03b0bdf4593bdd964786891ead8"
-    return "c5bd6fd4b9414ea0959795ccebc8126a"
-
-
-@pytest.fixture(scope="session")
-def test_integration_ids(test_integration: str) -> list[str]:
-    return [
-        test_integration,
-        "040a5b1572d74e14adbbc8bada248f41",
-        "7839b6bd6c0649acad13cf9d38a374f6",
-        "fc24f171c6ba49b49b19b4502f98e62d",
-        "a1b5719444444e678eb3b6bbcc137e1a",
-        "d1108b906b9c4447b5a62af8f2938a5d",
-        "7fede57c307b46d394b892456bc2083e",
-    ]
-
-
-@pytest.fixture(scope="session")
-def test_notification(py_version: str) -> str:
-    if "3.10" in py_version:
-        return "efc8e3340c054f00bc20dbab1719531f"
-    if "3.11" in py_version:
-        return "81f0e8c718ed47ada55ce9b88dad548f"
-    if "3.12" in py_version:
-        return "d90749ebb0e94692b4eaba1963cf0959"
-    return "393d6e91e1874e28baccd7441d28ba36"
-
-
-@pytest.fixture(scope="session")
-def test_flow(py_version: str) -> str:
-    if "3.10" in py_version:
-        return "8f9a377127844984b12775e9ca072108"
-    if "3.11" in py_version:
-        return "240a3d55754843be824cb4f97e48e061"
-    if "3.12" in py_version:
-        return "afc6cec5d4b343c6abb4f0b3d41f1f7f"
-    return "61f2a2b05ac64598bfeb6d9eb7eff97a"
 
 
 @pytest.fixture(scope="session")

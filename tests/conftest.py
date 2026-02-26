@@ -2,6 +2,7 @@ import logging
 import os
 import string
 import sys
+from dataclasses import dataclass
 from random import choices
 from typing import Any, Callable
 
@@ -15,22 +16,111 @@ logging.getLogger("httpx").setLevel(logging.ERROR)
 logging.getLogger("anaplan_sdk").setLevel(logging.INFO)
 
 
+@dataclass(slots=True, frozen=True, eq=False)
+class PyVersionConfig:
+    workspace_id: str
+    model_id: str
+    alm_src_model_id_async: str
+    alm_model_id_async: str
+    test_integration_async: str
+    test_notification_async: str
+    test_flow_async: str
+    alm_src_model_id_sync: str
+    alm_model_id_sync: str
+    test_integration_sync: str
+    test_notification_sync: str
+    test_flow_sync: str
+    connection_id: str = "8b2d5f3a2ff64f13ab52e5b993896386"
+    error_run_id: str = "910a68fb814e4225ad683bdafb70ae65"
+    scim_user_id: str = "38a0546fd5894c1fac87f8fb71566b3f"
+
+
 @pytest.fixture(scope="session")
-def model_ids_for_py_version(py_version: str) -> tuple[str, str]:
-    demo_tenant_id = "8a81b09d599f3c6e0159f605560c2630"
+def config(py_version: str) -> PyVersionConfig:
+    workspace_id = "8a81b09d599f3c6e0159f605560c2630"
     if "3.10" in py_version:
-        return demo_tenant_id, "060D1DD6C9D04DD4BF03BA96C1C4B93C"
+        return PyVersionConfig(
+            workspace_id=workspace_id,
+            model_id="060D1DD6C9D04DD4BF03BA96C1C4B93C",
+            alm_src_model_id_async="C852660C6AF547258FB6B97D4942AB27",
+            alm_model_id_async="174F0F20D5A84FF09C812E95B8E50997",
+            test_integration_async="840ccd8a279a454d99577d9538f24f09",
+            test_notification_async="bfe29c0ff7434bde96c94ce1ec1b8e0a",
+            test_flow_async="35e19e2f0f594d589f07fd8ba98c30a8",
+            alm_src_model_id_sync="662239743F56420EBECAE7EE0659475C",
+            alm_model_id_sync="7538F3BE46B94F208C6AF5051919E56E",
+            test_integration_sync="44bd0bd4606b4f77b62e70d5ff617f3f",
+            test_notification_sync="efc8e3340c054f00bc20dbab1719531f",
+            test_flow_sync="8f9a377127844984b12775e9ca072108",
+        )
     if "3.11" in py_version:
-        return demo_tenant_id, "D2D29CEE237C422099D83DCC4338CEA6"
+        return PyVersionConfig(
+            workspace_id=workspace_id,
+            model_id="D2D29CEE237C422099D83DCC4338CEA6",
+            alm_src_model_id_async="C042E6A3F0334DEC9C826E1E12947789",
+            alm_model_id_async="FFBB7D26E61040EBB5CACD80F7F8A01B",
+            test_integration_async="c0fa795faac047468a59c8dbe3752d75",
+            test_notification_async="e2c709c74998460c8688b641cde07cd3",
+            test_flow_async="0ca27f18a3f04a1382ecd1745609329b",
+            alm_src_model_id_sync="4FCB1B5224F64339AADC7B322E1663EF",
+            alm_model_id_sync="5C31E832E0B04567B5A8784B25AF3572",
+            test_integration_sync="dfcf1caace4f41748fc589e83c68c65a",
+            test_notification_sync="81f0e8c718ed47ada55ce9b88dad548f",
+            test_flow_sync="240a3d55754843be824cb4f97e48e061",
+        )
     if "3.12" in py_version:
-        return demo_tenant_id, "6EE2A426C16B464193498C1FE28972D1"
+        return PyVersionConfig(
+            workspace_id=workspace_id,
+            model_id="6EE2A426C16B464193498C1FE28972D1",
+            alm_src_model_id_async="E130519009E54304A54D8D9F1C6D2725",
+            alm_model_id_async="FDB11C592E9445D78337F01BABC89880",
+            test_integration_async="0204ea3261c8431e9e36ff1239c16247",
+            test_notification_async="e0f3d33a9c114e3a9c0e0908cffdb5e3",
+            test_flow_async="c9fd9841222d43d9886758ba4db4c340",
+            alm_src_model_id_sync="A68B26D67D00443FB8A3428CC83E427D",
+            alm_model_id_sync="7F51D466D915425CA80BEDF54BF364AE",
+            test_integration_sync="18e2c03b0bdf4593bdd964786891ead8",
+            test_notification_sync="d90749ebb0e94692b4eaba1963cf0959",
+            test_flow_sync="afc6cec5d4b343c6abb4f0b3d41f1f7f",
+        )
     if "3.13" in py_version:
-        return demo_tenant_id, "A7A1F7D149054E3080C95C8A085738B5"
+        return PyVersionConfig(
+            workspace_id=workspace_id,
+            model_id="A7A1F7D149054E3080C95C8A085738B5",
+            alm_src_model_id_async="12A4D6B9A816481F83F795F857407049",
+            alm_model_id_async="0CBB17195E5D445A9A3692F481D66CBE",
+            test_integration_async="cf9e1cf27a0f4eddb37a2a4807fd0ffc",
+            test_notification_async="e57b5620f006444a9324baaa4bd891ff",
+            test_flow_async="c330ca2eda974650bd99fea50b0e3acd",
+            alm_src_model_id_sync="5327704441464F36B4B05C6BF9DFACD2",
+            alm_model_id_sync="33A804FE8FE34AC291A6E866CA6B2284",
+            test_integration_sync="c5bd6fd4b9414ea0959795ccebc8126a",
+            test_notification_sync="393d6e91e1874e28baccd7441d28ba36",
+            test_flow_sync="61f2a2b05ac64598bfeb6d9eb7eff97a",
+        )
     if "3.14" in py_version:
-        return demo_tenant_id, "1D1741C3DD1042A68D8336B328C2324E"
+        return PyVersionConfig(
+            workspace_id=workspace_id,
+            model_id="1D1741C3DD1042A68D8336B328C2324E",
+            alm_src_model_id_async="12A4D6B9A816481F83F795F857407049",
+            alm_model_id_async="0CBB17195E5D445A9A3692F481D66CBE",
+            test_integration_async="cf9e1cf27a0f4eddb37a2a4807fd0ffc",
+            test_notification_async="e57b5620f006444a9324baaa4bd891ff",
+            test_flow_async="c330ca2eda974650bd99fea50b0e3acd",
+            alm_src_model_id_sync="5327704441464F36B4B05C6BF9DFACD2",
+            alm_model_id_sync="33A804FE8FE34AC291A6E866CA6B2284",
+            test_integration_sync="c5bd6fd4b9414ea0959795ccebc8126a",
+            test_notification_sync="393d6e91e1874e28baccd7441d28ba36",
+            test_flow_sync="61f2a2b05ac64598bfeb6d9eb7eff97a",
+        )
 
     logging.fatal(f"Unsupported Python version: {py_version}")
     exit(1)
+
+
+@pytest.fixture(scope="session")
+def model_ids_for_py_version(config: PyVersionConfig) -> tuple[str, str]:
+    return config.workspace_id, config.model_id
 
 
 @pytest.fixture(scope="session")
@@ -46,21 +136,6 @@ def list_items_long() -> list[dict[str, int]]:
 @pytest.fixture(scope="session")
 def list_items_short() -> list[dict[str, int]]:
     return [{"name": i, "code": i} for i in range(1_000)]  # Single batch
-
-
-@pytest.fixture(scope="session")
-def connection_id() -> str:
-    return "8b2d5f3a2ff64f13ab52e5b993896386"
-
-
-@pytest.fixture(scope="session")
-def error_run_id() -> str:
-    return "910a68fb814e4225ad683bdafb70ae65"
-
-
-@pytest.fixture(scope="session")
-def scim_user_id() -> str:
-    return "38a0546fd5894c1fac87f8fb71566b3f"
 
 
 @pytest.fixture

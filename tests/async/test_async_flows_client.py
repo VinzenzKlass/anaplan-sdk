@@ -32,8 +32,8 @@ async def test_get_flow(client, registry):
     assert isinstance(flow, Flow)
 
 
-async def test_run_flow(client, test_flow):
-    run_id = await client.cw.flows.run_flow(test_flow)
+async def test_run_flow(client, config):
+    run_id = await client.cw.flows.run_flow(config.test_flow_async)
     assert run_id is not None
 
 

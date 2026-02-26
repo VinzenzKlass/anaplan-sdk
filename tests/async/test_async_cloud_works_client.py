@@ -114,8 +114,8 @@ async def test_update_process_integration_dict(client, registry, process_integra
     await client.cw.update_integration(registry["integrations"][-1], process_integration_pydantic)
 
 
-async def test_run_integration(client, test_integration, registry):
-    run_id = await client.cw.run_integration(test_integration)
+async def test_run_integration(client, config, registry):
+    run_id = await client.cw.run_integration(config.test_integration_async)
     assert run_id is not None
     registry["run_id"] = run_id
 
@@ -159,11 +159,9 @@ async def test_update_schedule_dict(client, registry, schedule_dict):
     await client.cw.update_schedule(registry["integrations"][0], schedule_dict)
 
 
-async def test_update_notification_dict(
-    client, test_notification, notification_dict, test_integration
-):
-    notification_dict["integrationIds"] = [test_integration]
-    await client.cw.update_notification_config(test_notification, notification_dict)
+async def test_update_notification_dict(client, config, notification_dict):
+    notification_dict["integrationIds"] = [config.test_integration_async]
+    await client.cw.update_notification_config(config.test_notification_async, notification_dict)
 
 
 async def test_delete_notification(client, registry):
