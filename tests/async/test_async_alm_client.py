@@ -29,8 +29,8 @@ async def test_get_latest_revision(alm_client: AsyncClient):
     assert isinstance(rev, Revision)
 
 
-async def test_list_syncable_revisions(alm_client: AsyncClient, alm_src_model_id: str):
-    revisions = await alm_client.alm.get_syncable_revisions(alm_src_model_id)
+async def test_list_syncable_revisions(alm_client: AsyncClient, config):
+    revisions = await alm_client.alm.get_syncable_revisions(config.alm_src_model_id_async)
     assert isinstance(revisions, list)
     assert all(isinstance(rev, Revision) for rev in revisions)
 
@@ -47,7 +47,7 @@ async def test_create_revision(alm_src_client: AsyncClient):
 
 
 async def test_create_comparison_summary_task(
-    alm_client: AsyncClient, alm_src_client: AsyncClient, alm_src_model_id: str
+    alm_client: AsyncClient, alm_src_client: AsyncClient, config
 ):
     src_rev, latest_rev = await gather(
         alm_src_client.alm.get_latest_revision(), alm_client.alm.get_latest_revision()
@@ -55,13 +55,13 @@ async def test_create_comparison_summary_task(
     assert isinstance(src_rev, Revision)
     assert isinstance(latest_rev, Revision)
     report_task = await alm_client.alm.create_comparison_summary(
-        src_rev.id, alm_src_model_id, latest_rev.id, False
+        src_rev.id, config.alm_src_model_id_async, latest_rev.id, False
     )
     assert isinstance(report_task, ReportTask)
 
 
 async def test_create_comparison_summary(
-    alm_client: AsyncClient, alm_src_client: AsyncClient, alm_src_model_id: str
+    alm_client: AsyncClient, alm_src_client: AsyncClient, config
 ):
     src_rev, latest_rev = await gather(
         alm_src_client.alm.get_latest_revision(), alm_client.alm.get_latest_revision()
@@ -69,14 +69,14 @@ async def test_create_comparison_summary(
     assert isinstance(src_rev, Revision)
     assert isinstance(latest_rev, Revision)
     report = await alm_client.alm.create_comparison_summary(
-        src_rev.id, alm_src_model_id, latest_rev.id
+        src_rev.id, config.alm_src_model_id_async, latest_rev.id
     )
     assert isinstance(report, SummaryReport)
     assert sum((report.totals.created, report.totals.modified, report.totals.deleted)) > 0
 
 
 async def test_create_comparison_report(
-    alm_client: AsyncClient, alm_src_client: AsyncClient, alm_src_model_id: str
+    alm_client: AsyncClient, alm_src_client: AsyncClient, config
 ):
     src_rev, latest_rev = await gather(
         alm_src_client.alm.get_latest_revision(), alm_client.alm.get_latest_revision()
@@ -84,22 +84,22 @@ async def test_create_comparison_report(
     assert isinstance(src_rev, Revision)
     assert isinstance(latest_rev, Revision)
     report_task = await alm_client.alm.create_comparison_report(
-        src_rev.id, alm_src_model_id, latest_rev.id
+        src_rev.id, config.alm_src_model_id_async, latest_rev.id
     )
     assert isinstance(report_task, ReportTask)
     report = await alm_client.alm.get_comparison_report(report_task)
     assert report is not None
 
 
-async def test_sync_models(
-    alm_client: AsyncClient, alm_src_client: AsyncClient, alm_src_model_id: str
-):
+async def test_sync_models(alm_client: AsyncClient, alm_src_client: AsyncClient, config):
     src_rev, latest_rev = await gather(
         alm_src_client.alm.get_latest_revision(), alm_client.alm.get_latest_revision()
     )
     assert isinstance(src_rev, Revision)
     assert isinstance(latest_rev, Revision)
-    sync_task = await alm_client.alm.sync_models(src_rev.id, alm_src_model_id, latest_rev.id, True)
+    sync_task = await alm_client.alm.sync_models(
+        src_rev.id, config.alm_src_model_id_async, latest_rev.id, True
+    )
     assert isinstance(sync_task, CompletedSyncTask)
     assert isinstance(sync_task.result, SyncTaskResult)
     assert sync_task.result.source_revision_id == src_rev.id
