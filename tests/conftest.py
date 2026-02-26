@@ -1,32 +1,13 @@
 import logging
+import os
 import string
 import sys
-from os import getenv
 from random import choices
-from typing import Any
+from typing import Any, Callable
 
 import pytest
 
-from anaplan_sdk.models.cloud_works import (
-    AnaplanSource,
-    AnaplanTarget,
-    AzureBlobConnectionInput,
-    ConnectionInput,
-    FileSource,
-    FileSourceInput,
-    FileTarget,
-    IntegrationInput,
-    IntegrationJob,
-    IntegrationJobInput,
-    IntegrationProcessInput,
-    NotificationConfigInput,
-    NotificationInput,
-    NotificationItemInput,
-    ScheduleInput,
-    SingleIntegration,
-    TableSource,
-    TableTarget,
-)
+import anaplan_sdk.models.cloud_works as cwm
 from anaplan_sdk.models.flows import FlowInput, FlowStepInput
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
@@ -35,113 +16,133 @@ logging.getLogger("anaplan_sdk").setLevel(logging.INFO)
 
 
 @pytest.fixture(scope="session")
-def py_version():
+def model_ids_for_py_version(py_version: str) -> tuple[str, str]:
+    demo_tenant_id = "8a81b09d599f3c6e0159f605560c2630"
+    if "3.10" in py_version:
+        return demo_tenant_id, "060D1DD6C9D04DD4BF03BA96C1C4B93C"
+    if "3.11" in py_version:
+        return demo_tenant_id, "D2D29CEE237C422099D83DCC4338CEA6"
+    if "3.12" in py_version:
+        return demo_tenant_id, "6EE2A426C16B464193498C1FE28972D1"
+    if "3.13" in py_version:
+        return demo_tenant_id, "A7A1F7D149054E3080C95C8A085738B5"
+    if "3.14" in py_version:
+        return demo_tenant_id, "1D1741C3DD1042A68D8336B328C2324E"
+
+    logging.fatal(f"Unsupported Python version: {py_version}")
+    exit(1)
+
+
+@pytest.fixture(scope="session")
+def py_version() -> str:
     return f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
 
 
 @pytest.fixture(scope="session")
-def list_items_long():
+def list_items_long() -> list[dict[str, int]]:
     return [{"name": i, "code": i} for i in range(200_000)]  # Force several batches
 
 
 @pytest.fixture(scope="session")
-def list_items_short():
+def list_items_short() -> list[dict[str, int]]:
     return [{"name": i, "code": i} for i in range(1_000)]  # Single batch
 
 
 @pytest.fixture(scope="session")
-def connection_id():
+def connection_id() -> str:
     return "8b2d5f3a2ff64f13ab52e5b993896386"
 
 
 @pytest.fixture(scope="session")
-def error_run_id():
+def error_run_id() -> str:
     return "910a68fb814e4225ad683bdafb70ae65"
 
 
 @pytest.fixture(scope="session")
-def scim_user_id():
+def scim_user_id() -> str:
     return "38a0546fd5894c1fac87f8fb71566b3f"
 
 
 @pytest.fixture
-def name():
+def name() -> str:
     return "Test_" + "".join(choices(string.ascii_uppercase + string.digits, k=12))
 
 
 @pytest.fixture
-def az_blob_connection(name):
-    return ConnectionInput(
+def az_blob_connection(name: str) -> cwm.ConnectionInput:
+    return cwm.ConnectionInput(
         type="AzureBlob",
-        body=AzureBlobConnectionInput(
-            storage_account_name=getenv("AZ_STORAGE_ACCOUNT"),
+        body=cwm.AzureBlobConnectionInput(
+            storage_account_name=os.environ["AZ_STORAGE_ACCOUNT"],
             container_name="raw",
             name=name,
-            sas_token=getenv("AZ_STORAGE_SAS_TOKEN"),
+            sas_token=os.environ["AZ_STORAGE_SAS_TOKEN"],
         ),
     )
 
 
 @pytest.fixture
-def az_blob_connection_dict(name):
+def az_blob_connection_dict(name: str) -> dict[str, Any]:
     return {
         "type": "AzureBlob",
         "body": {
-            "storageAccountName": getenv("AZ_STORAGE_ACCOUNT"),
+            "storageAccountName": os.environ["AZ_STORAGE_ACCOUNT"],
             "containerName": "raw",
             "name": name,
-            "sasToken": getenv("AZ_STORAGE_SAS_TOKEN"),
+            "sasToken": os.environ["AZ_STORAGE_SAS_TOKEN"],
         },
     }
 
 
 @pytest.fixture
-def integration_pydantic(name, connection_id):
-    source = FileSourceInput(
+def integration_pydantic(name: str, connection_id: str) -> cwm.IntegrationInput:
+    source = cwm.FileSourceInput(
         type="AzureBlob", connection_id=connection_id, file="dummy/liquor_sales.csv"
     )
-    target = AnaplanTarget(action_id=112000000064, file_id=113000000055)
-    return IntegrationInput(
+    target = cwm.AnaplanTarget(action_id=112000000064, file_id=113000000055)
+    return cwm.IntegrationInput(
         name=name,
-        workspace_id=getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),
-        model_id=getenv("ANAPLAN_SDK_TEST_MODEL_ID"),
-        jobs=[IntegrationJobInput(type="AzureBlobToAnaplan", sources=[source], targets=[target])],
+        workspace_id=os.environ["ANAPLAN_SDK_TEST_WORKSPACE_ID"],
+        model_id=os.environ["ANAPLAN_SDK_TEST_MODEL_ID"],
+        jobs=[
+            cwm.IntegrationJobInput(type="AzureBlobToAnaplan", sources=[source], targets=[target])
+        ],
     )
 
 
 @pytest.fixture
-def multi_step_integration_pydantic(name, connection_id):
-    source = FileSourceInput(
+def multi_step_integration_pydantic(name: str, connection_id: str) -> cwm.IntegrationInput:
+    source = cwm.FileSourceInput(
         type="AzureBlob", connection_id=connection_id, file="dummy/liquor_sales.csv"
     )
-    target = AnaplanTarget(action_id=112000000064, file_id=113000000055)
-    job = IntegrationJobInput(type="AzureBlobToAnaplan", sources=[source], targets=[target])
-    return IntegrationInput(
+    target = cwm.AnaplanTarget(action_id=112000000064, file_id=113000000055)
+    job = cwm.IntegrationJobInput(type="AzureBlobToAnaplan", sources=[source], targets=[target])
+    return cwm.IntegrationInput(
         name=name,
         process_id=118000000012,
-        workspace_id=getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),
-        model_id=getenv("ANAPLAN_SDK_TEST_MODEL_ID"),
+        workspace_id=os.environ["ANAPLAN_SDK_TEST_WORKSPACE_ID"],
+        model_id=os.environ["ANAPLAN_SDK_TEST_MODEL_ID"],
         jobs=[job, job],
     )
 
 
 @pytest.fixture
-def process_integration_pydantic(name):
-    return IntegrationProcessInput(
+def process_integration_pydantic(name: str) -> cwm.IntegrationProcessInput:
+    return cwm.IntegrationProcessInput(
         name=name,
         process_id=118000000012,
-        workspace_id=getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),
-        model_id=getenv("ANAPLAN_SDK_TEST_MODEL_ID"),
+        workspace_id=os.environ["ANAPLAN_SDK_TEST_WORKSPACE_ID"],
+        model_id=os.environ["ANAPLAN_SDK_TEST_MODEL_ID"],
     )
 
 
 @pytest.fixture
-def integration_dict(name, connection_id):
+def integration_dict(name: str, connection_id: str) -> dict[str, Any]:
     return {
         "name": name,
         "version": "2.0",
-        "workspaceId": getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),
-        "modelId": getenv("ANAPLAN_SDK_TEST_MODEL_ID"),
+        "workspaceId": os.environ["ANAPLAN_SDK_TEST_WORKSPACE_ID"],
+        "modelId": os.environ["ANAPLAN_SDK_TEST_MODEL_ID"],
         "nuxVisible": False,
         "jobs": [
             {
@@ -162,12 +163,12 @@ def integration_dict(name, connection_id):
 
 
 @pytest.fixture
-def multi_step_integration_dict(name, connection_id) -> dict[str, Any]:
+def multi_step_integration_dict(name: str, connection_id: str) -> dict[str, Any]:
     return {
         "name": name,
         "version": "2.0",
-        "workspaceId": getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),
-        "modelId": getenv("ANAPLAN_SDK_TEST_MODEL_ID"),
+        "workspaceId": os.environ["ANAPLAN_SDK_TEST_WORKSPACE_ID"],
+        "modelId": os.environ["ANAPLAN_SDK_TEST_MODEL_ID"],
         "processId": "118000000012",
         "nuxVisible": False,
         "jobs": [
@@ -202,19 +203,19 @@ def multi_step_integration_dict(name, connection_id) -> dict[str, Any]:
 
 
 @pytest.fixture
-def process_integration_dict(name):
+def process_integration_dict(name: str) -> dict[str, Any]:
     return {
         "name": name,
         "version": "2.0",
         "processId": 118000000012,
-        "workspaceId": getenv("ANAPLAN_SDK_TEST_WORKSPACE_ID"),
-        "modelId": getenv("ANAPLAN_SDK_TEST_MODEL_ID"),
+        "workspaceId": os.environ["ANAPLAN_SDK_TEST_WORKSPACE_ID"],
+        "modelId": os.environ["ANAPLAN_SDK_TEST_MODEL_ID"],
     }
 
 
 @pytest.fixture
-def schedule_pydantic(name):
-    return ScheduleInput(
+def schedule_pydantic(name: str) -> cwm.ScheduleInput:
+    return cwm.ScheduleInput(
         name=name,
         timezone="Europe/Paris",
         start_date="2027-01-01",
@@ -226,7 +227,7 @@ def schedule_pydantic(name):
 
 
 @pytest.fixture
-def schedule_dict(name):
+def schedule_dict(name: str) -> dict[str, Any]:
     return {
         "name": name,
         "type": "daily",
@@ -239,13 +240,13 @@ def schedule_dict(name):
 
 
 @pytest.fixture
-def notification_pydantic(name):
-    return NotificationInput(
+def notification_pydantic(name: str) -> cwm.NotificationInput:
+    return cwm.NotificationInput(
         integration_ids=[],
         channels=["in_app"],
-        notifications=NotificationConfigInput(
+        notifications=cwm.NotificationConfigInput(
             config=[
-                NotificationItemInput(
+                cwm.NotificationItemInput(
                     type="full_failure", users=["8a868cd97f8f98a3017fe45cbdc65e25"]
                 )
             ]
@@ -254,7 +255,7 @@ def notification_pydantic(name):
 
 
 @pytest.fixture
-def notification_dict(name):
+def notification_dict(name: str) -> dict[str, Any]:
     return {
         "integrationIds": [],
         "channels": ["in_app"],
@@ -265,7 +266,7 @@ def notification_dict(name):
 
 
 @pytest.fixture
-def flow_pydantic(name):
+def flow_pydantic(name: str) -> FlowInput:
     return FlowInput(
         name=name,
         steps=[
@@ -279,7 +280,7 @@ def flow_pydantic(name):
 
 
 @pytest.fixture
-def flow_dict(name):
+def flow_dict(name: str) -> dict[str, Any]:
     return {
         "name": name,
         "steps": [
@@ -293,13 +294,13 @@ def flow_dict(name):
 
 
 @pytest.fixture(scope="session")
-def integration_validator():
-    def validate(integrations: list[SingleIntegration]):
-        assert all(isinstance(i, SingleIntegration) for i in integrations)
+def integration_validator() -> Callable[[list[cwm.SingleIntegration]], None]:
+    def validate(integrations: list[cwm.SingleIntegration]) -> None:
+        assert all(isinstance(i, cwm.SingleIntegration) for i in integrations)
         assert all(
-            isinstance(i.jobs, list) and len(i.jobs) > 0 and isinstance(j, IntegrationJob)
+            isinstance(i.jobs, list) and len(i.jobs) > 0 and isinstance(j, cwm.IntegrationJob)
             for i in integrations[1:]
-            for j in i.jobs
+            for j in i.jobs  # pyright: ignore[reportOptionalIterable]
         )
         process, gbq_import, gbq_export, s3_import, s3_export, az_import, az_export = integrations
         assert (
@@ -309,16 +310,16 @@ def integration_validator():
         )
 
         integration_configs = (
-            (gbq_import, TableSource, AnaplanTarget),
-            (gbq_export, AnaplanSource, TableTarget),
-            (s3_import, FileSource, AnaplanTarget),
-            (s3_export, AnaplanSource, FileTarget),
-            (az_import, FileSource, AnaplanTarget),
-            (az_export, AnaplanSource, FileTarget),
+            (gbq_import, cwm.TableSource, cwm.AnaplanTarget),
+            (gbq_export, cwm.AnaplanSource, cwm.TableTarget),
+            (s3_import, cwm.FileSource, cwm.AnaplanTarget),
+            (s3_export, cwm.AnaplanSource, cwm.FileTarget),
+            (az_import, cwm.FileSource, cwm.AnaplanTarget),
+            (az_export, cwm.AnaplanSource, cwm.FileTarget),
         )
         assert all(
-            isinstance(integration.jobs[0].sources[0], source_type)
-            and isinstance(integration.jobs[0].targets[0], target_type)
+            isinstance(integration.jobs[0].sources[0], source_type)  # pyright: ignore
+            and isinstance(integration.jobs[0].targets[0], target_type)  # pyright: ignore
             for integration, source_type, target_type in integration_configs
         )
 

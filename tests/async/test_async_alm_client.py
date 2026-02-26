@@ -4,11 +4,12 @@ from uuid import uuid4
 
 from anaplan_sdk import AsyncClient
 from anaplan_sdk.models import (
+    CompletedSyncTask,
     ModelRevision,
     ReportTask,
     Revision,
     SummaryReport,
-    SyncTask,
+    SyncTaskResult,
     TaskSummary,
 )
 
@@ -51,6 +52,8 @@ async def test_create_comparison_summary_task(
     src_rev, latest_rev = await gather(
         alm_src_client.alm.get_latest_revision(), alm_client.alm.get_latest_revision()
     )
+    assert isinstance(src_rev, Revision)
+    assert isinstance(latest_rev, Revision)
     report_task = await alm_client.alm.create_comparison_summary(
         src_rev.id, alm_src_model_id, latest_rev.id, False
     )
@@ -63,6 +66,8 @@ async def test_create_comparison_summary(
     src_rev, latest_rev = await gather(
         alm_src_client.alm.get_latest_revision(), alm_client.alm.get_latest_revision()
     )
+    assert isinstance(src_rev, Revision)
+    assert isinstance(latest_rev, Revision)
     report = await alm_client.alm.create_comparison_summary(
         src_rev.id, alm_src_model_id, latest_rev.id
     )
@@ -76,6 +81,8 @@ async def test_create_comparison_report(
     src_rev, latest_rev = await gather(
         alm_src_client.alm.get_latest_revision(), alm_client.alm.get_latest_revision()
     )
+    assert isinstance(src_rev, Revision)
+    assert isinstance(latest_rev, Revision)
     report_task = await alm_client.alm.create_comparison_report(
         src_rev.id, alm_src_model_id, latest_rev.id
     )
@@ -90,14 +97,18 @@ async def test_sync_models(
     src_rev, latest_rev = await gather(
         alm_src_client.alm.get_latest_revision(), alm_client.alm.get_latest_revision()
     )
-    sync_task = await alm_client.alm.sync_models(src_rev.id, alm_src_model_id, latest_rev.id)
-    assert isinstance(sync_task, SyncTask)
+    assert isinstance(src_rev, Revision)
+    assert isinstance(latest_rev, Revision)
+    sync_task = await alm_client.alm.sync_models(src_rev.id, alm_src_model_id, latest_rev.id, True)
+    assert isinstance(sync_task, CompletedSyncTask)
+    assert isinstance(sync_task.result, SyncTaskResult)
     assert sync_task.result.source_revision_id == src_rev.id
     assert sync_task.result.target_revision_id == latest_rev.id
 
 
 async def test_list_models_for_revision(alm_client: AsyncClient):
     rev = await alm_client.alm.get_latest_revision()
+    assert isinstance(rev, Revision)
     model_revs = await alm_client.alm.get_models_for_revision(rev.id)
     assert isinstance(model_revs, list)
     assert all(isinstance(rev, ModelRevision) for rev in model_revs)

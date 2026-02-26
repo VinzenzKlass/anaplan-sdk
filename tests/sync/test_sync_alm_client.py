@@ -3,11 +3,12 @@ from uuid import uuid4
 
 from anaplan_sdk import Client
 from anaplan_sdk.models import (
+    CompletedSyncTask,
     ModelRevision,
     ReportTask,
     Revision,
     SummaryReport,
-    SyncTask,
+    SyncTaskResult,
     TaskSummary,
 )
 
@@ -44,21 +45,6 @@ def test_create_revision(alm_src_client: Client):
     assert revision.description == desc
 
 
-def test_create_comparison_report(
-    alm_client: Client, alm_src_client: Client, alm_src_model_id: str
-):
-    src_rev, latest_rev = (
-        alm_src_client.alm.get_latest_revision(),
-        alm_client.alm.get_latest_revision(),
-    )
-    report_task = alm_client.alm.create_comparison_report(
-        src_rev.id, alm_src_model_id, latest_rev.id
-    )
-    assert isinstance(report_task, ReportTask)
-    report = alm_client.alm.get_comparison_report(report_task)
-    assert report is not None
-
-
 def test_create_comparison_summary_task(
     alm_client: Client, alm_src_client: Client, alm_src_model_id: str
 ):
@@ -66,6 +52,8 @@ def test_create_comparison_summary_task(
         alm_src_client.alm.get_latest_revision(),
         alm_client.alm.get_latest_revision(),
     )
+    assert isinstance(src_rev, Revision)
+    assert isinstance(latest_rev, Revision)
     report_task = alm_client.alm.create_comparison_summary(
         src_rev.id, alm_src_model_id, latest_rev.id, False
     )
@@ -79,9 +67,28 @@ def test_create_comparison_summary(
         alm_src_client.alm.get_latest_revision(),
         alm_client.alm.get_latest_revision(),
     )
+    assert isinstance(src_rev, Revision)
+    assert isinstance(latest_rev, Revision)
     report = alm_client.alm.create_comparison_summary(src_rev.id, alm_src_model_id, latest_rev.id)
     assert isinstance(report, SummaryReport)
     assert sum((report.totals.created, report.totals.modified, report.totals.deleted)) > 0
+
+
+def test_create_comparison_report(
+    alm_client: Client, alm_src_client: Client, alm_src_model_id: str
+):
+    src_rev, latest_rev = (
+        alm_src_client.alm.get_latest_revision(),
+        alm_client.alm.get_latest_revision(),
+    )
+    assert isinstance(src_rev, Revision)
+    assert isinstance(latest_rev, Revision)
+    report_task = alm_client.alm.create_comparison_report(
+        src_rev.id, alm_src_model_id, latest_rev.id
+    )
+    assert isinstance(report_task, ReportTask)
+    report = alm_client.alm.get_comparison_report(report_task)
+    assert report is not None
 
 
 def test_sync_models(alm_client: Client, alm_src_client: Client, alm_src_model_id: str):
@@ -89,14 +96,18 @@ def test_sync_models(alm_client: Client, alm_src_client: Client, alm_src_model_i
         alm_src_client.alm.get_latest_revision(),
         alm_client.alm.get_latest_revision(),
     )
-    sync_task = alm_client.alm.sync_models(src_rev.id, alm_src_model_id, latest_rev.id)
-    assert isinstance(sync_task, SyncTask)
+    assert isinstance(src_rev, Revision)
+    assert isinstance(latest_rev, Revision)
+    sync_task = alm_client.alm.sync_models(src_rev.id, alm_src_model_id, latest_rev.id, True)
+    assert isinstance(sync_task, CompletedSyncTask)
+    assert isinstance(sync_task.result, SyncTaskResult)
     assert sync_task.result.source_revision_id == src_rev.id
     assert sync_task.result.target_revision_id == latest_rev.id
 
 
 def test_list_models_for_revision(alm_client: Client):
     rev = alm_client.alm.get_latest_revision()
+    assert isinstance(rev, Revision)
     model_revs = alm_client.alm.get_models_for_revision(rev.id)
     assert isinstance(model_revs, list)
     assert all(isinstance(rev, ModelRevision) for rev in model_revs)
