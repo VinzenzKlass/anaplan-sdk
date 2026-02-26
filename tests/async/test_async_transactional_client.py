@@ -1,8 +1,9 @@
 from calendar import monthrange
 from datetime import date
-from os import getenv
+from typing import Any
 
 from anaplan_sdk import AsyncClient
+from anaplan_sdk.exceptions import AnaplanException
 from anaplan_sdk.models import (
     CurrentPeriod,
     Dimension,
@@ -18,51 +19,59 @@ from anaplan_sdk.models import (
     ViewInfo,
 )
 
-
-async def test_wake_model(client: AsyncClient):
-    await client.tr.wake_model()
+test_list = 101000000318
 
 
-async def test_close_model(client: AsyncClient):
+async def test_wake_model(client: AsyncClient) -> None:
+    try:
+        await client.tr.wake_model()
+    except AnaplanException as e:
+        if "424" in str(e):
+            return  # Model is already awake, which is fine for the purposes of these tests
+        raise e
+
+
+async def test_close_model(client: AsyncClient) -> None:
     await client.with_model("C87EBE934BD442B1A798540E0CA5A877").tr.close_model()
 
 
-async def test_get_model(client: AsyncClient):
-    model_id = getenv("ANAPLAN_SDK_TEST_MODEL_ID")
+async def test_get_model(client: AsyncClient) -> None:
     model = await client.tr.get_model_details()
     assert isinstance(model, Model)
-    assert model.id == model_id
+    assert model.id == client._model_id  # pyright: ignore[reportPrivateUsage]
 
 
-async def test_list_modules(client: AsyncClient):
+async def test_list_modules(client: AsyncClient) -> None:
     modules = await client.tr.get_modules()
     assert isinstance(modules, list)
     assert len(modules) > 0
 
 
-async def test_list_lists(client: AsyncClient):
+async def test_list_lists(client: AsyncClient) -> None:
     lists = await client.tr.get_lists()
     assert isinstance(lists, list)
     assert len(lists) > 0
 
 
-async def test_list_line_items(client: AsyncClient):
+async def test_list_line_items(client: AsyncClient) -> None:
     items = await client.tr.get_line_items()
     assert isinstance(items, list)
     assert len(items) > 0
 
 
-async def test_get_list_meta(client: AsyncClient, test_list):
+async def test_get_list_meta(client: AsyncClient) -> None:
     meta = await client.tr.get_list_metadata(test_list)
     assert isinstance(meta, ListMetadata)
 
 
-async def test_get_model_status(client: AsyncClient):
+async def test_get_model_status(client: AsyncClient) -> None:
     status = await client.tr.get_model_status()
     assert isinstance(status, ModelStatus)
 
 
-async def test_long_list_insertion(client: AsyncClient, test_list, list_items_long):
+async def test_long_list_insertion(
+    client: AsyncClient, list_items_long: list[dict[str, Any]]
+) -> None:
     result = await client.tr.insert_list_items(test_list, list_items_long)
     assert isinstance(result, InsertionResult)
     assert result.failures == []
@@ -70,13 +79,17 @@ async def test_long_list_insertion(client: AsyncClient, test_list, list_items_lo
     assert result.total == 200_000
 
 
-async def test_long_list_deletion(client: AsyncClient, test_list, list_items_long):
+async def test_long_list_deletion(
+    client: AsyncClient, list_items_long: list[dict[str, Any]]
+) -> None:
     result = await client.tr.delete_list_items(test_list, list_items_long)
     assert result.deleted == 200_000
     assert result.failures == []
 
 
-async def test_short_list_insertion(client: AsyncClient, test_list, list_items_short):
+async def test_short_list_insertion(
+    client: AsyncClient, list_items_short: list[dict[str, Any]]
+) -> None:
     result = await client.tr.insert_list_items(test_list, list_items_short)
     assert isinstance(result, InsertionResult)
     assert result.failures == []
@@ -84,48 +97,50 @@ async def test_short_list_insertion(client: AsyncClient, test_list, list_items_s
     assert result.total == 1_000
 
 
-async def test_get_list_items(client: AsyncClient, test_list):
+async def test_get_list_items(client: AsyncClient) -> None:
     items = await client.tr.get_list_items(test_list, False)
     assert isinstance(items, list)
     assert len(items) == 1_000
     assert all(isinstance(item, ListItem) for item in items)
 
 
-async def test_get_list_items_raw(client: AsyncClient, test_list):
+async def test_get_list_items_raw(client: AsyncClient) -> None:
     items = await client.tr.get_list_items(test_list, True)
     assert isinstance(items, list)
     assert len(items) == 1_000
     assert all(isinstance(item, dict) for item in items)
 
 
-async def test_short_list_deletion(client: AsyncClient, test_list, list_items_short):
+async def test_short_list_deletion(
+    client: AsyncClient, list_items_short: list[dict[str, Any]]
+) -> None:
     result = await client.tr.delete_list_items(test_list, list_items_short)
     assert result.deleted == 1_000
     assert result.failures == []
 
 
-async def test_reset_list_index(client: AsyncClient, test_list):
+async def test_reset_list_index(client: AsyncClient) -> None:
     await client.tr.reset_list_index(test_list)
 
 
-async def test_list_views(client: AsyncClient):
+async def test_list_views(client: AsyncClient) -> None:
     views = await client.tr.get_views()
     assert isinstance(views, list)
     assert len(views) > 0
     assert all(isinstance(view, View) for view in views)
 
 
-async def test_get_view_info(client: AsyncClient):
-    info = await client.tr.get_view_info(102000000015)
+async def test_get_view_info(client: AsyncClient) -> None:
+    info = await client.tr.get_view_info(102000000204)
     assert isinstance(info, ViewInfo)
 
 
-async def test_get_current_period(client: AsyncClient):
+async def test_get_current_period(client: AsyncClient) -> None:
     period = await client.tr.get_current_period()
     assert isinstance(period, CurrentPeriod)
 
 
-async def test_set_current_period(client: AsyncClient):
+async def test_set_current_period(client: AsyncClient) -> None:
     today = date.today()
     last_day_of_month = date(today.year, today.month, monthrange(today.year, today.month)[1])
     period = await client.tr.set_current_period(today.strftime("%Y-%m-%d"))
@@ -133,26 +148,26 @@ async def test_set_current_period(client: AsyncClient):
     assert period.last_day == last_day_of_month.strftime("%Y-%m-%d")
 
 
-async def test_set_current_fiscal_year(client: AsyncClient):
+async def test_set_current_fiscal_year(client: AsyncClient) -> None:
     year = "FY25"
     fiscal_year = await client.tr.set_current_fiscal_year(year)
     assert isinstance(fiscal_year, FiscalYear)
     assert fiscal_year.year == year
 
 
-async def test_get_model_calendar(client: AsyncClient):
+async def test_get_model_calendar(client: AsyncClient) -> None:
     calendar = await client.tr.get_model_calendar()
     assert isinstance(calendar, MonthsQuartersYearsCalendar)
 
 
-async def test_get_dimension_items(client: AsyncClient):
-    items = await client.tr.get_dimension_items(109000000000)
+async def test_get_dimension_items(client: AsyncClient) -> None:
+    items = await client.tr.get_dimension_items(test_list)
     assert isinstance(items, list)
     assert all(isinstance(item, DimensionWithCode) for item in items)
 
 
-async def test_get_dimension_items_with_list_warns(client: AsyncClient, caplog):
-    items = await client.tr.get_dimension_items(101000000008)
+async def test_get_dimension_items_with_list_warns(client: AsyncClient, caplog: Any) -> None:
+    items = await client.tr.get_dimension_items(test_list)
     assert isinstance(items, list)
     assert all(isinstance(item, DimensionWithCode) for item in items)
     assert any(
@@ -161,7 +176,7 @@ async def test_get_dimension_items_with_list_warns(client: AsyncClient, caplog):
     )
 
 
-async def test_get_dimension_items_with_users_warns(client: AsyncClient, caplog):
+async def test_get_dimension_items_with_users_warns(client: AsyncClient, caplog: Any) -> None:
     items = await client.tr.get_dimension_items(101999999999)
     assert isinstance(items, list)
     assert all(isinstance(item, DimensionWithCode) for item in items)
@@ -171,7 +186,7 @@ async def test_get_dimension_items_with_users_warns(client: AsyncClient, caplog)
     )
 
 
-async def test_get_line_item_dimensions(client: AsyncClient):
-    items = await client.tr.get_line_item_dimensions(284000000077)
+async def test_get_line_item_dimensions(client: AsyncClient) -> None:
+    items = await client.tr.get_line_item_dimensions(1248000000000)
     assert isinstance(items, list)
     assert all(isinstance(item, Dimension) for item in items)
