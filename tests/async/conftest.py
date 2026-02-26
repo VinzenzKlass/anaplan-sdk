@@ -14,7 +14,7 @@ def client(config: PyVersionConfig) -> AsyncClient:
         certificate=os.environ["ANAPLAN_SDK_TEST_CERT"],
         private_key=os.environ["ANAPLAN_SDK_TEST_PK"],
         retry_count=3,
-        backoff=10,
+        backoff=5,
         timeout=120,
     )
 

@@ -1,7 +1,9 @@
 import logging
 import os
+import random
 import string
 import sys
+import time
 from dataclasses import dataclass
 from random import choices
 from typing import Any, Callable
@@ -33,6 +35,12 @@ class PyVersionConfig:
     connection_id: str = "8b2d5f3a2ff64f13ab52e5b993896386"
     error_run_id: str = "910a68fb814e4225ad683bdafb70ae65"
     scim_user_id: str = "38a0546fd5894c1fac87f8fb71566b3f"
+
+
+@pytest.fixture(autouse=True)
+def random_delay_between_tests():
+    yield
+    time.sleep(random.uniform(0, 3))  # Avoid hitting rate limit too often
 
 
 @pytest.fixture(scope="session")

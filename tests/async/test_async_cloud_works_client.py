@@ -233,6 +233,20 @@ async def test_create_notification_dict(
     await client.cw.create_notification_config(notification_dict)
 
 
+async def test_get_notification(client: AsyncClient, config: PyVersionConfig) -> None:
+    notification = await client.cw.get_notification_config(config.test_notification_sync)
+    assert isinstance(notification, cwm.NotificationConfig)
+
+
+async def test_get_notification_by_integration(
+    client: AsyncClient, registry: dict[str, Any]
+) -> None:
+    notification = await client.cw.get_notification_config(
+        integration_id=registry["integrations"][0]
+    )
+    assert isinstance(notification, cwm.NotificationConfig)
+
+
 async def test_get_run_error(client: AsyncClient, config: PyVersionConfig) -> None:
     run_error = await client.cw.get_run_error(config.error_run_id)
     assert isinstance(run_error, RunError)
