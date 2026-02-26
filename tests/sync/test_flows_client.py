@@ -30,8 +30,8 @@ def test_get_flow(client, registry):
     assert isinstance(flow, Flow)
 
 
-def test_run_flow(client, test_flow):
-    run_id = client.cw.flows.run_flow(test_flow)
+def test_run_flow(client, config):
+    run_id = client.cw.flows.run_flow(config.test_flow_sync)
     assert run_id is not None
 
 

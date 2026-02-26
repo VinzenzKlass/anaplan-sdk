@@ -173,8 +173,8 @@ async def test_create_notification_dict(client, notification_dict, registry):
     await client.cw.create_notification_config(notification_dict)
 
 
-async def test_get_run_error(client, error_run_id):
-    run_error = await client.cw.get_run_error(error_run_id)
+async def test_get_run_error(client, config):
+    run_error = await client.cw.get_run_error(config.error_run_id)
     assert isinstance(run_error, RunError)
 
 

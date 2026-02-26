@@ -43,33 +43,33 @@ async def test_get_user_filtered(client: AsyncClient, name: str = "test.user@val
     assert all(u.user_name == name for u in users)
 
 
-async def test_get_user(client: AsyncClient, scim_user_id: str):
-    user = await client.scim.get_user(scim_user_id)
+async def test_get_user(client: AsyncClient, config):
+    user = await client.scim.get_user(config.scim_user_id)
     assert isinstance(user, User)
-    assert user.id == scim_user_id
+    assert user.id == config.scim_user_id
     assert isinstance(user.meta, MetaWithDates)
 
 
-async def test_replace_user(client: AsyncClient, scim_user_id: str):
+async def test_replace_user(client: AsyncClient, config):
     user = await client.scim.replace_user(
-        scim_user_id,
+        config.scim_user_id,
         ReplaceUserInput(
-            id=scim_user_id,
+            id=config.scim_user_id,
             name=NameInput(given_name="Test", family_name="User"),
             user_name="test.user@valantic.com",
         ),
     )
     assert isinstance(user, User)
-    assert user.id == scim_user_id
+    assert user.id == config.scim_user_id
     assert user.name.given_name == "Test"
     assert user.name.family_name == "User"
 
 
-async def test_create_update_user(client: AsyncClient, scim_user_id: str):
+async def test_create_update_user(client: AsyncClient, config):
     user = await client.scim.update_user(
-        scim_user_id, [Replace(path="active", value=False), Remove(path="entitlements")]
+        config.scim_user_id, [Replace(path="active", value=False), Remove(path="entitlements")]
     )
     assert isinstance(user, User)
-    assert user.id == scim_user_id
+    assert user.id == config.scim_user_id
     assert user.active is False
     assert user.entitlements == []

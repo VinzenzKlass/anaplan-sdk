@@ -170,9 +170,9 @@ def az_blob_connection_dict(name: str) -> dict[str, Any]:
 
 
 @pytest.fixture
-def integration_pydantic(name: str, connection_id: str) -> cwm.IntegrationInput:
+def integration_pydantic(name: str, config: PyVersionConfig) -> cwm.IntegrationInput:
     source = cwm.FileSourceInput(
-        type="AzureBlob", connection_id=connection_id, file="dummy/liquor_sales.csv"
+        type="AzureBlob", connection_id=config.connection_id, file="dummy/liquor_sales.csv"
     )
     target = cwm.AnaplanTarget(action_id=112000000064, file_id=113000000055)
     return cwm.IntegrationInput(
@@ -186,9 +186,9 @@ def integration_pydantic(name: str, connection_id: str) -> cwm.IntegrationInput:
 
 
 @pytest.fixture
-def multi_step_integration_pydantic(name: str, connection_id: str) -> cwm.IntegrationInput:
+def multi_step_integration_pydantic(name: str, config: PyVersionConfig) -> cwm.IntegrationInput:
     source = cwm.FileSourceInput(
-        type="AzureBlob", connection_id=connection_id, file="dummy/liquor_sales.csv"
+        type="AzureBlob", connection_id=config.connection_id, file="dummy/liquor_sales.csv"
     )
     target = cwm.AnaplanTarget(action_id=112000000064, file_id=113000000055)
     job = cwm.IntegrationJobInput(type="AzureBlobToAnaplan", sources=[source], targets=[target])
@@ -212,7 +212,7 @@ def process_integration_pydantic(name: str) -> cwm.IntegrationProcessInput:
 
 
 @pytest.fixture
-def integration_dict(name: str, connection_id: str) -> dict[str, Any]:
+def integration_dict(name: str, config: PyVersionConfig) -> dict[str, Any]:
     return {
         "name": name,
         "version": "2.0",
@@ -224,7 +224,7 @@ def integration_dict(name: str, connection_id: str) -> dict[str, Any]:
                 "type": "AzureBlobToAnaplan",
                 "sources": [
                     {
-                        "connectionId": connection_id,
+                        "connectionId": config.connection_id,
                         "type": "AzureBlob",
                         "file": "dummy/liquor_sales.csv",
                     }
@@ -238,7 +238,7 @@ def integration_dict(name: str, connection_id: str) -> dict[str, Any]:
 
 
 @pytest.fixture
-def multi_step_integration_dict(name: str, connection_id: str) -> dict[str, Any]:
+def multi_step_integration_dict(name: str, config: PyVersionConfig) -> dict[str, Any]:
     return {
         "name": name,
         "version": "2.0",
@@ -251,7 +251,7 @@ def multi_step_integration_dict(name: str, connection_id: str) -> dict[str, Any]
                 "type": "AzureBlobToAnaplan",
                 "sources": [
                     {
-                        "connectionId": connection_id,
+                        "connectionId": config.connection_id,
                         "type": "AzureBlob",
                         "file": "dummy/liquor_sales.csv",
                     }
@@ -264,7 +264,7 @@ def multi_step_integration_dict(name: str, connection_id: str) -> dict[str, Any]
                 "type": "AzureBlobToAnaplan",
                 "sources": [
                     {
-                        "connectionId": connection_id,
+                        "connectionId": config.connection_id,
                         "type": "AzureBlob",
                         "file": "dummy/liquor_sales.csv",
                     }

@@ -170,8 +170,8 @@ def test_create_notification_dict(client, notification_dict, registry):
     client.cw.create_notification_config(notification_dict)
 
 
-def test_get_run_error(client, error_run_id):
-    run_error = client.cw.get_run_error(error_run_id)
+def test_get_run_error(client, config):
+    run_error = client.cw.get_run_error(config.error_run_id)
     assert isinstance(run_error, RunError)
 
 

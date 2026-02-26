@@ -43,33 +43,33 @@ def test_get_user_filtered(client: Client, name: str = "test.user@valantic.com")
     assert all(u.user_name == name for u in users)
 
 
-def test_get_user(client: Client, scim_user_id: str):
-    user = client.scim.get_user(scim_user_id)
+def test_get_user(client: Client, config):
+    user = client.scim.get_user(config.scim_user_id)
     assert isinstance(user, User)
-    assert user.id == scim_user_id
+    assert user.id == config.scim_user_id
     assert isinstance(user.meta, MetaWithDates)
 
 
-def test_replace_user(client: Client, scim_user_id: str):
+def test_replace_user(client: Client, config):
     user = client.scim.replace_user(
-        scim_user_id,
+        config.scim_user_id,
         ReplaceUserInput(
-            id=scim_user_id,
+            id=config.scim_user_id,
             name=NameInput(given_name="Test", family_name="User"),
             user_name="test.user@valantic.com",
         ),
     )
     assert isinstance(user, User)
-    assert user.id == scim_user_id
+    assert user.id == config.scim_user_id
     assert user.name.given_name == "Test"
     assert user.name.family_name == "User"
 
 
-def test_create_update_user(client: Client, scim_user_id: str):
+def test_create_update_user(client: Client, config):
     user = client.scim.update_user(
-        scim_user_id, [Replace(path="active", value=False), Remove(path="entitlements")]
+        config.scim_user_id, [Replace(path="active", value=False), Remove(path="entitlements")]
     )
     assert isinstance(user, User)
-    assert user.id == scim_user_id
+    assert user.id == config.scim_user_id
     assert user.active is False
     assert user.entitlements == []
