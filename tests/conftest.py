@@ -20,15 +20,15 @@ logging.getLogger("anaplan_sdk").setLevel(logging.INFO)
 class PyVersionConfig:
     workspace_id: str
     model_id: str
-    alm_src_model_id_async: str
     alm_model_id_async: str
+    alm_src_model_id_async: str
+    alm_model_id_sync: str
+    alm_src_model_id_sync: str
     test_integration_async: str
     test_notification_async: str
-    test_flow_async: str
-    alm_src_model_id_sync: str
-    alm_model_id_sync: str
     test_integration_sync: str
     test_notification_sync: str
+    test_flow_async: str
     test_flow_sync: str
     connection_id: str = "8b2d5f3a2ff64f13ab52e5b993896386"
     error_run_id: str = "910a68fb814e4225ad683bdafb70ae65"
@@ -36,7 +36,8 @@ class PyVersionConfig:
 
 
 @pytest.fixture(scope="session")
-def config(py_version: str) -> PyVersionConfig:
+def config() -> PyVersionConfig:
+    py_version = f"{sys.version_info.major}.{sys.version_info.minor}"
     workspace_id = "8a81b09d599f3c6e0159f605560c2630"
     if "3.10" in py_version:
         return PyVersionConfig(
@@ -102,16 +103,16 @@ def config(py_version: str) -> PyVersionConfig:
         return PyVersionConfig(
             workspace_id=workspace_id,
             model_id="1D1741C3DD1042A68D8336B328C2324E",
-            alm_src_model_id_async="12A4D6B9A816481F83F795F857407049",
-            alm_model_id_async="0CBB17195E5D445A9A3692F481D66CBE",
-            test_integration_async="cf9e1cf27a0f4eddb37a2a4807fd0ffc",
-            test_notification_async="e57b5620f006444a9324baaa4bd891ff",
-            test_flow_async="c330ca2eda974650bd99fea50b0e3acd",
-            alm_src_model_id_sync="5327704441464F36B4B05C6BF9DFACD2",
-            alm_model_id_sync="33A804FE8FE34AC291A6E866CA6B2284",
-            test_integration_sync="c5bd6fd4b9414ea0959795ccebc8126a",
-            test_notification_sync="393d6e91e1874e28baccd7441d28ba36",
-            test_flow_sync="61f2a2b05ac64598bfeb6d9eb7eff97a",
+            alm_model_id_async="C48A0D162C964C02964E2EB78190D480",
+            alm_src_model_id_async="37DEEDC7D5F2434BBBF836251B90CE23",
+            alm_model_id_sync="06520A761F0B4ECF8AED011A6B7DADCA",
+            alm_src_model_id_sync="704A4A635CF1429E91B9C712B848F114",
+            test_integration_async="1eaee08c758e44948805632e766ec0ee",
+            test_notification_async="6da7d462645744c39c5b17405daf10c1",
+            test_integration_sync="132704f947044cae8713d9a95da1ba15",
+            test_notification_sync="a03de322708b4451b8117544197a8808",
+            test_flow_async="e95f6ed1fc2f4c02820edebb919e20b4",
+            test_flow_sync="68c07638382244cda4e2d997ddc0b05b",
         )
 
     logging.fatal(f"Unsupported Python version: {py_version}")
@@ -121,11 +122,6 @@ def config(py_version: str) -> PyVersionConfig:
 @pytest.fixture(scope="session")
 def model_ids_for_py_version(config: PyVersionConfig) -> tuple[str, str]:
     return config.workspace_id, config.model_id
-
-
-@pytest.fixture(scope="session")
-def py_version() -> str:
-    return f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
 
 
 @pytest.fixture(scope="session")
