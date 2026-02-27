@@ -299,7 +299,7 @@ class AnaplanRefreshTokenAuth(_AnaplanAuth):
         client_id: str,
         client_secret: str,
         redirect_uri: str,
-        token: dict[str, str],
+        token: dict[str, str | int],
         token_url: str = "https://us1a.app.anaplan.com/oauth/token",
     ):
         """
@@ -340,10 +340,10 @@ class AnaplanRefreshTokenAuth(_AnaplanAuth):
             redirect_uri=redirect_uri,
             token_url=token_url,
         )
-        super().__init__(self._oauth_token["access_token"])
+        super().__init__(str(self._oauth_token["access_token"]))
 
     @property
-    def token(self) -> dict[str, str]:
+    def token(self) -> dict[str, str | int]:
         """
         Returns the current OAuth token. You can safely use the `access_token`, but you
         must not use the `refresh_token` outside of this class, if you expect to use this instance
@@ -353,7 +353,7 @@ class AnaplanRefreshTokenAuth(_AnaplanAuth):
         return self._oauth_token
 
     def _build_auth_request(self) -> httpx.Request:
-        return self._oauth.refresh_token_request(self._oauth_token["refresh_token"])
+        return self._oauth.refresh_token_request(str(self._oauth_token["refresh_token"]))
 
     def _parse_auth_response(self, response: httpx.Response) -> None:
         if response.status_code in (401, 403):
