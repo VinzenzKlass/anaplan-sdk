@@ -76,7 +76,6 @@ build-backend = "hatchling.build"
 
 [tool.pyright]
 typeCheckingMode = "strict"
-exclude = ["tests/**", "**/__pycache__", "**/.*"]
 reportUnusedCallResult = false
 reportExplicitAny = false
 reportAny = false

@@ -40,7 +40,7 @@ class PyVersionConfig:
 @pytest.fixture(autouse=True)
 def random_delay_between_tests():
     yield
-    time.sleep(random.uniform(0, 3))  # Avoid hitting rate limit too often
+    time.sleep(random.uniform(1, 5))  # Avoid hitting rate limit too often
 
 
 @pytest.fixture(scope="session")
