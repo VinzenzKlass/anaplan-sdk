@@ -49,7 +49,6 @@ dev = [
     "pytest-asyncio>=1.1.0",
     "pytest-xdist>=3.8.0",
     "pytest-cov>=6.2.1",
-    "mkdocs>=1.6.1",
     "mkdocs-material>=9.6.16",
     "mkdocstrings[python]>=0.30.0",
     "griffe>=1.7.3",
