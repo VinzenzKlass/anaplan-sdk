@@ -63,6 +63,7 @@ dev = [
     "basedpyright>=1.34.0",
     "mkdocs-llmstxt>=0.5.0",
     "pyinstrument>=5.1.2",
+    "zensical>=0.0.24",
 ]
 
 [project.urls]
@@ -83,38 +84,10 @@ reportMissingTypeStubs = false
 reportUnusedClass = false
 
 [tool.ruff]
-exclude = [
-    ".bzr",
-    ".direnv",
-    ".eggs",
-    ".git",
-    ".git-rewrite",
-    ".hg",
-    ".ipynb_checkpoints",
-    ".mypy_cache",
-    ".nox",
-    ".pants.d",
-    ".pyenv",
-    ".pytest_cache",
-    ".pytype",
-    ".ruff_cache",
-    ".svn",
-    ".tox",
-    ".venv",
-    ".vscode",
-    "__pypackages__",
-    "_build",
-    "buck-out",
-    "build",
-    "dist",
-    "node_modules",
-    "site-packages",
-    "venv",
-]
-
+respect-gitignore = false
 line-length = 100
 fix = true
-target-version = "py313"
+target-version = "py314"
 
 [tool.ruff.format]
 skip-magic-trailing-comma = true
