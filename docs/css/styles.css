@@ -5,8 +5,8 @@
 
     --md-primary-fg-color: #000;
     --md-primary-bg-color: #fff;
-    --md-code-bg-color: #ECECEC;
-    --md-default-fg-color--lightest: #00000020;
+    --md-code-bg-color: #EDEDED;
+    --md-default-fg-color--lightest: #00000030;
 }
 
 :root, [data-md-color-scheme=slate] {
