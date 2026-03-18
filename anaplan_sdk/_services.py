@@ -73,7 +73,7 @@ class _HttpService:
     def get_paginated(self, url: str, result_key: str, **kwargs: Any) -> Iterator[dict[str, Any]]:
         logger.debug(f"Starting paginated fetch from {url} with page_size={self._page_size}.")
         first_page, total_items, actual_size = self._get_first_page(url, result_key, **kwargs)
-        if total_items <= self._page_size:
+        if total_items <= actual_size:
             logger.debug("All items fit in first page, no additional requests needed.")
             return iter(first_page)
         pages_needed = ceil(total_items / actual_size)
@@ -183,7 +183,7 @@ class _AsyncHttpService:
     ) -> Iterator[dict[str, Any]]:
         logger.debug(f"Starting paginated fetch from {url} with page_size={self._page_size}.")
         first_page, total_items, actual_size = await self._get_first_page(url, result_key, **kwargs)
-        if total_items <= self._page_size:
+        if total_items <= actual_size:
             logger.debug("All items fit in first page, no additional requests needed.")
             return iter(first_page)
         pages = await gather(
