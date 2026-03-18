@@ -141,7 +141,7 @@ class Connection(_VersionedBaseModel):
             "connection."
         )
     )
-    integration_error_code: str | None = Field(
+    integration_error_code: int | None = Field(
         description="The error code of the connection, if any."
     )
     workspace_id: str | None = Field(
