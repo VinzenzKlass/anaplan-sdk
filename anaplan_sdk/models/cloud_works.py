@@ -93,6 +93,8 @@ class AzureBlobConnectionInput(AzureBlobConnectionInfo, BaseConnectionInput):
             "directly and not on any child blobs and have at least 'Read' and 'List' permissions."
         )
     )
+    # Undocumented field (for now), but required in the API payload to update connections
+    auth_method: str = "SAS-based"
 
 
 class AmazonS3ConnectionInfo(AnaplanModel):
