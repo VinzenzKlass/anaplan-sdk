@@ -92,7 +92,7 @@ def integration_payload(
     if isinstance(body, dict):
         body = (
             IntegrationInput.model_validate(body)
-            if "jobs" in body
+            if body.get("jobs")
             else IntegrationProcessInput.model_validate(body)
         )
     return body.model_dump(exclude_none=True, by_alias=True)
