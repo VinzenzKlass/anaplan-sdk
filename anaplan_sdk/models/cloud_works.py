@@ -416,7 +416,7 @@ class ErrorMessage(AnaplanModel):
 
 
 class RunError(AnaplanModel):
-    task_id: str = Field(description="The Task ID of the invoked Anaplan Action.")
+    task_id: str | None = Field(description="The Task ID of the invoked Anaplan Action.")
     error_messages: list[ErrorMessage] = Field(description="The error messages of the run.")
 
 
