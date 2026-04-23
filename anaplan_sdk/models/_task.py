@@ -27,7 +27,7 @@ class TaskResult(AnaplanModel):
 
 class TaskSummary(AnaplanModel):
     id: str = Field(validation_alias="taskId", description="The unique identifier of this task.")
-    task_state: Literal["NOT_STARTED", "IN_PROGRESS", "COMPLETE"] = Field(
+    task_state: Literal["NOT_STARTED", "IN_PROGRESS", "COMPLETE", "CANCELLED"] = Field(
         description="The state of this task."
     )
     creation_time: int = Field(description="Unix timestamp of when this task was created.")
