@@ -34,7 +34,9 @@ class TaskSummary(AnaplanModel):
 
 
 class Task(TaskSummary):
-    task_state: Literal["NOT_STARTED", "IN_PROGRESS"] = Field(description="The state of this task.")  # pyright: ignore[reportIncompatibleVariableOverride]
+    task_state: Literal["NOT_STARTED", "IN_PROGRESS", "CANCELLED"] = Field(  # pyright: ignore[reportIncompatibleVariableOverride]
+        description="The state of this task."
+    )
     progress: float = Field(description="The progress of this task as a float between 0 and 1.")
     current_step: str | None = Field(None, description="The current step of this task.")
 
