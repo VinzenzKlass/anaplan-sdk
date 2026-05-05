@@ -4,6 +4,11 @@ from pydantic import Field
 
 from ._base import AnaplanModel
 
+ViewExportType: TypeAlias = (
+    Literal["GRID_CURRENT_PAGE", "GRID_ALL_PAGES", "TABULAR_SINGLE_COLUMN", "TABULAR_MULTI_COLUMN"]
+    | None
+)
+
 
 class User(AnaplanModel):
     id: str = Field(description="The unique identifier of this user.")
