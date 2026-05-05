@@ -29,6 +29,7 @@ from anaplan_sdk.models import (
     View,
     ViewInfo,
 )
+from anaplan_sdk.models._transactional import ViewExportType
 
 SortBy = Literal["id", "name"] | None
 
@@ -106,6 +107,65 @@ class _AsyncTransactionalClient:
         :return: The information about the View.
         """
         return ViewInfo.model_validate((await self._http.get(f"{self._url}/views/{view_id}")))
+
+    @overload
+    async def get_view_data(
+        self,
+        view_id: int,
+        pages: str | None = ...,
+        dimension_id: int | None = ...,
+        item_id: int | None = ...,
+        module_id: int | None = ...,
+        max_rows: int | None = ...,
+        export_type: ViewExportType = ...,
+        data_format: Literal["application/json"] = "application/json",
+    ) -> dict[str, Any]: ...
+
+    @overload
+    async def get_view_data(
+        self,
+        view_id: int,
+        pages: str | None = ...,
+        dimension_id: int | None = ...,
+        item_id: int | None = ...,
+        module_id: int | None = ...,
+        max_rows: int | None = ...,
+        export_type: ViewExportType = ...,
+        data_format: Literal["text/csv"] = "text/csv",
+    ) -> bytes: ...
+
+    async def get_view_data(
+        self,
+        view_id: int,
+        pages: str | None = None,
+        dimension_id: int | None = None,
+        item_id: int | None = None,
+        module_id: int | None = None,
+        max_rows: int | None = None,
+        export_type: ViewExportType = None,
+        data_format: Literal["text/csv", "application/json"] = "application/json",
+    ) -> dict[str, Any] | bytes:
+        params = {
+            k: str(v)
+            for k, v in {
+                "pages": pages,
+                "dimensionId": dimension_id,
+                "itemId": item_id,
+                "moduleId": module_id,
+                "maxRows": max_rows,
+                "exportType": export_type,
+            }.items()
+            if v
+        }
+        if data_format == "application/json":
+            return await self._http.get(
+                f"{self._url}/views/{view_id}/data",
+                params={"format": "v1"} | params,
+                headers={"Accept": data_format},
+            )
+        return await self._http.get_binary(
+            f"{self._url}/views/{view_id}/data", params=params, headers={"Accept": data_format}
+        )
 
     async def get_line_items(self, only_module_id: int | None = None) -> list[LineItem]:
         """

@@ -148,8 +148,8 @@ class _AsyncHttpService:
     async def get(self, url: str, **kwargs: Any) -> dict[str, Any]:
         return (await self._run_with_retry(self._client.get, url, **kwargs)).json()
 
-    async def get_binary(self, url: str) -> bytes:
-        return (await self._run_with_retry(self._client.get, url)).content
+    async def get_binary(self, url: str, **kwargs: Any) -> bytes:
+        return (await self._run_with_retry(self._client.get, url, **kwargs)).content
 
     async def post(self, url: str, json: AnyJson) -> dict[str, Any]:
         return (
