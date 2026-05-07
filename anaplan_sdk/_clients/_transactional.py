@@ -29,6 +29,7 @@ from anaplan_sdk.models import (
     View,
     ViewInfo,
 )
+from anaplan_sdk.models._transactional import ViewExportType
 
 SortBy = Literal["id", "name"] | None
 
@@ -117,6 +118,81 @@ class _TransactionalClient:
             else f"{self._url}/lineItems?includeAll=true"
         )
         return [LineItem.model_validate(e) for e in self._http.get(url).get("items", [])]
+
+    @overload
+    def get_view_data(
+        self,
+        view_id: int,
+        pages: list[tuple[int, int]] | None = ...,
+        parent_module_id: int | None = ...,
+        max_rows: int | None = ...,
+        export_type: ViewExportType = ...,
+        data_format: Literal["application/json"] = "application/json",
+    ) -> dict[str, Any]: ...
+
+    @overload
+    def get_view_data(
+        self,
+        view_id: int,
+        pages: list[tuple[int, int]] | None = ...,
+        parent_module_id: int | None = ...,
+        max_rows: int | None = ...,
+        export_type: ViewExportType = ...,
+        data_format: Literal["text/csv", "text/csv;escaped=true"] = ...,
+    ) -> bytes: ...
+
+    def get_view_data(
+        self,
+        view_id: int,
+        pages: list[tuple[int, int]] | None = None,
+        parent_module_id: int | None = None,
+        max_rows: int | None = None,
+        export_type: ViewExportType = None,
+        data_format: Literal[
+            "text/csv", "text/csv;escaped=true", "application/json"
+        ] = "application/json",
+    ) -> dict[str, Any] | bytes:
+        """
+        Retrieves cell data for a View. The view must contain no more than 1,000,000 cells —
+        if exceeded the API returns a 400 error rather than a partial result.
+
+        You may pass a `view_id` or any valid `line_item_id`. For line items with a subsidiary
+        view the response reflects that subsidiary view; otherwise the default module view is used.
+
+        :param view_id: The ID of the View (or Line Item) to retrieve data for.
+        :param pages: Page-selector overrides as a list of `(dimension_id, item_id)` tuples —
+               one tuple per page dimension you want to pin. Omit to use the view's default page
+               selection. Example: `[(101000000026, 330000000028), (20000000012, 587000000000)]`
+        :param parent_module_id: ID of the parent Module. Required together with `export_type`
+               when requesting a tabular layout (`TABULAR_SINGLE_COLUMN` /
+               `TABULAR_MULTI_COLUMN`).
+        :param max_rows: Cap the number of data rows returned (header not counted).
+        :param export_type: Controls the layout of a CSV export. One of `GRID_CURRENT_PAGE`,
+               `GRID_ALL_PAGES`, `TABULAR_SINGLE_COLUMN`, or `TABULAR_MULTI_COLUMN`. The
+               tabular layouts require `parent_module_id` to be set as well.
+        :param data_format: `"application/json"` (default) returns a structured dict;
+               `"text/csv"` or `"text/csv;escaped=true"` returns raw CSV bytes.
+        :return: A `dict` when `data_format` is `"application/json"`, otherwise `bytes`
+        """
+        params = {
+            k: str(v)
+            for k, v in {
+                "pages": ",".join(f"{page}:{item}" for page, item in (pages or ())),
+                "moduleId": parent_module_id,
+                "maxRows": max_rows,
+                "exportType": export_type,
+            }.items()
+            if v
+        }
+        if data_format == "application/json":
+            return self._http.get(
+                f"{self._url}/views/{view_id}/data",
+                params={"format": "v1"} | params,
+                headers={"Accept": data_format},
+            )
+        return self._http.get_binary(
+            f"{self._url}/views/{view_id}/data", params=params, headers={"Accept": data_format}
+        )
 
     def get_lists(self, sort_by: SortBy = None, descending: bool = False) -> list[List]:
         """
