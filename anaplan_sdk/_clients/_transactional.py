@@ -120,14 +120,14 @@ class _TransactionalClient:
         return [LineItem.model_validate(e) for e in self._http.get(url).get("items", [])]
 
     @overload
-    def get_view_data(
+    def get_view_data(  # pyright: ignore[reportOverlappingOverload]
         self,
         view_id: int,
         pages: list[tuple[int, int]] | None = ...,
         parent_module_id: int | None = ...,
         max_rows: int | None = ...,
         export_type: ViewExportType = ...,
-        data_format: Literal["application/json"] = "application/json",
+        data_format: Literal["application/json"] = ...,
     ) -> dict[str, Any]: ...
 
     @overload
