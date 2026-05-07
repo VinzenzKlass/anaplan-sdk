@@ -112,10 +112,8 @@ class _AsyncTransactionalClient:
     async def get_view_data(
         self,
         view_id: int,
-        pages: str | None = ...,
-        dimension_id: int | None = ...,
-        item_id: int | None = ...,
-        module_id: int | None = ...,
+        pages: list[tuple[int, int]] | None = ...,
+        parent_module_id: int | None = ...,
         max_rows: int | None = ...,
         export_type: ViewExportType = ...,
         data_format: Literal["application/json"] = "application/json",
@@ -125,33 +123,29 @@ class _AsyncTransactionalClient:
     async def get_view_data(
         self,
         view_id: int,
-        pages: str | None = ...,
-        dimension_id: int | None = ...,
-        item_id: int | None = ...,
-        module_id: int | None = ...,
+        pages: list[tuple[int, int]] | None = ...,
+        parent_module_id: int | None = ...,
         max_rows: int | None = ...,
         export_type: ViewExportType = ...,
-        data_format: Literal["text/csv"] = "text/csv",
+        data_format: Literal["text/csv", "text/csv;escaped=true"] = "text/csv",
     ) -> bytes: ...
 
     async def get_view_data(
         self,
         view_id: int,
-        pages: str | None = None,
-        dimension_id: int | None = None,
-        item_id: int | None = None,
-        module_id: int | None = None,
+        pages: list[tuple[int, int]] | None = None,
+        parent_module_id: int | None = None,
         max_rows: int | None = None,
         export_type: ViewExportType = None,
-        data_format: Literal["text/csv", "application/json"] = "application/json",
+        data_format: Literal[
+            "text/csv", "text/csv;escaped=true", "application/json"
+        ] = "application/json",
     ) -> dict[str, Any] | bytes:
         params = {
             k: str(v)
             for k, v in {
-                "pages": pages,
-                "dimensionId": dimension_id,
-                "itemId": item_id,
-                "moduleId": module_id,
+                "pages": ",".join(f"{page}:{item}" for page, item in (pages or ())),
+                "moduleId": parent_module_id,
                 "maxRows": max_rows,
                 "exportType": export_type,
             }.items()
