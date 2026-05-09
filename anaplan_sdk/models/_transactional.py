@@ -63,6 +63,9 @@ class ViewInfo(AnaplanModel):
     rows: list[Dimension] = Field(
         [], description="The list of dimensions in the rows of this view."
     )
+    columns: list[Dimension] = Field(
+        [], description="The list of dimensions in the columns of this view."
+    )
     pages: list[Dimension] = Field(
         [], description="The list of dimensions in the pages of this view."
     )
