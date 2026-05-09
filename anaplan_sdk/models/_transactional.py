@@ -4,6 +4,11 @@ from pydantic import Field
 
 from ._base import AnaplanModel
 
+ViewExportType: TypeAlias = (
+    Literal["GRID_CURRENT_PAGE", "GRID_ALL_PAGES", "TABULAR_SINGLE_COLUMN", "TABULAR_MULTI_COLUMN"]
+    | None
+)
+
 
 class User(AnaplanModel):
     id: str = Field(description="The unique identifier of this user.")
@@ -57,6 +62,9 @@ class ViewInfo(AnaplanModel):
     view_name: str = Field(description="The name of this view.")
     rows: list[Dimension] = Field(
         [], description="The list of dimensions in the rows of this view."
+    )
+    columns: list[Dimension] = Field(
+        [], description="The list of dimensions in the columns of this view."
     )
     pages: list[Dimension] = Field(
         [], description="The list of dimensions in the pages of this view."
