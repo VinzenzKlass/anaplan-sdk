@@ -116,7 +116,7 @@ class _AsyncTransactionalClient:
         parent_module_id: int | None = ...,
         max_rows: int | None = ...,
         export_type: ViewExportType = ...,
-        data_format: Literal["application/json"] = "application/json",
+        data_format: Literal["application/json"] = ...,
     ) -> dict[str, Any]: ...
 
     @overload
