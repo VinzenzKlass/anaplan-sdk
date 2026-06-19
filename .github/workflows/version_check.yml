@@ -1,0 +1,57 @@
+name: Version Check
+
+# Ensures every PR into master bumps the project version so each built image gets
+# a unique, immutable tag in Artifact Registry. Fails if the version is not
+# strictly increased (PEP 440), including accidental downgrades.
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  version-bump:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # Need base branch history to read its pyproject.toml
+
+      - name: Extract versions
+        id: versions
+        run: |
+          extract() { grep -m1 '^version' "$1" | sed -E 's/.*"([^"]+)".*/\1/'; }
+          HEAD_VERSION="$(extract pyproject.toml)"
+          git show "origin/${{ github.base_ref }}:pyproject.toml" >/tmp/base_pyproject.toml
+          BASE_VERSION="$(extract /tmp/base_pyproject.toml)"
+          echo "head=${HEAD_VERSION}" >>"$GITHUB_OUTPUT"
+          echo "base=${BASE_VERSION}" >>"$GITHUB_OUTPUT"
+          echo "Comparing base=${BASE_VERSION} -> head=${HEAD_VERSION}"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v8.2.0
+
+      - name: Enforce version increase
+        env:
+          HEAD_VERSION: ${{ steps.versions.outputs.head }}
+          BASE_VERSION: ${{ steps.versions.outputs.base }}
+        run: |
+          uv run --with packaging python - <<'PY'
+          import os
+          import sys
+
+          from packaging.version import Version
+
+          base = Version(os.environ["BASE_VERSION"])
+          head = Version(os.environ["HEAD_VERSION"])
+
+          if head <= base:
+              print(
+                  f"::error::Project version must be increased before merging "
+                  f"(base={base}, head={head}). Run 'uv version --bump "
+                  f"patch|minor|major' and commit the change."
+              )
+              sys.exit(1)
+
+          print(f"OK: version increased {base} -> {head}")
+          PY
