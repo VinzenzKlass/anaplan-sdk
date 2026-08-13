@@ -86,6 +86,7 @@ respect-gitignore = false
 line-length = 100
 fix = true
 target-version = "py314"
+extend-exclude = ["docs/"]
 
 [tool.ruff.format]
 skip-magic-trailing-comma = true
