@@ -349,7 +349,7 @@ class _AsyncCloudWorksClient:
         :param run_id: The ID of the run to retrieve.
         :return: The error dump.
         """
-        return await self._http.get_binary(f"{self._url}/run/{run_id}/dump")
+        return await self._http.get_binary(f"{self._url}/run/{run_id}/dumps")
 
     async def get_process_error_dump(self, run_id: str, action_id: int | str) -> bytes:
         """
