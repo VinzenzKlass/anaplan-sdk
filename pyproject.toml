@@ -37,31 +37,31 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-cert = ["cryptography>=42.0.7,<47.0.0"]
+cert = ["cryptography>=42.0.7,<51.0.0"]
 oauth = ["oauthlib>=3.0.0,<4.0.0"]
 keyring = ["keyring>=25.6.0,<26.0.0"]
 
 [dependency-groups]
 dev = [
-    "ruff>=0.15.11",
-    "pre-commit>=4.3.0",
-    "pytest>=9.0.3",
-    "pytest-asyncio>=1.3.0",
+    "ruff>=0.16.3",
+    "pre-commit>=4.6.2",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
     "pytest-xdist>=3.8.0",
     "pytest-cov>=7.1.0",
-    "mkdocstrings[python]>=0.30.0",
-    "griffe>=1.15.0",
+    "mkdocstrings[python]>=1.0.6",
+    "griffe>=2.1.0",
     "fieldz>=0.2.0",
     "griffe-fieldz>=0.5.0",
     "oauthlib>=3.3.1",
-    "cryptography>=46.0.7",
+    "cryptography>=50.0.0",
     "keyring>=25.7.0",
     "mkdocs-minify-plugin>=0.8.0",
-    "polars>=1.40.0",
-    "basedpyright>=1.39.2",
+    "polars>=1.43.2",
+    "basedpyright>=1.39.9",
     "mkdocs-llmstxt>=0.5.0",
-    "pyinstrument>=5.1.2",
-    "zensical>=0.0.33",
+    "pyinstrument>=5.1.3",
+    "zensical>=0.0.54",
 ]
 
 [project.urls]
