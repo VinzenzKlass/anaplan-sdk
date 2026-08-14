@@ -5,7 +5,7 @@ description: Anaplan API concepts explained for developers working with the Bulk
 
 This guide explains key Anaplan concepts for developers working with the Bulk API. You can think of the flow of uploading data to Anaplan with the Bulk API like so:
 
-<iframe id="bulk-overview"  src="../assets/overview.html"></iframe>
+<iframe id="bulk-overview"  src="./assets/overview.html"></iframe>
 
 ---
 
