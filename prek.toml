@@ -1,0 +1,24 @@
+default_language_version.python = "3.14"
+
+repos = [
+    {
+        repo = "https://github.com/astral-sh/uv-pre-commit",
+        rev = "0.12.5",
+        hooks = [{ id = "uv-lock", priority = 0 }]
+    },
+    {
+        repo = "https://github.com/astral-sh/ruff-pre-commit",
+        rev = "v0.16.3",
+        hooks = [
+            { id = "ruff-format", priority = 0 },
+            { id = "ruff-check", args = ["--fix"], priority = 1 }
+        ]
+    },
+    {
+        repo = "https://github.com/DetachHead/basedpyright-pre-commit-mirror",
+        rev = "1.39.8",
+        hooks = [
+            { id = "basedpyright", pass_filenames = false, always_run = true, args = ["--threads", "8"], priority = 0 }
+        ]
+    }
+]

@@ -56,11 +56,11 @@ ruff check
 ruff format
 ```
 
-You can also enable [pre-commit](https://pre-commit.com/) hooks to automatically format and lint your code before
+You should also enable [prek](https://prek.j178.dev/) hooks to automatically format and lint your code before
 committing:
 
 ```shell
-pre-commit install
+prek install
 ```
 
 If your PR goes beyond a simple bug fix or small changes, please add tests to cover your changes.
