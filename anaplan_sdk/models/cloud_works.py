@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Callable, Literal, Self
+from typing import Any, Callable, Literal
 
 from pydantic import Field, field_validator, model_serializer, model_validator
 
@@ -348,7 +348,7 @@ class IntegrationJobInput(AnaplanModel):
         return self
 
     @model_serializer(mode="wrap")
-    def _serialize(self, handler: Callable[[Self], dict[str, Any]]):
+    def _serialize(self, handler: Callable[[Any], dict[str, Any]]):
         data = handler(self)
         if self.mapping is None:
             data.pop("mapping", None)
