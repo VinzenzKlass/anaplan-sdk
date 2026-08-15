@@ -300,6 +300,93 @@ instead, or an accordingly shaped dictionary:
     ```
 
 
+## Exporting to Google BigQuery
+
+When creating an export integration with `type="AnaplanToGoogleBigQuery"`, you must additionally provide a
+`mapping` that tells Anaplan how to map the exported Anaplan fields to the target BigQuery table's columns. This
+is validated for you, so if you set `type="AnaplanToGoogleBigQuery"` and omit `mapping`, or vice versa, this will
+raise a validation error before any request is sent to Anaplan.
+
+You can pass a plain dictionary of `{"Anaplan Field Name": "bigquery_column_name", ...}`. The SDK will
+serialize this to the format the Anaplan API expects for you.
+
+=== "Pydantic"
+    ```python
+    from anaplan_sdk.models.cloud_works import (
+        AnaplanSource,
+        IntegrationInput,
+        IntegrationJobInput,
+        TableTarget,
+    )
+
+    source = AnaplanSource(action_id=112000000064)
+    target = TableTarget(type="GoogleBigQuery", connection_id="5e...05", table="my_table")
+    job = IntegrationJobInput(
+        type="AnaplanToGoogleBigQuery",
+        sources=[source],
+        targets=[target],
+        mapping={
+            "Period": "period",
+            "Product Category": "product_category",
+            "Review Count": "review_count",
+            "Average Rating": "average_rating",
+        },
+    )
+    integration_input = IntegrationInput(
+        name="Anaplan to Google BigQuery",
+        workspace_id="AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+        model_id="22222222222222222222222222222222",
+        jobs=[job],
+    )
+    integration_id = anaplan.cw.create_integration(integration_input)
+    ```
+=== "Dictionary"
+    ```python
+    anaplan.cw.create_integration(
+        {
+            "name": "Anaplan to Google BigQuery",
+            "version": "2.0",
+            "workspaceId": "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+            "modelId": "22222222222222222222222222222222",
+            "nuxVisible": False,
+            "jobs": [
+                {
+                    "type": "AnaplanToGoogleBigQuery",
+                    "sources": [{"type": "Anaplan", "actionId": "112000000064"}],
+                    "targets": [
+                        {
+                            "type": "GoogleBigQuery",
+                            "connectionId": "5e...05",
+                            "table": "my_table",
+                        }
+                    ],
+                    "mapping": [
+                        {"sourceName": "Period", "targetName": "period"},
+                        {"sourceName": "Product Category", "targetName": "product_category"},
+                        {"sourceName": "Review Count", "targetName": "review_count"},
+                        {"sourceName": "Average Rating", "targetName": "average_rating"}
+                    ],
+                }
+            ],
+        }
+    )
+    ```
+
+Behind the scenes, when using the Pydantic model, the `mapping` dictionary is serialized into the list of
+`sourceName`/`targetName` objects that the Anaplan API requires:
+
+```json
+[
+    {"sourceName": "Period", "targetName": "period"},
+    {"sourceName": "Product Category", "targetName": "product_category"},
+    {"sourceName": "Review Count", "targetName": "review_count"},
+    {"sourceName": "Average Rating", "targetName": "average_rating"}
+]
+```
+
+If you pass a dictionary payload instead of the Pydantic model, you must already provide `mapping` in this list
+format, since dictionary payloads are not transformed, only validated.
+
 ## Create a Flow
 
 A Flow or Integration Flow is a sequence of integrations that are executed in a specific order. You can create a Flow

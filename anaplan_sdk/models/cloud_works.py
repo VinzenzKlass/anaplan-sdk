@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import Any, Literal
+from typing import Any, Callable, Literal, Self
 
-from pydantic import Field, field_validator
+from pydantic import Field, field_validator, model_serializer, model_validator
 
 from anaplan_sdk.models import TaskResultDetail
 
@@ -333,6 +333,31 @@ class IntegrationJobInput(AnaplanModel):
     targets: list[AnaplanTarget | FileTarget | TableTarget] = Field(
         description="The targets of this integration."
     )
+    mapping: dict[str, str] | None = Field(
+        default=None,
+        description=(
+            "The mapping of Anaplan fields to BigQuery fields. Required if type is "
+            "'AnaplanToGoogleBigQuery'. Must be a plan dict of SourceName -> TargetName."
+        ),
+    )
+
+    @model_validator(mode="after")
+    def _validate_mapping(self):
+        if self.type == "AnaplanToGoogleBigQuery" and self.mapping is None:
+            raise ValueError("'mapping' is required when type is 'AnaplanToGoogleBigQuery'.")
+        return self
+
+    @model_serializer(mode="wrap")
+    def _serialize(self, handler: Callable[[Self], dict[str, Any]]):
+        data = handler(self)
+        if self.mapping is None:
+            data.pop("mapping", None)
+        else:
+            data["mapping"] = [
+                {"sourceName": source, "targetName": target}
+                for source, target in self.mapping.items()
+            ]
+        return data
 
 
 class IntegrationProcessInput(AnaplanModel):

@@ -1,6 +1,6 @@
 [project]
 name = "anaplan-sdk"
-version = "0.5.18"
+version = "0.5.19"
 description = "Streamlined Python Interface for the Anaplan API."
 license = "Apache-2.0"
 authors = [{ name = "Vinzenz Klass", email = "vinzenz.klass@valantic.com" }]
@@ -44,7 +44,7 @@ keyring = ["keyring>=25.6.0,<26.0.0"]
 [dependency-groups]
 dev = [
     "ruff>=0.16.3",
-    "pre-commit>=4.6.2",
+    "prek>=0.4.13",
     "pytest>=9.1.1",
     "pytest-asyncio>=1.4.0",
     "pytest-xdist>=3.8.0",
