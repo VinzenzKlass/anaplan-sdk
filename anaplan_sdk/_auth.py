@@ -5,18 +5,18 @@ import threading
 from base64 import b64encode
 from typing import AsyncGenerator, Callable, Generator, TypeAlias
 
-import httpx
+import httpx2
 
 from ._oauth import _OAuthRequestFactory  # pyright: ignore[reportPrivateUsage]
 from .exceptions import AnaplanException, InvalidCredentialsException, InvalidPrivateKeyException
 
 logger = logging.getLogger("anaplan_sdk")
 
-AuthGen: TypeAlias = Generator[httpx.Request, httpx.Response, None]
-AsyncAuthGen: TypeAlias = AsyncGenerator[httpx.Request, httpx.Response]
+AuthGen: TypeAlias = Generator[httpx2.Request, httpx2.Response, None]
+AsyncAuthGen: TypeAlias = AsyncGenerator[httpx2.Request, httpx2.Response]
 
 
-class _AnaplanAuth(httpx.Auth):
+class _AnaplanAuth(httpx2.Auth):
     requires_response_body = True
 
     def __init__(self, token: str | None = None):
@@ -24,13 +24,13 @@ class _AnaplanAuth(httpx.Auth):
         self._lock = asyncio.Lock()
         if not token:
             logger.info("Creating Authentication Token.")
-            with httpx.Client(timeout=15.0) as client:
+            with httpx2.Client(timeout=15.0) as client:
                 self._parse_auth_response(client.send(self._build_auth_request()))
 
-    def _build_auth_request(self) -> httpx.Request:
+    def _build_auth_request(self) -> httpx2.Request:
         raise NotImplementedError("Must be implemented in subclass.")
 
-    def sync_auth_flow(self, request: httpx.Request) -> AuthGen:
+    def sync_auth_flow(self, request: httpx2.Request) -> AuthGen:
         request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
         response = yield request
         if response.status_code == 401:
@@ -41,7 +41,7 @@ class _AnaplanAuth(httpx.Auth):
             request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
             yield request
 
-    async def async_auth_flow(self, request: httpx.Request) -> AsyncAuthGen:
+    async def async_auth_flow(self, request: httpx2.Request) -> AsyncAuthGen:
         async with self._lock:
             request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
             response = yield request
@@ -53,7 +53,7 @@ class _AnaplanAuth(httpx.Auth):
                 request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
                 yield request
 
-    def _parse_auth_response(self, response: httpx.Response) -> None:
+    def _parse_auth_response(self, response: httpx2.Response) -> None:
         if response.status_code == 401:
             raise InvalidCredentialsException
         if not response.is_success:
@@ -61,13 +61,15 @@ class _AnaplanAuth(httpx.Auth):
         self._token = response.json()["tokenInfo"]["tokenValue"]
 
 
-class _StaticTokenAuth(httpx.Auth):
+class _StaticTokenAuth(httpx2.Auth):
     def __init__(self, token: str):
         self._token = token
 
-    def auth_flow(self, request: httpx.Request) -> Generator[httpx.Request, httpx.Response, None]:
+    def auth_flow(
+        self, request: httpx2.Request
+    ) -> Generator[httpx2.Request, httpx2.Response, None]:
         request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
-        response: httpx.Response = yield request
+        response: httpx2.Response = yield request
         if response.status_code == 401:
             raise InvalidCredentialsException("Token is invalid or expired.")
 
@@ -78,9 +80,9 @@ class _AnaplanBasicAuth(_AnaplanAuth):
         self.password = password
         super().__init__(token)
 
-    def _build_auth_request(self) -> httpx.Request:
+    def _build_auth_request(self) -> httpx2.Request:
         cred = b64encode(f"{self.user_email}:{self.password}".encode()).decode()
-        return httpx.Request(
+        return httpx2.Request(
             method="post",
             url="https://auth.anaplan.com/token/authenticate",
             headers={"Authorization": f"Basic {cred}"},
@@ -101,9 +103,9 @@ class _AnaplanCertAuth(_AnaplanAuth):
         self.__set_private_key(private_key, private_key_password)
         super().__init__(token)
 
-    def _build_auth_request(self) -> httpx.Request:
+    def _build_auth_request(self) -> httpx2.Request:
         encoded_cert, encoded_string, encoded_signed_string = self._prep_credentials()
-        return httpx.Request(
+        return httpx2.Request(
             method="post",
             url="https://auth.anaplan.com/token/authenticate",
             headers={
@@ -259,10 +261,10 @@ class AnaplanLocalOAuth(_AnaplanAuth):
         """
         return self._oauth_token
 
-    def _build_auth_request(self) -> httpx.Request:
+    def _build_auth_request(self) -> httpx2.Request:
         return self._oauth.refresh_token_request(self._oauth_token["refresh_token"])
 
-    def _parse_auth_response(self, response: httpx.Response) -> None:
+    def _parse_auth_response(self, response: httpx2.Response) -> None:
         if response.status_code in (401, 403):
             raise InvalidCredentialsException
         if not response.is_success:
@@ -286,10 +288,10 @@ class AnaplanLocalOAuth(_AnaplanAuth):
                 f"Please go to {url} and authorize the app.\n"
                 "Then paste the entire redirect URL here: "
             )
-            with httpx.Client() as client:
+            with httpx2.Client() as client:
                 res = client.send(self._oauth.token_request(authorization_response))
             self._parse_auth_response(res)
-        except (httpx.HTTPError, ValueError, TypeError, OAuth2Error) as error:
+        except (httpx2.HTTPError, ValueError, TypeError, OAuth2Error) as error:
             raise InvalidCredentialsException("Error during OAuth2 authorization flow.") from error
 
 
@@ -352,10 +354,10 @@ class AnaplanRefreshTokenAuth(_AnaplanAuth):
         """
         return self._oauth_token
 
-    def _build_auth_request(self) -> httpx.Request:
+    def _build_auth_request(self) -> httpx2.Request:
         return self._oauth.refresh_token_request(str(self._oauth_token["refresh_token"]))
 
-    def _parse_auth_response(self, response: httpx.Response) -> None:
+    def _parse_auth_response(self, response: httpx2.Response) -> None:
         if response.status_code in (401, 403):
             raise InvalidCredentialsException
         if not response.is_success:
@@ -371,7 +373,7 @@ def _create_auth(  # pyright: ignore[reportUnusedFunction]
     private_key: str | bytes | None = None,
     private_key_password: str | bytes | None = None,
     token: str | None = None,
-) -> httpx.Auth:
+) -> httpx2.Auth:
     if certificate and private_key:
         return _AnaplanCertAuth(certificate, private_key, private_key_password, token)
     if user_email and password:

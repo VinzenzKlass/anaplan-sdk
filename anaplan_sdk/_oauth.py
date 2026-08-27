@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Callable
 
-import httpx
+import httpx2
 
 from .exceptions import AnaplanException, InvalidCredentialsException
 
@@ -27,10 +27,10 @@ class _BaseOauth:
 
         1. You must implement the actual authentication flow in your application. You cannot pass
         the credentials directly to the `Client` or `AsyncClient`, and this class does not
-        implement the SDK internal authentication flow, i.e. it does not subclass `httpx.Auth`.
+        implement the SDK internal authentication flow, i.e. it does not subclass `httpx2.Auth`.
 
         2. You then simply pass the resulting token to the `Client` or `AsyncClient`, rather than
-        passing the credentials directly, which will internally construct an `httpx.Auth` instance
+        passing the credentials directly, which will internally construct an `httpx2.Auth` instance
 
         Note that this class exist for convenience only, and you can implement the OAuth 2.0 Flow
         yourself in your preferred library, or bring an existing implementation. For details on the
@@ -92,7 +92,7 @@ class _BaseOauth:
 
     def _token_request(
         self, authorization_response: str, state: str | None = None
-    ) -> httpx.Request:
+    ) -> httpx2.Request:
         url, headers, body = self._oauth.prepare_token_request(  # pyright: ignore[reportUnknownMemberType]
             authorization_response=authorization_response,
             token_url=self._token_url,
@@ -100,18 +100,18 @@ class _BaseOauth:
             client_secret=self._client_secret,
             state=state,
         )
-        return httpx.Request(method="POST", url=url, headers=headers, content=body)
+        return httpx2.Request(method="POST", url=url, headers=headers, content=body)
 
-    def _refresh_token_request(self, refresh_token: str) -> httpx.Request:
+    def _refresh_token_request(self, refresh_token: str) -> httpx2.Request:
         url, headers, body = self._oauth.prepare_refresh_token_request(  # pyright: ignore[reportUnknownMemberType]
             self._token_url,
             refresh_token=refresh_token,
             client_id=self._client_id,
             client_secret=self._client_secret,
         )
-        return httpx.Request(method="POST", url=url, headers=headers, content=body)
+        return httpx2.Request(method="POST", url=url, headers=headers, content=body)
 
-    def _parse_response(self, response: httpx.Response) -> dict[str, Any]:
+    def _parse_response(self, response: httpx2.Response) -> dict[str, Any]:
         if response.status_code == 401:
             raise InvalidCredentialsException
         if not response.is_success:
@@ -123,10 +123,10 @@ class _BaseOauth:
 
 
 class _OAuthRequestFactory(_BaseOauth):
-    def token_request(self, authorization_response: str) -> httpx.Request:
+    def token_request(self, authorization_response: str) -> httpx2.Request:
         return self._token_request(authorization_response)
 
-    def refresh_token_request(self, refresh_token: str) -> httpx.Request:
+    def refresh_token_request(self, refresh_token: str) -> httpx2.Request:
         return self._refresh_token_request(refresh_token)
 
 
@@ -155,10 +155,10 @@ class AsyncOauth(_BaseOauth):
         from oauthlib.oauth2 import OAuth2Error
 
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx2.AsyncClient() as client:
                 response = await client.send(self._token_request(authorization_response, state))
             return self._parse_response(response)
-        except (httpx.HTTPError, ValueError, TypeError, OAuth2Error) as error:
+        except (httpx2.HTTPError, ValueError, TypeError, OAuth2Error) as error:
             logger.error(error)
             raise AnaplanException("Error during token creation.") from error
 
@@ -170,12 +170,12 @@ class AsyncOauth(_BaseOauth):
         :return: The Token information as a dictionary containing the token's details.
         """
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx2.AsyncClient() as client:
                 response = await client.get(
                     url=self._validation_url, headers={"Authorization": f"AnaplanAuthToken {token}"}
                 )
             return self._parse_response(response)
-        except httpx.HTTPError as error:
+        except httpx2.HTTPError as error:
             logger.error(error)
             raise AnaplanException("Error during token validation.") from error
 
@@ -189,10 +189,10 @@ class AsyncOauth(_BaseOauth):
         from oauthlib.oauth2 import OAuth2Error
 
         try:
-            async with httpx.AsyncClient() as client:
+            async with httpx2.AsyncClient() as client:
                 response = await client.send(self._refresh_token_request(refresh_token))
             return self._parse_response(response)
-        except (httpx.HTTPError, ValueError, TypeError, OAuth2Error) as error:
+        except (httpx2.HTTPError, ValueError, TypeError, OAuth2Error) as error:
             logger.error(error)
             raise AnaplanException("Error during token refresh.") from error
 
@@ -222,10 +222,10 @@ class Oauth(_BaseOauth):
         from oauthlib.oauth2 import OAuth2Error
 
         try:
-            with httpx.Client() as client:
+            with httpx2.Client() as client:
                 response = client.send(self._token_request(authorization_response, state))
             return self._parse_response(response)
-        except (httpx.HTTPError, ValueError, TypeError, OAuth2Error) as error:
+        except (httpx2.HTTPError, ValueError, TypeError, OAuth2Error) as error:
             logger.error(error)
             raise AnaplanException("Error during token creation.") from error
 
@@ -237,12 +237,12 @@ class Oauth(_BaseOauth):
         :return: The Token information as a dictionary containing the token's details.
         """
         try:
-            with httpx.Client() as client:
+            with httpx2.Client() as client:
                 response = client.get(
                     url=self._validation_url, headers={"Authorization": f"AnaplanAuthToken {token}"}
                 )
             return self._parse_response(response)
-        except httpx.HTTPError as error:
+        except httpx2.HTTPError as error:
             logger.error(error)
             raise AnaplanException("Error during token validation.") from error
 
@@ -262,9 +262,9 @@ class Oauth(_BaseOauth):
                 client_id=self._client_id,
                 client_secret=self._client_secret,
             )
-            with httpx.Client() as client:
+            with httpx2.Client() as client:
                 response = client.post(url=url, headers=headers, content=body)
             return self._parse_response(response)
-        except (httpx.HTTPError, ValueError, TypeError, OAuth2Error) as error:
+        except (httpx2.HTTPError, ValueError, TypeError, OAuth2Error) as error:
             logger.error(error)
             raise AnaplanException("Error during token refresh.") from error
