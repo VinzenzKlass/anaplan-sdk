@@ -338,7 +338,7 @@ If you need more control over the authentication process, you can provide your o
 `auth` parameter of the `Client` or `AsyncClient`. This allows you to implement any custom authentication 
 strategy you need. If you do so, the **entire** Authentication process is your responsibility. You can read more about
 the `httpx2.Auth` interface in the 
-[httpx2 documentation](https://www.python-httpx2.org/advanced/authentication/#custom-authentication-schemes).
+[httpx2 documentation](https://httpx2.pydantic.dev/advanced/authentication/).
 
 Below is an outline of the simplest variant of the `httpx2.Auth` interface that will suffice for Anaplan's 
 authentication. Note the non-standard `AnaplanAuthToken` prefix in the `Authorization` header and the 

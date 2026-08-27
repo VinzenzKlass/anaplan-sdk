@@ -23,7 +23,7 @@ Anaplan SDK requires Python 3.10.4 or higher.
 
 By default, Anaplan SDK has just two dependencies:
 
-- [httpx2](https://www.python-httpx2.org/): HTTP Client.
+- [httpx2](https://httpx2.pydantic.dev/): HTTP Client.
 - [pydantic](https://pypi.org/project/pydantic/): Data Models and validation.
 
 

@@ -25,7 +25,7 @@ logging.getLogger("anaplan_sdk").setLevel(logging.CRITICAL)
 You can do the same using dictionary configuration for logging just as well.
 
 If you need Information about the actual HTTP Requests sent, you can set the log level for the
-underlying [httpx2](https://www.python-httpx2.org/) library:
+underlying [httpx2](https://httpx2.pydantic.dev/logging/ library:
 
 ```python
 logging.getLogger("httpx2").setLevel(logging.INFO)
