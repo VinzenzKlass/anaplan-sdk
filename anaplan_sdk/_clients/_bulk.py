@@ -6,7 +6,7 @@ from copy import copy
 from time import sleep
 from typing import Any, Iterator, Literal, overload
 
-import httpx
+import httpx2
 from typing_extensions import Self
 
 from anaplan_sdk._auth import _create_auth
@@ -57,8 +57,8 @@ class Client:
         private_key: str | bytes | None = None,
         private_key_password: str | bytes | None = None,
         token: str | None = None,
-        auth: httpx.Auth | None = None,
-        timeout: float | httpx.Timeout = 30,
+        auth: httpx2.Auth | None = None,
+        timeout: float | httpx2.Timeout = 30,
         retry_count: int = 2,
         backoff: float = 1.0,
         backoff_factor: float = 2.0,
@@ -90,13 +90,13 @@ class Client:
                short-lived instances, such as in web applications where user specific clients are
                created, this is the recommended way to authenticate, since this has the least
                overhead.
-        :param auth: You can provide a subclass of `httpx.Auth` to use for authentication. You can
+        :param auth: You can provide a subclass of `httpx2.Auth` to use for authentication. You can
                provide an instance of one of the classes provided by the SDK, or an instance of
-               your own subclass of `httpx.Auth`. This will give you full control over the
+               your own subclass of `httpx2.Auth`. This will give you full control over the
                authentication process, but you will need to implement the entire authentication
                logic yourself.
         :param timeout: The timeout in seconds for the HTTP requests. Alternatively, you can pass
-               an instance of `httpx.Timeout` to set the timeout for the HTTP requests.
+               an instance of `httpx2.Timeout` to set the timeout for the HTTP requests.
         :param retry_count: The number of times to retry an HTTP request if it fails. Set this to 0
                to never retry. Defaults to 2, meaning each HTTP Operation will be tried a total
         :param backoff: The initial backoff time in seconds for the retry mechanism. This is the
@@ -117,9 +117,9 @@ class Client:
                altogether. A file that is created this way will not be referenced by any action in
                anaplan until manually assigned so there is typically no value in dynamically
                creating new files and uploading content to them.
-        :param httpx_kwargs: Additional keyword arguments to pass to the `httpx.Client`.
+        :param httpx_kwargs: Additional keyword arguments to pass to the `httpx2.Client`.
                This can be used to set additional options such as proxies, headers, etc. See
-               https://www.python-httpx.org/api/#client for the full list of arguments.
+               https://www.python-httpx2.org/api/#client for the full list of arguments.
         """
         auth = auth or _create_auth(
             token=token,
@@ -129,7 +129,7 @@ class Client:
             private_key=private_key,
             private_key_password=private_key_password,
         )
-        _client = httpx.Client(auth=auth, timeout=timeout, **httpx_kwargs)
+        _client = httpx2.Client(auth=auth, timeout=timeout, **httpx_kwargs)
         self._http = _HttpService(
             _client,
             retry_count=retry_count,

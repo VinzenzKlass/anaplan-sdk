@@ -14,7 +14,7 @@ import anaplan_sdk.models.cloud_works as cwm
 from anaplan_sdk.models.flows import FlowInput, FlowStepInput
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
-logging.getLogger("httpx").setLevel(logging.ERROR)
+logging.getLogger("httpx2").setLevel(logging.ERROR)
 logging.getLogger("anaplan_sdk").setLevel(logging.INFO)
 
 

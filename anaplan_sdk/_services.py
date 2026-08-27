@@ -8,8 +8,8 @@ from itertools import chain
 from math import ceil
 from typing import Any, Callable, Coroutine, Iterator, TypeAlias
 
-import httpx
-from httpx import HTTPError, Response
+import httpx2
+from httpx2 import HTTPError, Response
 
 from .exceptions import AnaplanException, AnaplanTimeoutException, InvalidIdentifierException
 
@@ -25,7 +25,7 @@ AnyJson: TypeAlias = dict[str, Any] | list[dict[str, Any]]
 class _HttpService:
     def __init__(
         self,
-        client: httpx.Client,
+        client: httpx2.Client,
         *,
         retry_count: int,
         backoff: float,
@@ -129,7 +129,7 @@ class _HttpService:
 class _AsyncHttpService:
     def __init__(
         self,
-        client: httpx.AsyncClient,
+        client: httpx2.AsyncClient,
         *,
         retry_count: int,
         backoff: float,
@@ -249,9 +249,9 @@ def _extract_first_page(
 
 
 def _raise_error(error: HTTPError) -> None:
-    if isinstance(error, httpx.TimeoutException):
+    if isinstance(error, httpx2.TimeoutException):
         raise AnaplanTimeoutException from error
-    if isinstance(error, httpx.HTTPStatusError):
+    if isinstance(error, httpx2.HTTPStatusError):
         if error.response.status_code == 404:
             raise InvalidIdentifierException from error
         logger.error(f"Anaplan Error: [{error.response.status_code}]: {error.response.text}")

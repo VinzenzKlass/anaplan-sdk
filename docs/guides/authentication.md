@@ -334,20 +334,20 @@ potential conflicts appropriately.
 
 ## Custom Authentication Schemes
 
-If you need more control over the authentication process, you can provide your own Subclass of `httpx.Auth` to the 
+If you need more control over the authentication process, you can provide your own Subclass of `httpx2.Auth` to the 
 `auth` parameter of the `Client` or `AsyncClient`. This allows you to implement any custom authentication 
 strategy you need. If you do so, the **entire** Authentication process is your responsibility. You can read more about
-the `httpx.Auth` interface in the 
-[httpx documentation](https://www.python-httpx.org/advanced/authentication/#custom-authentication-schemes).
+the `httpx2.Auth` interface in the 
+[httpx2 documentation](https://httpx2.pydantic.dev/advanced/authentication/).
 
-Below is an outline of the simplest variant of the `httpx.Auth` interface that will suffice for Anaplan's 
+Below is an outline of the simplest variant of the `httpx2.Auth` interface that will suffice for Anaplan's 
 authentication. Note the non-standard `AnaplanAuthToken` prefix in the `Authorization` header and the 
 `requires_response_body = True` class attribute.
 
 ```python
-import httpx
+import httpx2
 
-class MyCustomAuth(httpx.Auth):
+class MyCustomAuth(httpx2.Auth):
     requires_response_body = True
 
     def __init__(self, token: str):
@@ -357,7 +357,7 @@ class MyCustomAuth(httpx.Auth):
         request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
         response = yield request
         if response.status_code == 401:
-            auth_res = yield httpx.Request(...) # Your implementation
+            auth_res = yield httpx2.Request(...) # Your implementation
             self._token = auth_res.json()["tokenInfo"]["tokenValue"]
             request.headers["Authorization"] = f"AnaplanAuthToken {self._token}"
             yield request
