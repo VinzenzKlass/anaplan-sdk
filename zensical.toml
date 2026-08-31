@@ -1,0 +1,142 @@
+[project]
+site_name = "Anaplan SDK"
+site_description = "Streamlined Python Interface for the Anaplan API. Get up and running with the Anaplan API in minutes."
+site_url = "https://vinzenzklass.github.io/anaplan-sdk/"
+repo_url = "https://github.com/VinzenzKlass/anaplan-sdk"
+repo_name = "VinzenzKlass/anaplan-sdk"
+watch = ["anaplan_sdk"]
+extra_css = ["css/styles.css"]
+extra_javascript = ["js/highlight.min.js"]
+
+nav = [
+    { "Home" = "index.md" },
+    { "Getting Started" = [
+        { "Installation" = "installation.md" },
+        { "Quick Start" = "quickstart.md" },
+    ] },
+    { "Guides" = [
+        { "Index" = "guides/index.md" },
+        { "Authentication" = "guides/authentication.md" },
+        { "Bulk API" = "guides/bulk.md" },
+        { "Transactional API" = "guides/transactional.md" },
+        { "CloudWorks API" = "guides/cloud_works.md" },
+        { "ALM API" = "guides/alm.md" },
+        { "Audit API" = "guides/audit.md" },
+        { "SCIM API" = "guides/scim.md" },
+        { "Sorting" = "guides/sorting.md" },
+        { "Multiple Models" = "guides/multiple_models.md" },
+        { "Logging" = "guides/logging.md" },
+    ] },
+    { "Concepts" = [
+        { "Anaplan Basics" = "concepts.md" },
+        { "Bulk vs Transactional" = "guides/bulk_vs_transactional.md" },
+    ] },
+    { "API Reference" = [
+        { "Asynchronous" = [
+            { "Bulk" = "api/async/async_client.md" },
+            { "Transactional" = "api/async/async_transactional_client.md" },
+            { "Audit" = "api/async/async_audit_client.md" },
+            { "ALM" = "api/async/async_alm_client.md" },
+            { "CloudWorks" = [
+                { "Client" = "api/async/async_cw_client.md" },
+                { "Flows" = "api/async/async_flows_client.md" },
+            ] },
+            { "SCIM" = "api/async/async_scim_client.md" },
+            { "OAuth" = "api/async/async_oauth_client.md" },
+        ] },
+        { "Synchronous" = [
+            { "Bulk" = "api/sync/sync_client.md" },
+            { "Transactional" = "api/sync/sync_transactional_client.md" },
+            { "Audit" = "api/sync/sync_audit_client.md" },
+            { "ALM" = "api/sync/sync_alm_client.md" },
+            { "CloudWorks" = [
+                { "Client" = "api/sync/sync_cw_client.md" },
+                { "Flows" = "api/sync/sync_flows_client.md" },
+            ] },
+            { "SCIM" = "api/sync/sync_scim_client.md" },
+            { "OAuth" = "api/sync/sync_oauth_client.md" },
+        ] },
+        { "Models" = [
+            { "ALM" = "api/models/alm.md" },
+            { "Bulk" = "api/models/bulk.md" },
+            { "CloudWorks" = "api/models/cloud_works.md" },
+            { "Flows" = "api/models/flows.md" },
+            { "Transactional" = "api/models/transactional.md" },
+            { "SCIM" = "api/models/scim.md" },
+            { "Tasks" = "api/models/task.md" },
+        ] },
+        { "Exceptions" = "api/exceptions.md" },
+    ] },
+]
+
+[project.theme]
+custom_dir = "docs/overrides"
+favicon = "img/anaplan-sdk.webp"
+logo = "img/anaplan-sdk.webp"
+features = [
+    "content.code.copy",
+    "content.tabs.link",
+    "search.suggest",
+    "navigation.instant",
+    "navigation.tabs",
+    "navigation.top",
+]
+
+[project.theme.icon]
+repo = "fontawesome/brands/github"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+primary = "custom"
+toggle.icon = "material/lightbulb"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+primary = "custom"
+toggle.icon = "material/lightbulb-outline"
+toggle.name = "Switch to light mode"
+
+[project.markdown_extensions]
+admonition = { }
+attr_list = { }
+md_in_html = { }
+pymdownx.details = { }
+pymdownx.highlight.use_pygments = false
+pymdownx.superfences = { }
+pymdownx.tabbed.alternate_style = true
+
+[project.plugins.search]
+lang = "en"
+
+[project.plugins.minify]
+minify_html = true
+
+[project.plugins.mkdocstrings.handlers.python]
+paths = ["anaplan_sdk"]
+options.docstring_style = "sphinx"
+options.group_by_category = false
+options.line_length = 80
+options.members_order = "source"
+options.separate_signature = true
+options.show_bases = false
+options.show_signature_annotations = true
+options.show_source = false
+options.extensions = [
+    { griffe_fieldz = { include_inherited = true } },
+]
+
+
+[project.extra.analytics]
+provider = "google"
+property = "G-8X4QQH8XQB"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/github"
+link = "https://github.com/VinzenzKlass/anaplan-sdk"
+
+[[project.extra.social]]
+icon = "fontawesome/brands/python"
+link = "https://pypi.org/project/anaplan-sdk/"
