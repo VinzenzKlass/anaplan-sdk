@@ -228,16 +228,23 @@ class ModelStatus(AnaplanModel):
     export_task_type: str | None = Field(description="The export task type of this model.")
 
 
-class InsertionResult(AnaplanModel):
-    added: int = Field(description="The number of items successfully added.")
+class _ListItemsResult(AnaplanModel):
     ignored: int = Field(description="The number of items ignored, or items that failed.")
     total: int = Field(description="The total number of items.")
     failures: list[Failure] = Field([], description="The list of failures.")
 
 
+class InsertionResult(_ListItemsResult):
+    added: int = Field(description="The number of items successfully added.")
+
+
 class ListDeletionResult(AnaplanModel):
     deleted: int = Field(description="The number of items successfully deleted.")
     failures: list[Failure] = Field([], description="The list of failures.")
+
+
+class ListUpdateResult(_ListItemsResult):
+    updated: int = Field(description="The number of items successfully updated.")
 
 
 class PartialCurrentPeriod(AnaplanModel):

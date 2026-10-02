@@ -142,6 +142,16 @@ def list_items_short() -> list[dict[str, Any]]:
     return [{"name": i, "code": i} for i in range(1_000)]  # Single batch
 
 
+@pytest.fixture(scope="session")
+def list_items_long_update() -> list[dict[str, Any]]:
+    return [{"code": i, "name": f"Updated_{i}"} for i in range(200_000)]  # Force several batches
+
+
+@pytest.fixture(scope="session")
+def list_items_short_update() -> list[dict[str, Any]]:
+    return [{"code": i, "name": f"Updated_{i}"} for i in range(1_000)]  # Single batch
+
+
 @pytest.fixture
 def name() -> str:
     return "Test_" + "".join(choices(string.ascii_uppercase + string.digits, k=12))
