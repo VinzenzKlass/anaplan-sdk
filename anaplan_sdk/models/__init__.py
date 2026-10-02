@@ -40,6 +40,7 @@ from ._transactional import (
     LineItem,
     ListDeletionResult,
     ListItem,
+    ListUpdateResult,
     ModelCalendar,
     ModelStatus,
     Module,
@@ -102,4 +103,5 @@ __all__ = [
     "ModelDeletionResult",
     "DimensionWithCode",
     "ListDeletionResult",
+    "ListUpdateResult",
 ]

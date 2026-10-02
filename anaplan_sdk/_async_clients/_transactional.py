@@ -22,6 +22,7 @@ from anaplan_sdk.models import (
     ListDeletionResult,
     ListItem,
     ListMetadata,
+    ListUpdateResult,
     Model,
     ModelCalendar,
     ModelStatus,
@@ -251,7 +252,7 @@ class _AsyncTransactionalClient:
         """
         Insert new items to the given list. The items must be a list of dictionaries with at least
         the keys `code` and `name`. You can optionally pass further keys for parents, extra
-        properties etc. If you pass a long list, it will be split into chunks of 100,000 items, the
+        properties, etc. If you pass a long list, it will be split into chunks of 100_000 items, the
         maximum allowed by the API.
 
         **Warning**: If one or some of the requests timeout during large batch operations, the
@@ -263,7 +264,7 @@ class _AsyncTransactionalClient:
         :param list_id: The ID of the List.
         :param items: The items to insert into the List.
         :return: The result of the insertion, indicating how many items were added,
-                 ignored or failed.
+                 ignored, or failed.
         """
         if not items:
             return InsertionResult(added=0, ignored=0, failures=[], total=0)
@@ -285,6 +286,55 @@ class _AsyncTransactionalClient:
         )
         result = parse_insertion_response(responses)
         logger.info(f"Inserted {result.added} items into list '{list_id}'.")
+        return result
+
+    async def update_list_items(
+        self, list_id: int, items: list[dict[str, str | int | dict[str, Any]]]
+    ) -> ListUpdateResult:
+        """
+        Updates existing items in the given list. Each item must be identified by exactly one of
+        `id`, `code` or `name` (`name` is not valid for numbered lists). Only the passed keys, such
+        as `name`, `code`, `parent`, `properties` or `subsets`, are updated, all other attributes
+        retain their existing values. If you pass a long list, it will be split into chunks of
+        100,000 items, the maximum allowed by the API.
+
+        **Warning**: If one or some of the requests timeout during large batch operations, the
+        operation may actually complete on the server. Retries for these chunks will then likely
+        report these items as "ignored" rather than "updated", leading to misleading results. The
+        results in Anaplan will be correct, but this function may report otherwise. Be generous
+        with your timeouts and retries if you are using this function for large batch operations.
+
+        :param list_id: The ID of the List.
+        :param items: The items to update in the List.
+        :return: The result of the update, indicating how many items were updated,
+                 ignored, or failed.
+        """
+        if not items:
+            return ListUpdateResult(updated=0, ignored=0, total=0, failures=[])
+        if len(items) <= 100_000:
+            result = ListUpdateResult.model_validate(
+                await self._http.put(
+                    f"{self._url}/lists/{list_id}/items?action=update", json={"items": items}
+                )
+            )
+            logger.info(f"Updated {result.updated} items in list '{list_id}'.")
+            return result
+
+        responses = await gather(
+            *(
+                self._http.put(
+                    f"{self._url}/lists/{list_id}/items?action=update", json={"items": chunk}
+                )
+                for chunk in (items[i : i + 100_000] for i in range(0, len(items), 100_000))
+            )
+        )
+        result = ListUpdateResult(
+            updated=sum(res.get("updated", 0) for res in responses),
+            ignored=sum(res.get("ignored", 0) for res in responses),
+            total=sum(res.get("total", 0) for res in responses),
+            failures=list(chain.from_iterable(res.get("failures", []) for res in responses)),
+        )
+        logger.info(f"Updated {result.updated} items in list '{list_id}'.")
         return result
 
     async def delete_list_items(

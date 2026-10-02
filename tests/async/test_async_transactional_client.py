@@ -12,6 +12,7 @@ from anaplan_sdk.models import (
     InsertionResult,
     ListItem,
     ListMetadata,
+    ListUpdateResult,
     Model,
     ModelStatus,
     MonthsQuartersYearsCalendar,
@@ -79,6 +80,16 @@ async def test_long_list_insertion(
     assert result.total == 200_000
 
 
+async def test_long_list_update(
+    client: AsyncClient, list_items_long_update: list[dict[str, Any]]
+) -> None:
+    result = await client.tr.update_list_items(test_list, list_items_long_update)
+    assert isinstance(result, ListUpdateResult)
+    assert result.failures == []
+    assert result.updated == 200_000
+    assert result.total == 200_000
+
+
 async def test_long_list_deletion(
     client: AsyncClient, list_items_long: list[dict[str, Any]]
 ) -> None:
@@ -95,6 +106,31 @@ async def test_short_list_insertion(
     assert result.failures == []
     assert result.added == 1_000
     assert result.total == 1_000
+
+
+async def test_short_list_update(
+    client: AsyncClient, list_items_short_update: list[dict[str, Any]]
+) -> None:
+    result = await client.tr.update_list_items(test_list, list_items_short_update)
+    assert isinstance(result, ListUpdateResult)
+    assert result.failures == []
+    assert result.updated == 1_000
+    assert result.total == 1_000
+    items = await client.tr.get_list_items(test_list)
+    assert {item.name for item in items} == {item["name"] for item in list_items_short_update}
+
+
+async def test_list_update_unknown_item(client: AsyncClient) -> None:
+    result = await client.tr.update_list_items(test_list, [{"code": "does_not_exist", "name": "x"}])
+    assert isinstance(result, ListUpdateResult)
+    assert result.updated == 0
+    assert result.total == 1
+    assert result.ignored == 1
+
+
+async def test_empty_list_update(client: AsyncClient) -> None:
+    result = await client.tr.update_list_items(test_list, [])
+    assert result == ListUpdateResult(updated=0, ignored=0, total=0, failures=[])
 
 
 async def test_get_list_items(client: AsyncClient) -> None:
