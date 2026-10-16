@@ -69,7 +69,7 @@ def config() -> PyVersionConfig:
             alm_model_id_async="FFBB7D26E61040EBB5CACD80F7F8A01B",
             alm_src_model_id_async="C042E6A3F0334DEC9C826E1E12947789",
             test_integration_async="c0fa795faac047468a59c8dbe3752d75",
-            test_notification_async="e2c709c74998460c8688b641cde07cd3",
+            test_notification_async="36f1c06643db4f8ca8d49ad040594867",
             test_flow_async="0ca27f18a3f04a1382ecd1745609329b",
             alm_model_id_sync="5C31E832E0B04567B5A8784B25AF3572",
             alm_src_model_id_sync="4FCB1B5224F64339AADC7B322E1663EF",
