@@ -336,7 +336,7 @@ def notification_pydantic(name: str) -> cwm.NotificationInput:
         notifications=cwm.NotificationConfigInput(
             config=[
                 cwm.NotificationItemInput(
-                    type="full_failure", users=["8a868cd97f8f98a3017fe45cbdc65e25"]
+                    type="full_failure", users=["1011d30ade7a4ac985dea84e96487461"]
                 )
             ]
         ),
@@ -349,7 +349,7 @@ def notification_dict(name: str) -> dict[str, Any]:
         "integrationIds": [],
         "channels": ["in_app"],
         "notifications": {
-            "config": [{"type": "full_failure", "users": ["8a868cd97f8f98a3017fe45cbdc65e25"]}]
+            "config": [{"type": "full_failure", "users": ["1011d30ade7a4ac985dea84e96487461"]}]
         },
     }
 
