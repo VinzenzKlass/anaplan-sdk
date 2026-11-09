@@ -2,23 +2,12 @@ default_language_version.python = "3.14"
 
 repos = [
     {
-        repo = "https://github.com/astral-sh/uv-pre-commit",
-        rev = "0.12.5",
-        hooks = [{ id = "uv-lock", priority = 0 }]
-    },
-    {
-        repo = "https://github.com/astral-sh/ruff-pre-commit",
-        rev = "v0.16.3",
+        repo = "local",
         hooks = [
-            { id = "ruff-format", priority = 0 },
-            { id = "ruff-check", args = ["--fix"], priority = 1 }
-        ]
-    },
-    {
-        repo = "https://github.com/DetachHead/basedpyright-pre-commit-mirror",
-        rev = "1.39.8",
-        hooks = [
-            { id = "basedpyright", pass_filenames = false, always_run = true, args = ["--threads", "8"], priority = 0 }
+            { id = "uv-lock", name = "uv lock", entry = "uv lock", language = "system", files = '^(uv\.lock|pyproject\.toml|uv\.toml|requirements\.txt)$', pass_filenames = false, priority = 0 },
+            { id = "ruff-format", name = "ruff format", entry = "ruff format --force-exclude", language = "system", types_or = ["python", "pyi", "jupyter"], require_serial = true, priority = 0 },
+            { id = "ruff-check", name = "ruff check", entry = "ruff check --force-exclude --fix", language = "system", types_or = ["python", "pyi", "jupyter"], require_serial = true, priority = 1 },
+            { id = "basedpyright", name = "basedpyright", entry = "basedpyright --threads 8", language = "system", types_or = ["python", "pyi"], require_serial = true, pass_filenames = false, always_run = true, priority = 0 },
         ]
     }
 ]
